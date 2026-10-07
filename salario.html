@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1F5C7A"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="salario"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Controle Salário</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1F5C7A"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="salario"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Controle Salário</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 /* Layout: seletor de mês e abas (Danrlei original / Danrlei); em cada aba, colunas Danrlei e Cristiane e um resumo do casal. */
@@ -28,7 +28,7 @@ h2{font-family:var(--f-display);font-size:1.05rem;margin:0}
 .tabs{display:flex;gap:6px}
 .tabs button{appearance:none;font:inherit;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:7px;padding:8px 14px;cursor:pointer}
 .tabs button.on{background:var(--accent);border-color:var(--accent);color:var(--surface)}
-.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:12px}
 .cols>*{min-width:0}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:12px;min-width:0}
 .f2{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start}
@@ -55,10 +55,12 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
 .tot span:last-child{font-family:var(--f-num);font-variant-numeric:tabular-nums}
 .tot .big{font-family:var(--f-display);font-weight:700;font-size:1.05rem}
 .pos{color:var(--win)} .neg{color:var(--loss)}
-.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:12px}
 .k .lbl{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .k .big{font-family:var(--f-num);font-weight:600;font-size:1.4rem}
 .empty{font-size:.85rem;color:var(--muted)}
+.wrap>*{min-width:0}
+img,svg{max-width:100%}
 </style>
 <div class="wrap">
   <div class="top">
