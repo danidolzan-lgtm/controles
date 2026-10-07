@@ -1,0 +1,175 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1F5C7A"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="salario"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Controle Salário</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: seletor de mês e abas (Danrlei original / Danrlei); em cada aba, colunas Danrlei e Cristiane e um resumo do casal. */
+:root{
+  --bg:#EEF1F0; --surface:#FFFFFF; --line:#D5DCDA; --fg:#16201D; --muted:#5D6B67;
+  --accent:#1F5C7A; --accent-soft:#DCE9EF; --win:#1E7A4C; --loss:#B23A35; --rep:#7A5BA8; --rep-soft:#ECE5F5;
+  --f-display:"Archivo",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E; --accent:#6FB2D3; --accent-soft:#1B3240;
+  --win:#5BC98E; --loss:#EC7A73; --rep:#B69BE0; --rep-soft:#2A2238; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E; --accent:#6FB2D3; --accent-soft:#1B3240;
+  --win:#5BC98E; --loss:#EC7A73; --rep:#B69BE0; --rep-soft:#2A2238; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
+.wrap{max-width:900px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:16px}
+h1{font-family:var(--f-display);font-weight:800;font-size:1.6rem;margin:0}
+h2{font-family:var(--f-display);font-size:1.05rem;margin:0}
+.sub,.status{color:var(--muted);font-size:.85rem}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.month{display:flex;gap:6px;align-items:center}
+.month b{font-family:var(--f-display);min-width:9.5rem;text-align:center}
+.month b::first-letter{text-transform:uppercase}
+.ic{appearance:none;font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:7px;width:36px;height:36px;cursor:pointer}
+.tabs{display:flex;gap:6px}
+.tabs button{appearance:none;font:inherit;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:7px;padding:8px 14px;cursor:pointer}
+.tabs button.on{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.cols>*{min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:12px;min-width:0}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start}
+label{display:grid;gap:3px;font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+input[type=text],input[type=number]{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-width:0;width:100%}
+input[type=number]{font-family:var(--f-num)}
+input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.com{font-size:.82rem;color:var(--muted);background:var(--bg);border-radius:7px;padding:8px 10px}
+.com b{font-family:var(--f-num);color:var(--fg)}
+.list{display:grid;gap:6px}
+.item{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:6px 8px;border:1px solid var(--line);border-radius:7px}
+.item .d{min-width:0;overflow-wrap:anywhere}
+.item .v{font-family:var(--f-num);font-variant-numeric:tabular-nums;color:var(--loss);white-space:nowrap}
+.item.rep{background:var(--rep-soft);border-color:var(--rep)}
+.tag{font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--rep);font-weight:600;display:block}
+.x{appearance:none;font:inherit;border:0;background:transparent;color:var(--muted);cursor:pointer;padding:4px 6px;border-radius:5px}
+.x:hover{color:var(--loss)}
+.repbox{display:flex;align-items:center;gap:5px;font-size:.72rem;color:var(--rep);text-transform:none;letter-spacing:0;cursor:pointer}
+.add{display:grid;grid-template-columns:1fr 7rem auto;gap:6px;align-items:end}
+.btn{appearance:none;font:inherit;font-weight:600;border-radius:7px;padding:8px 14px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--surface)}
+.btn.ghost{background:var(--surface);color:var(--fg);border-color:var(--line)}
+.tot{display:grid;gap:4px;border-top:1px solid var(--line);padding-top:10px;font-size:.9rem}
+.tot div{display:flex;justify-content:space-between;gap:10px}
+.tot span:last-child{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.tot .big{font-family:var(--f-display);font-weight:700;font-size:1.05rem}
+.pos{color:var(--win)} .neg{color:var(--loss)}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.k .lbl{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.k .big{font-family:var(--f-num);font-weight:600;font-size:1.4rem}
+.empty{font-size:.85rem;color:var(--muted)}
+</style>
+<div class="wrap">
+  <div class="top">
+    <div><h1>Controle Salário</h1><div class="sub">Salário e gastos de Danrlei e Cristiane, mês a mês</div></div>
+    <div class="status" id="status">Carregando…</div>
+  </div>
+  <div class="bar">
+    <div class="month"><button type="button" class="ic" id="prev" aria-label="Mês anterior">‹</button><b id="mes"></b><button type="button" class="ic" id="next" aria-label="Próximo mês">›</button></div>
+    <div class="tabs" id="tabs"></div>
+  </div>
+  <div class="panel">
+    <h2 id="sumTitle">Resumo do casal</h2>
+    <div class="summary" id="summary"></div>
+  </div>
+  <div class="cols" id="cols"></div>
+  <button type="button" class="btn ghost" id="copy" style="justify-self:start">Copiar salários e gastos do mês anterior</button>
+</div>
+<script>
+const LS="salario.v1";
+let months={}, db=null, tab="orig";
+let ym=(()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")})();
+const $=id=>document.getElementById(id);
+const brl=v=>(v<0?"-":"")+"R$ "+Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const uid=()=>Math.random().toString(36).slice(2,9);
+function blank(){return{orig:{salario:null,comBase:null,comPct:0.02,gastos:[]},dan:{salario:null,comBase:null,comPct:0.03,gastos:[]},cris:{salario:null,gastos:[]}}}
+function cur(){if(!months[ym])months[ym]=blank();return months[ym]}
+function shift(n){const [y,m]=ym.split("-").map(Number);const d=new Date(y,m-1+n,1);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")}
+function load(){try{const r=JSON.parse(localStorage.getItem(LS)||"null");if(r)months=r}catch(e){}}
+let tmr=null;
+function save(){
+  const key=ym, body=JSON.parse(JSON.stringify(cur()));
+  try{localStorage.setItem(LS,JSON.stringify(months))}catch(e){}
+  clearTimeout(tmr);
+  tmr=setTimeout(async()=>{
+    if(!db){$("status").textContent="Salvo neste aparelho";return}
+    try{await db.doc("meses/"+key).set(body);$("status").textContent="Salvo"}catch(e){$("status").textContent="Não salvou. Tente de novo."}
+  },500);
+}
+function gastosDe(who){
+  const M=cur();
+  if(who==="dan") return [...M.orig.gastos.filter(g=>g.rep).map(g=>({...g,herdado:true})),...M.dan.gastos];
+  return M[who].gastos;
+}
+function totals(who){const M=cur(),s=+M[who].salario||0,g=gastosDe(who).reduce((a,x)=>a+(+x.valor||0),0);return{s,g,saldo:s-g}}
+function personPanel(who,nome,editableKey){
+  const M=cur(), P=M[editableKey], p=document.createElement("div"); p.className="panel";
+  const t=totals(who);
+  let h="<h2>"+nome+"</h2><div class='f2'><label for='sal-"+who+"'>Salário (R$)<input id='sal-"+who+"' type='number' step='0.01' inputmode='decimal' data-f='salario' data-w='"+editableKey+"' value='"+(P.salario??"")+"'></label>";
+  if(who!=="cris"){
+    h+="<label for='pct-"+who+"'>Comissão (%)<input id='pct-"+who+"' type='number' step='0.01' inputmode='decimal' data-f='comPct' data-w='"+editableKey+"' value='"+(P.comPct??"")+"'></label></div>";
+    h+="<div class='f2'><label for='cb-"+who+"'>Base da comissão (R$)<input id='cb-"+who+"' type='number' step='0.01' inputmode='decimal' data-f='comBase' data-w='"+editableKey+"' value='"+(P.comBase??"")+"'></label><div class='com'>Comissão calculada<br><b>"+brl((+P.comBase||0)*(+P.comPct||0)/100)+"</b><br>só cálculo, não entra no saldo</div></div>";
+  } else h+="<div></div></div>";
+  h+="<div class='list'>";
+  const gs=gastosDe(who);
+  if(!gs.length) h+="<div class='empty'>Nenhum gasto lançado neste mês.</div>";
+  gs.forEach(g=>{
+    if(g.herdado) h+="<div class='item rep'><span class='d'><span class='tag'>vem do Danrlei original</span>"+esc(g.desc)+"</span><span class='v'>-"+brl(+g.valor||0).replace("R$ ","")+"</span><span></span></div>";
+    else{
+      h+="<div class='item'><span class='d'>"+esc(g.desc)+(who==="orig"?"<label class='repbox'><input type='checkbox' data-rep='"+g.id+"' "+(g.rep?"checked":"")+"> replicar no Danrlei</label>":"")+"</span><span class='v'>-"+brl(+g.valor||0).replace("R$ ","")+"</span><button type='button' class='x' data-del='"+g.id+"' data-w='"+editableKey+"' aria-label='Excluir "+esc(g.desc)+"'>✕</button></div>";
+    }
+  });
+  h+="</div><form class='add' data-w='"+editableKey+"'><label for='gd-"+who+"'>Gasto<input id='gd-"+who+"' type='text' name='d' placeholder='Ex.: mercado' autocomplete='off'></label><label for='gv-"+who+"'>Valor<input id='gv-"+who+"' type='number' name='v' step='0.01' inputmode='decimal'></label><button class='btn' type='submit'>Adicionar</button></form>";
+  h+="<div class='tot'><div><span>Salário</span><span>"+brl(t.s)+"</span></div><div><span>Gastos</span><span class='neg'>-"+brl(t.g).replace("R$ ","R$ ")+"</span></div><div class='big'><span>Sobra</span><span class='"+(t.saldo>=0?"pos":"neg")+"'>"+brl(t.saldo)+"</span></div></div>";
+  p.innerHTML=h; return p;
+}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function render(){
+  const [y,m]=ym.split("-").map(Number);
+  $("mes").textContent=new Date(y,m-1,15).toLocaleDateString("pt-BR",{month:"long",year:"numeric"});
+  $("tabs").innerHTML="";
+  [["orig","Danrlei original"],["dan","Danrlei"]].forEach(([k,l])=>{const b=document.createElement("button");b.type="button";b.textContent=l;b.className=k===tab?"on":"";b.onclick=()=>{tab=k;render()};$("tabs").appendChild(b)});
+  const c=$("cols");c.innerHTML="";
+  c.appendChild(personPanel(tab,tab==="orig"?"Danrlei original":"Danrlei",tab));
+  c.appendChild(personPanel("cris","Cristiane","cris"));
+  const a=totals(tab),b=totals("cris"),s=a.s+b.s,g=a.g+b.g;
+  $("sumTitle").textContent="Resumo do casal · "+(tab==="orig"?"Danrlei original":"Danrlei")+" + Cristiane";
+  $("summary").innerHTML=[["Salários",brl(s),""],["Gastos","-"+brl(g).replace("R$ ","R$ "),"neg"],["Sobra do mês",brl(s-g),(s-g)>=0?"pos":"neg"]].map(([l,v,cl])=>"<div class='k'><div class='lbl'>"+l+"</div><div class='big "+cl+"'>"+v+"</div></div>").join("");
+}
+$("cols").addEventListener("change",e=>{
+  const el=e.target;
+  if(el.dataset.f){const v=parseFloat(el.value);cur()[el.dataset.w][el.dataset.f]=isNaN(v)?null:v;save();render();return}
+  if(el.dataset.rep){const g=cur().orig.gastos.find(x=>x.id===el.dataset.rep);if(g){g.rep=el.checked;save();render()}}
+});
+$("cols").addEventListener("click",e=>{
+  const b=e.target.closest("[data-del]");if(!b)return;
+  const L=cur()[b.dataset.w].gastos;const i=L.findIndex(x=>x.id===b.dataset.del);if(i>=0){L.splice(i,1);save();render()}
+});
+$("cols").addEventListener("submit",e=>{
+  e.preventDefault();const f=e.target, d=f.d.value.trim(), v=parseFloat(f.v.value);
+  if(!d||isNaN(v)){f.d.focus();return}
+  cur()[f.dataset.w].gastos.push({id:uid(),desc:d,valor:Math.abs(v),rep:false});save();render();
+  const again=document.querySelector("form[data-w='"+f.dataset.w+"'] input[name=d]");again&&again.focus();
+});
+$("prev").onclick=()=>{ym=shift(-1);render()};
+$("next").onclick=()=>{ym=shift(1);render()};
+$("copy").onclick=()=>{
+  const p=months[shift(-1)];if(!p){$("status").textContent="O mês anterior está vazio.";return}
+  const c=JSON.parse(JSON.stringify(p));["orig","dan","cris"].forEach(k=>c[k].gastos.forEach(g=>g.id=uid()));
+  months[ym]=c;save();render();$("status").textContent="Copiado do mês anterior";
+};
+load();render();$("status").textContent="Conectando…";
+(async()=>{
+  try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
+  if(!db){$("status").textContent="Salvando neste aparelho";return}
+  db.collection("meses").onSnapshot(q=>{
+    const m={};q.docs.forEach(d=>{m[d.id]=JSON.parse(JSON.stringify(d.data()))});
+    months=Object.assign({},months,m);
+    const a=document.activeElement;
+    if(!(a&&a.closest&&a.closest("#cols"))) render();
+    $("status").textContent="Sincronizado";
+  },()=>{$("status").textContent="Sem conexão com o salvamento"});
+})();
+</script>
+</body></html>

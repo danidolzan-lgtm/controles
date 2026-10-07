@@ -1,0 +1,116 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1F5C7A"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="progresso-ob"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Progresso OB</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: escada vertical de metas de banca, resumo da meta atual no topo. */
+:root{
+  --bg:#EEF1F0; --surface:#FFFFFF; --line:#D5DCDA; --fg:#16201D; --muted:#5D6B67;
+  --accent:#1F5C7A; --accent-soft:#DCE9EF; --win:#1E7A4C; --win-soft:#DDF0E5;
+  --f-display:"Archivo",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E;
+  --accent:#6FB2D3; --accent-soft:#1B3240; --win:#5BC98E; --win-soft:#173327; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E;
+  --accent:#6FB2D3; --accent-soft:#1B3240; --win:#5BC98E; --win-soft:#173327; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
+.wrap{max-width:640px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:16px}
+h1{font-family:var(--f-display);font-weight:800;font-size:1.6rem;margin:0}
+.sub,.status{color:var(--muted);font-size:.85rem}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
+.goal{display:grid;gap:10px}
+.lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.big{font-family:var(--f-num);font-weight:600;font-size:1.8rem}
+.row{display:flex;gap:16px;flex-wrap:wrap;align-items:end}
+.row>div{display:grid;gap:2px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.bar{height:10px;border-radius:5px;background:var(--accent-soft);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0}
+label{display:grid;gap:3px;font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:140px}
+input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ladder{display:grid;gap:6px}
+.step{appearance:none;font:inherit;color:var(--fg);text-align:left;cursor:pointer;display:grid;grid-template-columns:2rem 1fr auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:11px 12px}
+.step .n{font-family:var(--f-num);font-size:.8rem;color:var(--muted)}
+.step .b{font-family:var(--f-display);font-weight:700;font-size:1.05rem}
+.step .e{font-family:var(--f-num);font-size:.85rem;color:var(--muted);text-align:right}
+.step .e small{display:block;font-size:.68rem;font-family:var(--f-body);text-transform:uppercase;letter-spacing:.05em}
+.step.done{background:var(--win-soft);border-color:var(--win)}
+.step.done .b,.step.done .n{color:var(--win)}
+.step.next{border:2px solid var(--accent)}
+.hint{font-size:.8rem;color:var(--muted)}
+</style>
+<div class="wrap">
+  <div class="top">
+    <div><h1>Progresso OB</h1><div class="sub">Entrada = banca ÷ 5 · toque na meta para marcar como conquistada</div></div>
+    <div class="status" id="status">Carregando…</div>
+  </div>
+  <div class="panel goal">
+    <div class="row">
+      <div><span class="lbl">Nível atual</span><span class="big" id="gNivel">–</span></div>
+      <div><span class="lbl">Entrada</span><span class="big num" id="gEntrada">–</span></div>
+      <div><span class="lbl">Próxima meta</span><span class="big num" id="gProx">–</span></div>
+    </div>
+    <div class="row">
+      <label for="banca">Banca atual (R$)<input id="banca" type="number" min="0" step="0.01" inputmode="decimal"></label>
+      <span class="hint" id="gFalta"></span>
+    </div>
+    <div class="bar" aria-hidden="true"><i id="gBar"></i></div>
+  </div>
+  <div class="ladder" id="ladder"></div>
+</div>
+<script>
+const LV=[50,100,150,250,350,500,750,1000,1500,2500,3500,5000,7500,10000];
+let st={conquistados:[],banca:null}, db=null, ref=null;
+const LS="progressoOB.v1";
+const $=id=>document.getElementById(id);
+const brl=v=>"R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:0,maximumFractionDigits:2});
+function load(){try{const r=JSON.parse(localStorage.getItem(LS)||"null");if(r)st=r}catch(e){}}
+async function save(){
+  if(ref){try{await ref.set(st);$("status").textContent="Salvo"}catch(e){$("status").textContent="Não salvou. Tente de novo."}}
+  else{try{localStorage.setItem(LS,JSON.stringify(st))}catch(e){}$("status").textContent="Salvo neste aparelho"}
+}
+function render(){
+  const done=new Set(st.conquistados);
+  let last=-1; LV.forEach((v,i)=>{if(done.has(i))last=i});
+  const nextI=LV.findIndex((v,i)=>!done.has(i));
+  $("gNivel").textContent= last>=0 ? brl(LV[last]) : "início";
+  $("gEntrada").textContent= brl((last>=0?LV[last]:LV[0])/5);
+  $("gProx").textContent= nextI>=0 ? brl(LV[nextI]) : "concluído";
+  const b=st.banca;
+  if(nextI>=0 && b!=null && !isNaN(b)){
+    const base= last>=0?LV[last]:0, alvo=LV[nextI];
+    const p=Math.max(0,Math.min(1,(b-base)/(alvo-base)));
+    $("gBar").style.width=(p*100)+"%";
+    $("gFalta").textContent= b>=alvo ? "Banca já passou da próxima meta. Marque a meta como conquistada." : "Faltam "+brl(alvo-b)+" para "+brl(alvo);
+  } else { $("gBar").style.width=(nextI<0?100:0)+"%"; $("gFalta").textContent= nextI<0?"Todas as metas conquistadas.":"Informe a banca para ver quanto falta." }
+  const L=$("ladder"); L.innerHTML="";
+  LV.forEach((v,i)=>{
+    const b=document.createElement("button"); b.type="button";
+    b.className="step"+(done.has(i)?" done":"")+(i===nextI?" next":"");
+    b.setAttribute("aria-pressed",done.has(i));
+    b.innerHTML="<span class='n'>"+String(i+1).padStart(2,"0")+"</span><span class='b'>"+brl(v)+"</span><span class='e'><small>entrada</small>"+brl(v/5)+"</span>";
+    b.addEventListener("click",()=>{
+      const s=new Set(st.conquistados); s.has(i)?s.delete(i):s.add(i);
+      st.conquistados=[...s].sort((a,c)=>a-c); render(); save();
+    });
+    L.appendChild(b);
+  });
+}
+$("banca").addEventListener("change",e=>{const v=parseFloat(e.target.value);st.banca=isNaN(v)?null:v;render();save()});
+load(); if(st.banca!=null) $("banca").value=st.banca; render(); $("status").textContent="Conectando…";
+(async()=>{
+  try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
+  if(!db){$("status").textContent="Salvando neste aparelho";return}
+  ref=db.doc("estado/progresso");
+  ref.onSnapshot(s=>{
+    if(s.exists){const d=s.data(); st={conquistados:[...(d.conquistados||[])],banca:d.banca??null};
+      if(document.activeElement!==$("banca")) $("banca").value=st.banca??"";}
+    else st={conquistados:[],banca:null};
+    render(); $("status").textContent="Sincronizado";
+  },()=>{$("status").textContent="Sem conexão com o salvamento"});
+})();
+</script>
+</body></html>

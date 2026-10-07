@@ -1,0 +1,130 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1F5C7A"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="oracao"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Oração e Consagração</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: duas abas; texto de oração em coluna de leitura com serifa; consagração com campo, texto montado e lista salva. */
+:root{
+  --bg:#EEF1F0; --surface:#FFFFFF; --line:#D5DCDA; --fg:#16201D; --muted:#5D6B67;
+  --accent:#1F5C7A; --accent-soft:#DCE9EF; --gold:#A0782A;
+  --f-display:"Archivo",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-read:"Newsreader",Georgia,serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E; --accent:#6FB2D3; --accent-soft:#1B3240; --gold:#D8B46A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E; --accent:#6FB2D3; --accent-soft:#1B3240; --gold:#D8B46A; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:640px;margin:0 auto;padding-inline:16px;padding-block:20px 56px;display:grid;gap:16px}
+h1{font-family:var(--f-display);font-weight:800;font-size:1.6rem;margin:0}
+.sub,.status{color:var(--muted);font-size:.85rem}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.tabs{display:flex;gap:6px}
+.tabs button{appearance:none;font:inherit;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:7px;padding:9px 14px;cursor:pointer;flex:1}
+.tabs button.on{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px 18px;display:grid;gap:16px}
+.read{font-family:var(--f-read);font-size:1.18rem;line-height:1.7;display:grid;gap:14px}
+.read p{margin:0;max-width:60ch}
+.read h2{font-family:var(--f-read);font-weight:500;font-style:italic;font-size:1.05rem;color:var(--gold);margin:6px 0 -6px;letter-spacing:.01em}
+.amen{font-style:italic;color:var(--gold)}
+.mark{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);font-weight:600}
+label{display:grid;gap:5px;font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+input,textarea{font:inherit;text-transform:none;letter-spacing:0;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:10px 12px;width:100%}
+textarea{min-height:70px;resize:vertical}
+.btn{appearance:none;font:inherit;font-weight:600;border-radius:7px;padding:10px 16px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--surface);justify-self:start}
+.btn.ghost{background:var(--surface);color:var(--fg);border-color:var(--line)}
+.list{display:grid;gap:8px}
+.it{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:2px}
+.it b{font-family:var(--f-read);font-size:1.05rem;font-weight:500}
+.it span{font-size:.78rem;color:var(--muted)}
+.empty{color:var(--muted);font-size:.9rem}
+</style>
+<div class="wrap">
+  <div class="top">
+    <div><h1>Oração e Consagração</h1><div class="sub">Um momento com Deus antes de dormir</div></div>
+    <div class="status" id="status"></div>
+  </div>
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" id="tNoite" class="on" aria-selected="true">Antes de dormir</button>
+    <button type="button" role="tab" id="tCons" aria-selected="false">Consagração</button>
+  </div>
+
+  <div id="pNoite" class="panel">
+    <div class="mark">Oração da noite</div>
+    <div class="read">
+      <h2>Agradecimento</h2>
+      <p>Senhor Deus, Pai de bondade, chego ao fim deste dia e coloco diante de Ti tudo o que vivi. Obrigado pela vida, pelo ar que respirei, pelo trabalho, pelo pão que comi e pelas pessoas que caminharam comigo hoje. Obrigado pela minha família e pela minha casa.</p>
+      <h2>Perdão</h2>
+      <p>Perdoa-me, Senhor, pelas palavras ditas sem amor, pela impaciência, pelo orgulho e por tudo o que deixei de fazer quando podia ter feito o bem. Limpa o meu coração e me ensina a perdoar também quem me feriu, assim como Tu me perdoas.</p>
+      <h2>Entrega</h2>
+      <p>Entrego em Tuas mãos as minhas preocupações: o trabalho, as contas, as decisões que preciso tomar e tudo aquilo que ainda não sei resolver. Dá-me sabedoria e disciplina para agir com prudência, e paz para descansar sabendo que Tu cuidas de mim.</p>
+      <h2>Intercessão</h2>
+      <p>Abençoa a minha família, guarda a nossa casa e protege quem eu amo. Lembra-Te dos doentes, dos que estão sozinhos e dos que passam necessidade. Que nenhum de nós fique sem o Teu cuidado nesta noite.</p>
+      <h2>Descanso</h2>
+      <p>Agora, Senhor, me deito em paz, porque só Tu me fazes repousar em segurança. Guarda o meu sono, afasta de mim todo mal e todo medo, e renova as minhas forças para amanhã. Que eu acorde com o coração grato e pronto para Te servir.</p>
+      <h2>Pai Nosso</h2>
+      <p>Pai nosso, que estais nos céus, santificado seja o vosso nome; venha a nós o vosso reino; seja feita a vossa vontade, assim na terra como no céu. O pão nosso de cada dia nos dai hoje; perdoai-nos as nossas ofensas, assim como nós perdoamos a quem nos tem ofendido; e não nos deixeis cair em tentação, mas livrai-nos do mal.</p>
+      <p class="amen">Em nome do Pai, do Filho e do Espírito Santo. Amém.</p>
+    </div>
+  </div>
+
+  <div id="pCons" class="panel" hidden>
+    <div class="mark">Consagrar a Deus</div>
+    <form id="form" style="display:grid;gap:12px">
+      <label for="oque">O que você quer consagrar?<input id="oque" type="text" placeholder="Ex.: este novo começo, meu trabalho, minha família" autocomplete="off"></label>
+      <label for="pedido">Um pedido ou propósito (opcional)<textarea id="pedido" placeholder="Ex.: que eu tenha disciplina e paciência"></textarea></label>
+      <button class="btn" type="submit">Montar consagração</button>
+    </form>
+    <div class="read" id="texto">
+      <p>Senhor, eu Te consagro este momento e tudo o que ele representa. Que ele seja Teu desde o começo, que cresça segundo a Tua vontade e que dê frutos para a Tua glória.</p>
+      <p class="amen">Amém.</p>
+    </div>
+    <button type="button" class="btn ghost" id="salvar" hidden>Guardar esta consagração</button>
+    <div style="display:grid;gap:8px">
+      <div class="mark">Minhas consagrações</div>
+      <div class="list" id="lista"><p class="empty">As consagrações que você guardar aparecem aqui com a data.</p></div>
+    </div>
+  </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+let db=null, last=null, items=[];
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function tab(n){
+  const a=n==="noite";
+  $("tNoite").classList.toggle("on",a);$("tCons").classList.toggle("on",!a);
+  $("tNoite").setAttribute("aria-selected",a);$("tCons").setAttribute("aria-selected",!a);
+  $("pNoite").hidden=!a;$("pCons").hidden=a;
+  try{localStorage.setItem("oracao.tab",n)}catch(e){}
+}
+$("tNoite").onclick=()=>tab("noite");$("tCons").onclick=()=>tab("cons");
+try{if(localStorage.getItem("oracao.tab")==="cons")tab("cons")}catch(e){}
+$("form").addEventListener("submit",e=>{
+  e.preventDefault();
+  const o=$("oque").value.trim(), p=$("pedido").value.trim();
+  if(!o){$("oque").focus();return}
+  last={oque:o,pedido:p};
+  $("texto").innerHTML=
+    "<p>Senhor Deus, diante de Ti eu me coloco com o coração aberto. Hoje eu Te consagro <b>"+esc(o)+"</b>.</p>"+
+    "<p>Tudo o que sou e tudo o que tenho vem de Ti. Por isso entrego em Tuas mãos o que agora Te consagro: que seja Teu desde o começo, guardado pela Tua proteção e conduzido pela Tua vontade.</p>"+
+    (p?"<p>Coloco também diante de Ti este pedido: <b>"+esc(p)+"</b>. Que ele se cumpra se for da Tua vontade, e que eu tenha fé para esperar o Teu tempo.</p>":"")+
+    "<p>Afasta disso todo mal, toda inveja e todo desânimo. Que cresça em paz, que dê frutos bons e que cada passo me aproxime mais de Ti. Que eu seja fiel no pouco, para que Tu me confies o muito.</p>"+
+    "<p>Recebe esta consagração, Senhor, e faz dela um sinal da Tua presença na minha vida.</p>"+
+    "<p class='amen'>Em nome de Jesus. Amém.</p>";
+  $("salvar").hidden=!db;
+});
+$("salvar").onclick=async()=>{
+  if(!db||!last)return;
+  try{await db.collection("consagracoes").add({oque:last.oque,pedido:last.pedido,data:new Date().toISOString()});$("salvar").hidden=true;$("status").textContent="Consagração guardada"}
+  catch(e){$("status").textContent="Não guardou. Tente de novo."}
+};
+function draw(){
+  if(!items.length){$("lista").innerHTML="<p class='empty'>As consagrações que você guardar aparecem aqui com a data.</p>";return}
+  $("lista").innerHTML=items.map(i=>"<div class='it'><b>"+esc(i.oque)+"</b><span>"+new Date(i.data).toLocaleDateString("pt-BR",{day:"2-digit",month:"long",year:"numeric"})+(i.pedido?" · "+esc(i.pedido):"")+"</span></div>").join("");
+}
+(async()=>{
+  try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
+  if(!db)return;
+  db.collection("consagracoes").orderBy("data","desc").onSnapshot(q=>{items=q.docs.map(d=>d.data());draw()},()=>{});
+})();
+</script>
+</body></html>

@@ -1,0 +1,409 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1F5C7A"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="diario-ob"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Diário OB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: coluna única de painel — resumo no topo, calendário de dias, tabelas por estratégia/sessão. Modal de check-in por dia. */
+:root{
+  --bg:#EEF1F0; --surface:#FFFFFF; --line:#D5DCDA; --fg:#16201D; --muted:#5D6B67;
+  --accent:#1F5C7A; --accent-soft:#DCE9EF;
+  --win:#1E7A4C; --win-soft:#DDF0E5; --loss:#B23A35; --loss-soft:#F6E0DE; --idle:#8A9693;
+  --f-display:"Archivo",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E;
+  --accent:#6FB2D3; --accent-soft:#1B3240;
+  --win:#5BC98E; --win-soft:#173327; --loss:#EC7A73; --loss-soft:#3A1E1C; --idle:#6C7A76; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E;
+  --accent:#6FB2D3; --accent-soft:#1B3240;
+  --win:#5BC98E; --win-soft:#173327; --loss:#EC7A73; --loss-soft:#3A1E1C; --idle:#6C7A76; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
+.wrap{max-width:860px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:18px}
+h1{font-family:var(--f-display);font-weight:800;font-size:1.6rem;margin:0;letter-spacing:-.01em}
+h2{font-family:var(--f-display);font-weight:700;font-size:1.05rem;margin:0}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.sub{color:var(--muted);font-size:.85rem}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi .lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.kpi .big{font-family:var(--f-num);font-weight:600;font-size:1.7rem;margin-top:2px}
+.kpi .row{display:flex;gap:14px;margin-top:6px;font-size:.85rem;color:var(--muted)}
+.kpi .row b{color:var(--fg);font-family:var(--f-num);font-weight:600}
+.pos{color:var(--win)} .neg{color:var(--loss)}
+.be{font-size:.8rem;margin-top:6px}
+.cfg{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
+.cfg label{display:grid;gap:3px;font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+input,select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-width:0}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cfg input{width:110px}
+.month{display:grid;gap:8px}
+.month h3{font-family:var(--f-display);font-size:.95rem;margin:0}
+.month h3::first-letter{text-transform:uppercase}
+.dow,.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.dow span{font-size:.68rem;color:var(--muted);text-align:center;text-transform:uppercase;letter-spacing:.05em}
+.day{appearance:none;border:1px solid var(--line);background:var(--surface);border-radius:7px;min-height:58px;padding:5px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;cursor:pointer;color:var(--fg);font:inherit;text-align:left}
+.day:hover{border-color:var(--accent)}
+.day .d{font-family:var(--f-num);font-size:.78rem;color:var(--muted)}
+.day .v{font-family:var(--f-num);font-size:.72rem;font-weight:600}
+.day.today{border:2px solid var(--accent)}
+.day.past{opacity:.75}
+.day.pos{background:var(--win-soft)} .day.neg{background:var(--loss-soft)}
+.day.blank{visibility:hidden}
+.dots{display:flex;gap:3px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--idle)}
+.dot.w{background:var(--win)} .dot.l{background:var(--loss)}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+td{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+td:first-child{font-family:var(--f-body)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.two>*{min-width:0}
+.status{font-size:.78rem;color:var(--muted)}
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(10,16,14,.55);display:flex;align-items:flex-end;justify-content:center;z-index:10;padding-top:env(safe-area-inset-top,0px)}
+@media (min-width:640px){.ov{align-items:center}}
+.modal{background:var(--surface);color:var(--fg);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:12px 12px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));display:grid;gap:14px}
+@media (min-width:640px){.modal{border-radius:12px}}
+.mhead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sess{border:1px solid var(--line);border-radius:9px;padding:12px;display:grid;gap:10px}
+.sess h4{margin:0;font-family:var(--f-display);font-size:.95rem;display:flex;justify-content:space-between;align-items:center}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{appearance:none;font:inherit;font-size:.85rem;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:6px;padding:7px 11px;cursor:pointer}
+.seg button.on{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.seg button.on.w{background:var(--win);border-color:var(--win)}
+.seg button.on.l{background:var(--loss);border-color:var(--loss)}
+.op{display:grid;gap:8px;border-top:1px dashed var(--line);padding-top:10px}
+.op .t{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:flex;justify-content:space-between}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fields label{display:grid;gap:3px;font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.hint{font-size:.78rem;color:var(--muted)}
+.lock{font-size:.82rem;color:var(--muted);font-style:italic}
+.actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.btn{appearance:none;font:inherit;font-weight:600;border-radius:7px;padding:10px 16px;cursor:pointer;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.err{color:var(--loss);font-size:.82rem}
+.ro .seg button,.ro input,.ro select{pointer-events:none}
+@media (prefers-reduced-motion:no-preference){.day{transition:border-color .15s}}
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Diário OB</h1>
+      <div class="sub">M1 · expiração 5 min · médias 9 / 21 / 50 · Soros nível 1</div>
+    </div>
+    <div class="status" id="status">Carregando…</div>
+  </div>
+
+  <div class="kpis">
+    <div class="panel kpi">
+      <div class="lbl">Lucro / prejuízo</div>
+      <div class="big" id="kLucro">R$ 0,00</div>
+      <div class="row"><span>Hoje <b id="kHoje">0,00</b></span><span>Dias <b id="kDias">0</b></span></div>
+    </div>
+    <div class="panel kpi">
+      <div class="lbl">Assertividade</div>
+      <div class="big" id="kAss">–</div>
+      <div class="row"><span>Total <b id="kTot">0</b></span><span>Win <b id="kWin" class="pos">0</b></span><span>Loss <b id="kLoss" class="neg">0</b></span></div>
+      <div class="be" id="kBe"></div>
+    </div>
+    <div class="panel kpi">
+      <div class="lbl">Soros (2ª entrada)</div>
+      <div class="big" id="kSoros">–</div>
+      <div class="row"><span>Feitas <b id="kSorosN">0</b></span><span>Resultado <b id="kSorosV">0,00</b></span></div>
+    </div>
+  </div>
+
+  <div class="panel cfg">
+    <label for="cfgBase">Mão base (R$)<input id="cfgBase" type="number" min="0" step="0.5" inputmode="decimal"></label>
+    <label for="cfgPayout">Payout (%)<input id="cfgPayout" type="number" min="1" max="100" step="1" inputmode="numeric"></label>
+    <span class="hint" id="cfgHint"></span>
+  </div>
+
+  <div class="panel" style="display:grid;gap:16px">
+    <h2>Calendário</h2>
+    <div id="cal" style="display:grid;gap:20px"></div>
+  </div>
+
+  <div class="two">
+    <div class="panel"><h2 style="margin-bottom:8px">Por estratégia</h2><div class="tbl-wrap"><table id="tEst"></table></div></div>
+    <div class="panel"><h2 style="margin-bottom:8px">Por sessão</h2><div class="tbl-wrap"><table id="tSess"></table></div></div>
+  </div>
+</div>
+
+<div class="ov" id="ov" hidden>
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"></div>
+</div>
+
+<script>
+const START = "2026-10-07";
+const END = "2026-12-31";
+const EST = [
+  {id:"virada", nome:"Virada", desc:"cruzamento 9×21 a favor da 50"},
+  {id:"respiro", nome:"Respiro", desc:"pullback na zona 9–21"},
+  {id:"muralha", nome:"Muralha", desc:"toque e rejeição na 50"}
+];
+const SESS = [{id:"manha",nome:"Manhã"},{id:"tarde",nome:"Tarde"}];
+
+let days = {};          // date -> doc
+let cfg = {base:10, payout:85};
+let db = null, canWrite = true;
+const LS = "diarioOB.v1";
+
+const brl = v => (v<0?"-":"") + "R$ " + Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const n2 = v => (v<0?"-":v>0?"+":"") + Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const pct = (a,b) => b ? (a/b*100).toLocaleString("pt-BR",{maximumFractionDigits:1})+"%" : "–";
+function todayStr(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+const $ = id => document.getElementById(id);
+
+function emptySess(){return {status:"pendente", ops:[]}}
+function emptyDay(date){return {date, manha:emptySess(), tarde:emptySess()}}
+function opValue(op){return op.resultado==="win" ? Math.abs(op.valor||0) : -Math.abs(op.valor||0)}
+function dayNet(d){let s=0;for(const k of ["manha","tarde"]) for(const op of (d[k]?.ops||[])) s+=opValue(op);return s}
+
+/* ---------- storage ---------- */
+function lsLoad(){try{const r=JSON.parse(localStorage.getItem(LS)||"null");if(r){days=r.days||{};cfg=Object.assign(cfg,r.cfg||{})}}catch(e){}}
+function lsSave(){try{localStorage.setItem(LS,JSON.stringify({days,cfg}))}catch(e){}}
+
+async function saveDay(d){
+  days[d.date]=d; render();
+  if(db){
+    try{await db.doc("dias/"+d.date).set(d); setStatus("Salvo")}
+    catch(e){ if(e&&e.code==="invalid_argument"){canWrite=false;setStatus("Somente leitura")} else setStatus("Não salvou. Tente de novo.") }
+  } else { lsSave(); setStatus("Salvo neste aparelho") }
+}
+let cfgTimer=null;
+function saveCfg(){
+  clearTimeout(cfgTimer);
+  cfgTimer=setTimeout(async()=>{
+    if(db){try{await db.doc("config/geral").set({base:cfg.base,payout:cfg.payout})}catch(e){}}
+    else lsSave();
+  },600);
+}
+function setStatus(t){$("status").textContent=t}
+
+/* ---------- render ---------- */
+function render(){renderKpis();renderCal();renderTables();renderCfgHint()}
+
+function allOps(){
+  const out=[];
+  for(const d of Object.values(days)) for(const s of SESS) (d[s.id]?.ops||[]).forEach((op,i)=>out.push({...op,sess:s.id,idx:i,date:d.date}));
+  return out;
+}
+function renderKpis(){
+  const ops=allOps(), w=ops.filter(o=>o.resultado==="win").length, l=ops.length-w;
+  const total=ops.reduce((s,o)=>s+opValue(o),0);
+  const t=todayStr(), hoje=days[t]?dayNet(days[t]):0;
+  const diasOp=Object.values(days).filter(d=>(d.manha.ops.length+d.tarde.ops.length)>0).length;
+  $("kLucro").textContent=brl(total); $("kLucro").className="big "+(total>0?"pos":total<0?"neg":"");
+  $("kHoje").textContent=n2(hoje); $("kHoje").className=hoje>0?"pos":hoje<0?"neg":"";
+  $("kDias").textContent=diasOp;
+  const be=100/(1+cfg.payout/100), rate=ops.length?w/ops.length*100:null;
+  $("kAss").textContent=pct(w,ops.length); $("kAss").className="big "+(rate==null?"":rate>=be?"pos":"neg");
+  $("kTot").textContent=ops.length; $("kWin").textContent=w; $("kLoss").textContent=l;
+  $("kBe").innerHTML="Empate com payout "+cfg.payout+"%: <b class='num'>"+be.toLocaleString("pt-BR",{maximumFractionDigits:1})+"%</b>"+(rate==null?"":rate>=be?" · <span class='pos'>acima</span>":" · <span class='neg'>abaixo</span>");
+  const so=ops.filter(o=>o.idx===1), sw=so.filter(o=>o.resultado==="win").length, sv=so.reduce((s,o)=>s+opValue(o),0);
+  $("kSoros").textContent=pct(sw,so.length); $("kSorosN").textContent=so.length;
+  $("kSorosV").textContent=n2(sv); $("kSorosV").className=sv>0?"pos":sv<0?"neg":"";
+}
+function renderCfgHint(){
+  const b=+cfg.base||0, p=(+cfg.payout||0)/100;
+  $("cfgHint").textContent="Win na 1ª = +"+(b*p).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})+" · entrada do Soros = R$ "+(b+b*p).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function renderCal(){
+  const cal=$("cal"); cal.innerHTML="";
+  const t=todayStr();
+  const s=new Date(START+"T12:00:00"), e=new Date(END+"T12:00:00");
+  let cur=new Date(s.getFullYear(),s.getMonth(),1,12);
+  while(cur<=e){
+    const y=cur.getFullYear(), m=cur.getMonth();
+    const box=document.createElement("div"); box.className="month";
+    const h=document.createElement("h3"); h.textContent=cur.toLocaleDateString("pt-BR",{month:"long",year:"numeric"}); box.appendChild(h);
+    const dow=document.createElement("div"); dow.className="dow";
+    ["dom","seg","ter","qua","qui","sex","sáb"].forEach(x=>{const sp=document.createElement("span");sp.textContent=x;dow.appendChild(sp)});
+    box.appendChild(dow);
+    const g=document.createElement("div"); g.className="grid";
+    const first=new Date(y,m,1).getDay(), last=new Date(y,m+1,0).getDate();
+    for(let i=0;i<first;i++){const b=document.createElement("div");b.className="day blank";g.appendChild(b)}
+    for(let d=1;d<=last;d++){
+      const ds=y+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+      const btn=document.createElement("button"); btn.type="button"; btn.className="day";
+      if(ds<START||ds>END){btn.className="day blank";g.appendChild(btn);continue}
+      const doc=days[ds], net=doc?dayNet(doc):0, ops=doc?[...doc.manha.ops,...doc.tarde.ops]:[];
+      if(ds===t) btn.classList.add("today");
+      if(ds<t) btn.classList.add("past");
+      if(ops.length){btn.classList.add(net>0?"pos":net<0?"neg":"x")}
+      const dn=document.createElement("span"); dn.className="d"; dn.textContent=d; btn.appendChild(dn);
+      const dots=document.createElement("span"); dots.className="dots";
+      ops.forEach(o=>{const x=document.createElement("i");x.className="dot "+(o.resultado==="win"?"w":"l");dots.appendChild(x)});
+      if(doc && !ops.length && (doc.manha.status==="nao_operei"||doc.tarde.status==="nao_operei")){const x=document.createElement("i");x.className="dot";dots.appendChild(x)}
+      btn.appendChild(dots);
+      if(ops.length){const v=document.createElement("span");v.className="v "+(net>0?"pos":net<0?"neg":"");v.textContent=n2(net);btn.appendChild(v)}
+      btn.setAttribute("aria-label",ds+(ops.length?", resultado "+n2(net):""));
+      btn.addEventListener("click",()=>openDay(ds));
+      g.appendChild(btn);
+    }
+    box.appendChild(g); cal.appendChild(box);
+    cur=new Date(y,m+1,1,12);
+  }
+}
+function tableHTML(rows,head){
+  return "<thead><tr>"+head.map(h=>"<th>"+h+"</th>").join("")+"</tr></thead><tbody>"+rows.map(r=>"<tr>"+r.map((c,i)=>"<td"+(c.cls?" class='"+c.cls+"'":"")+">"+(c.t??c)+"</td>").join("")+"</tr>").join("")+"</tbody>";
+}
+function statRow(nome,ops){
+  const w=ops.filter(o=>o.resultado==="win").length, v=ops.reduce((s,o)=>s+opValue(o),0);
+  return [nome,ops.length,{t:w,cls:"pos"},{t:ops.length-w,cls:"neg"},pct(w,ops.length),{t:n2(v),cls:v>0?"pos":v<0?"neg":""}];
+}
+function renderTables(){
+  const ops=allOps(), head=["","Ops","Win","Loss","Acerto","R$"];
+  $("tEst").innerHTML=tableHTML(EST.map(e=>statRow(e.nome,ops.filter(o=>o.estrategia===e.id))),head);
+  $("tSess").innerHTML=tableHTML([
+    ...SESS.map(s=>statRow(s.nome,ops.filter(o=>o.sess===s.id))),
+    statRow("1ª entrada",ops.filter(o=>o.idx===0)),
+    statRow("2ª (Soros)",ops.filter(o=>o.idx===1))
+  ],head);
+}
+
+/* ---------- modal ---------- */
+let draft=null, readOnly=false, lastFocus=null;
+function openDay(ds){
+  lastFocus=document.activeElement;
+  draft=JSON.parse(JSON.stringify(days[ds]||emptyDay(ds)));
+  readOnly = ds<todayStr() || !canWrite;
+  drawModal(); $("ov").hidden=false;
+  setTimeout(()=>{const f=$("modal").querySelector("button,input,select");f&&f.focus()},0);
+}
+function closeModal(){ $("ov").hidden=true; draft=null; lastFocus&&lastFocus.focus() }
+
+function defaultStake(sess,idx){
+  const b=+cfg.base||0, p=(+cfg.payout||0)/100;
+  if(idx===0) return b;
+  const op1=sess.ops[0]; if(!op1) return b;
+  return (+op1.entrada||b) + Math.abs(op1.valor||0);
+}
+function calcValor(op){ const p=(+cfg.payout||0)/100; return op.resultado==="win" ? +(op.entrada*p).toFixed(2) : +(+op.entrada).toFixed(2) }
+
+function drawModal(){
+  const m=$("modal"); m.className="modal"+(readOnly?" ro":"");
+  const d=new Date(draft.date+"T12:00:00");
+  let h="<div class='mhead'><h2 id='mTitle'>"+d.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit"})+"</h2><span class='num "+(dayNet(draft)>0?"pos":dayNet(draft)<0?"neg":"")+"'>"+n2(dayNet(draft))+"</span></div>";
+  if(readOnly) h+="<div class='lock'>Dia encerrado. Só visualização.</div>";
+  SESS.forEach(s=>{
+    const ss=draft[s.id];
+    h+="<div class='sess'><h4>"+s.nome+"<span class='hint'>"+(ss.ops.length?ss.ops.length+" de 2":"")+"</span></h4>";
+    h+="<div class='seg'><button type='button' data-a='status' data-s='"+s.id+"' data-v='operei' class='"+(ss.status==="operei"?"on":"")+"'>Operei</button><button type='button' data-a='status' data-s='"+s.id+"' data-v='nao_operei' class='"+(ss.status==="nao_operei"?"on":"")+"'>Não operei</button></div>";
+    if(ss.status==="operei"){
+      for(let i=0;i<2;i++){
+        const op=ss.ops[i];
+        if(i===1){
+          const o1=ss.ops[0];
+          if(!o1||!o1.resultado) break;
+          if(o1.resultado==="loss"){h+="<div class='lock'>Loss na 1ª. Sessão encerrada, sem 2ª entrada.</div>";break}
+          if(!op){
+            h+="<div class='op'><div class='t'><span>2ª entrada · Soros</span></div><div class='seg'><button type='button' data-a='add2' data-s='"+s.id+"'>Fiz a 2ª entrada</button><button type='button' data-a='no2' data-s='"+s.id+"' class='"+(ss.sem2?"on":"")+"'>Não fiz 2ª entrada</button></div></div>";
+            break;
+          }
+        }
+        if(!op) break;
+        h+="<div class='op'><div class='t'><span>"+(i===0?"1ª entrada":"2ª entrada · Soros")+"</span>"+(op.resultado?"<span class='num "+(op.resultado==="win"?"pos":"neg")+"'>"+n2(opValue(op))+"</span>":"")+"</div>";
+        h+="<div class='seg'>"+EST.map(e=>"<button type='button' data-a='est' data-s='"+s.id+"' data-i='"+i+"' data-v='"+e.id+"' class='"+(op.estrategia===e.id?"on":"")+"' title='"+e.desc+"'>"+e.nome+"</button>").join("")+"</div>";
+        h+="<div class='seg'><button type='button' data-a='dir' data-s='"+s.id+"' data-i='"+i+"' data-v='CALL' class='"+(op.direcao==="CALL"?"on":"")+"'>CALL ▲</button><button type='button' data-a='dir' data-s='"+s.id+"' data-i='"+i+"' data-v='PUT' class='"+(op.direcao==="PUT"?"on":"")+"'>PUT ▼</button>";
+        h+="<button type='button' data-a='res' data-s='"+s.id+"' data-i='"+i+"' data-v='win' class='w "+(op.resultado==="win"?"on":"")+"'>Win</button><button type='button' data-a='res' data-s='"+s.id+"' data-i='"+i+"' data-v='loss' class='l "+(op.resultado==="loss"?"on":"")+"'>Loss</button></div>";
+        h+="<div class='fields'><label for='en-"+s.id+i+"'>Entrada (R$)<input id='en-"+s.id+i+"' type='number' step='0.01' min='0' inputmode='decimal' data-a='entrada' data-s='"+s.id+"' data-i='"+i+"' value='"+(op.entrada??"")+"'></label>";
+        h+="<label for='va-"+s.id+i+"'>"+(op.resultado==="loss"?"Perda (R$)":"Lucro (R$)")+"<input id='va-"+s.id+i+"' type='number' step='0.01' min='0' inputmode='decimal' data-a='valor' data-s='"+s.id+"' data-i='"+i+"' value='"+(op.valor??"")+"'></label></div>";
+        h+="</div>";
+        if(i===0 && op.resultado==="win" && !ss.ops[1]){
+          // fallthrough to loop i=1 which shows add2 buttons
+        }
+      }
+    }
+    h+="</div>";
+  });
+  h+="<div class='err' id='mErr'></div>";
+  h+="<div class='actions'>"+(readOnly?"<button type='button' class='btn' data-a='close'>Fechar</button>":"<button type='button' class='btn' data-a='close'>Fechar sem salvar</button><button type='button' class='btn primary' data-a='save'>Salvar</button>")+"</div>";
+  m.innerHTML=h;
+}
+
+$("modal").addEventListener("click",ev=>{
+  const b=ev.target.closest("button[data-a]"); if(!b) return;
+  const a=b.dataset.a;
+  if(a==="close") return closeModal();
+  if(readOnly) return;
+  if(a==="save") return doSave();
+  const ss=draft[b.dataset.s], i=+b.dataset.i;
+  if(a==="status"){
+    ss.status=b.dataset.v;
+    if(ss.status==="nao_operei"){ss.ops=[];ss.sem2=false}
+    else if(!ss.ops.length) ss.ops=[{entrada:defaultStake(ss,0)}];
+  }
+  if(a==="add2"){ss.sem2=false; ss.ops[1]={entrada:+defaultStake(ss,1).toFixed(2)}}
+  if(a==="no2"){ss.sem2=true}
+  if(a==="est") ss.ops[i].estrategia=b.dataset.v;
+  if(a==="dir") ss.ops[i].direcao=b.dataset.v;
+  if(a==="res"){
+    const op=ss.ops[i]; op.resultado=b.dataset.v;
+    if(op.entrada!=null && op.entrada!=="") op.valor=calcValor(op);
+    if(i===0 && op.resultado==="loss"){ss.ops.length=1; ss.sem2=false}
+    if(i===0 && ss.ops[1]) ss.ops[1].entrada=+defaultStake(ss,1).toFixed(2);
+  }
+  drawModal();
+});
+$("modal").addEventListener("change",ev=>{
+  const el=ev.target; if(!el.dataset||!el.dataset.a||readOnly) return;
+  const ss=draft[el.dataset.s], i=+el.dataset.i, op=ss.ops[i], v=parseFloat(el.value);
+  if(el.dataset.a==="entrada"){op.entrada=isNaN(v)?null:v; if(op.resultado&&!isNaN(v)) op.valor=calcValor(op); if(i===0&&ss.ops[1]) ss.ops[1].entrada=+defaultStake(ss,1).toFixed(2)}
+  if(el.dataset.a==="valor"){op.valor=isNaN(v)?null:Math.abs(v); if(i===0&&ss.ops[1]) ss.ops[1].entrada=+defaultStake(ss,1).toFixed(2)}
+  drawModal();
+  const again=document.getElementById(el.id); again&&again.focus();
+});
+$("ov").addEventListener("click",ev=>{ if(ev.target.id==="ov") closeModal() });
+document.addEventListener("keydown",ev=>{ if(ev.key==="Escape" && !$("ov").hidden) closeModal() });
+
+function doSave(){
+  const err=$("mErr");
+  for(const s of SESS){
+    const ss=draft[s.id];
+    for(const [i,op] of ss.ops.entries()){
+      if(!op.estrategia||!op.resultado||op.valor==null||isNaN(op.valor)){
+        err.textContent=s.nome+", "+(i+1)+"ª entrada: escolha a estratégia, marque Win ou Loss e confira o valor."; return;
+      }
+    }
+    if(ss.status==="operei"&&!ss.ops.length){err.textContent=s.nome+": nenhuma entrada marcada.";return}
+  }
+  const d=draft; closeModal(); saveDay(d);
+}
+
+/* ---------- config inputs ---------- */
+function bindCfg(){
+  $("cfgBase").value=cfg.base; $("cfgPayout").value=cfg.payout;
+  $("cfgBase").addEventListener("change",e=>{const v=parseFloat(e.target.value);if(!isNaN(v)){cfg.base=v;saveCfg();render()}});
+  $("cfgPayout").addEventListener("change",e=>{const v=parseFloat(e.target.value);if(!isNaN(v)){cfg.payout=v;saveCfg();render()}});
+}
+
+/* ---------- boot ---------- */
+lsLoad(); bindCfg(); render(); setStatus("Conectando…");
+(async()=>{
+  try{ db = window.claude ? await window.claude.use("db") : null }catch(e){ db=null }
+  if(!db){ setStatus("Salvando neste aparelho"); return }
+  try{
+    const user=await window.claude.use("user");
+    if(user && user.can){ const c=await user.can("data.write"); if(c===false) canWrite=false }
+  }catch(e){}
+  db.doc("config/geral").onSnapshot(s=>{
+    if(s.exists){const v=s.data(); cfg.base=v.base??cfg.base; cfg.payout=v.payout??cfg.payout;
+      if(document.activeElement!==$("cfgBase")) $("cfgBase").value=cfg.base;
+      if(document.activeElement!==$("cfgPayout")) $("cfgPayout").value=cfg.payout;
+      render()}
+  },()=>{});
+  db.collection("dias").onSnapshot(q=>{
+    const nd={}; q.docs.forEach(d=>{nd[d.id]=d.data()}); days=nd; render();
+    setStatus(canWrite?"Sincronizado":"Somente leitura");
+  },()=>setStatus("Sem conexão com o salvamento"));
+})();
+</script>
+</body></html>
