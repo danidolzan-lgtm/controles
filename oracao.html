@@ -32,6 +32,7 @@ input,textarea{font:inherit;text-transform:none;letter-spacing:0;color:var(--fg)
 textarea{min-height:70px;resize:vertical}
 .btn{appearance:none;font:inherit;font-weight:600;border-radius:7px;padding:10px 16px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--surface);justify-self:start}
 .btn.ghost{background:var(--surface);color:var(--fg);border-color:var(--line)}
+.btn[disabled]{opacity:.6;cursor:default}
 .list{display:grid;gap:8px}
 .it{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:2px}
 .it b{font-family:var(--f-read);font-size:1.05rem;font-weight:500}
@@ -112,21 +113,26 @@ $("form").addEventListener("submit",e=>{
     "<p>Afasta disso todo mal, toda inveja e todo desânimo. Que cresça em paz, que dê frutos bons e que cada passo me aproxime mais de Ti. Que eu seja fiel no pouco, para que Tu me confies o muito.</p>"+
     "<p>Recebe esta consagração, Senhor, e faz dela um sinal da Tua presença na minha vida.</p>"+
     "<p class='amen'>Em nome de Jesus. Amém.</p>";
-  $("salvar").hidden=!db;
+  $("salvar").hidden=false;$("salvar").disabled=false;$("salvar").textContent="Guardar esta consagração";
 });
+const LSC="oracao.consagracoes";
+function lsItems(){try{return JSON.parse(localStorage.getItem(LSC)||"[]")}catch(e){return []}}
 $("salvar").onclick=async()=>{
-  if(!db||!last)return;
-  try{await db.collection("consagracoes").add({oque:last.oque,pedido:last.pedido,data:new Date().toISOString()});$("salvar").hidden=true;$("status").textContent="Consagração guardada"}
-  catch(e){$("status").textContent="Não guardou. Tente de novo."}
+  if(!last)return;
+  const item={oque:last.oque,pedido:last.pedido,data:new Date().toISOString()};
+  if(db){try{await db.collection("consagracoes").add(item);$("status").textContent="Consagração guardada"}catch(e){$("status").textContent="Não guardou. Tente de novo.";return}}
+  else{const l=lsItems();l.unshift(item);try{localStorage.setItem(LSC,JSON.stringify(l))}catch(e){}items=l;draw();$("status").textContent="Consagração guardada neste aparelho"}
+  $("salvar").textContent="Guardada ✓";$("salvar").disabled=true;
 };
 function draw(){
   if(!items.length){$("lista").innerHTML="<p class='empty'>As consagrações que você guardar aparecem aqui com a data.</p>";return}
   $("lista").innerHTML=items.map(i=>"<div class='it'><b>"+esc(i.oque)+"</b><span>"+new Date(i.data).toLocaleDateString("pt-BR",{day:"2-digit",month:"long",year:"numeric"})+(i.pedido?" · "+esc(i.pedido):"")+"</span></div>").join("");
 }
+items=lsItems();draw();
 (async()=>{
   try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
   if(!db)return;
-  db.collection("consagracoes").orderBy("data","desc").onSnapshot(q=>{items=q.docs.map(d=>d.data());draw()},()=>{});
+  db.collection("consagracoes").orderBy("data","desc").onSnapshot(q=>{items=q.docs.map(d=>d.data());draw()},()=>{$("status").textContent="Sem conexão com o salvamento"});
 })();
 </script>
 </body></html>

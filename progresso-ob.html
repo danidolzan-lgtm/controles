@@ -88,20 +88,21 @@ function render(){
     $("gBar").style.width=(p*100)+"%";
     $("gFalta").textContent= b>=alvo ? "Banca já passou da próxima meta. Marque a meta como conquistada." : "Faltam "+brl(alvo-b)+" para "+brl(alvo);
   } else { $("gBar").style.width=(nextI<0?100:0)+"%"; $("gFalta").textContent= nextI<0?"Todas as metas conquistadas.":"Informe a banca para ver quanto falta." }
-  const L=$("ladder"); L.innerHTML="";
-  LV.forEach((v,i)=>{
-    const b=document.createElement("button"); b.type="button";
-    b.className="step"+(done.has(i)?" done":"")+(i===nextI?" next":"");
-    b.setAttribute("aria-pressed",done.has(i));
-    b.innerHTML="<span class='n'>"+String(i+1).padStart(2,"0")+"</span><span class='b'>"+brl(v)+"</span><span class='e'><small>entrada</small>"+brl(v/5)+"</span>";
-    b.addEventListener("click",()=>{
-      const s=new Set(st.conquistados); s.has(i)?s.delete(i):s.add(i);
-      st.conquistados=[...s].sort((a,c)=>a-c); render(); save();
+  const L=$("ladder");
+  if(!L.children.length){
+    LV.forEach((v,i)=>{
+      const b=document.createElement("button"); b.type="button";
+      b.innerHTML="<span class='n'>"+String(i+1).padStart(2,"0")+"</span><span class='b'>"+brl(v)+"</span><span class='e'><small>entrada</small>"+brl(v/5)+"</span>";
+      b.addEventListener("click",()=>{
+        const s=new Set(st.conquistados); s.has(i)?s.delete(i):s.add(i);
+        st.conquistados=[...s].sort((a,c)=>a-c); render(); save();
+      });
+      L.appendChild(b);
     });
-    L.appendChild(b);
-  });
+  }
+  [...L.children].forEach((b,i)=>{b.className="step"+(done.has(i)?" done":"")+(i===nextI?" next":"");b.setAttribute("aria-pressed",done.has(i))});
 }
-$("banca").addEventListener("change",e=>{const v=parseFloat(e.target.value);st.banca=isNaN(v)?null:v;render();save()});
+$("banca").addEventListener("change",e=>{const v=parseFloat(e.target.value),n=isNaN(v)?null:v;if(n===st.banca)return;st.banca=n;render();save()});
 load(); if(st.banca!=null) $("banca").value=st.banca; render(); $("status").textContent="Conectando…";
 (async()=>{
   try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}

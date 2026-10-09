@@ -82,7 +82,7 @@ img,svg{max-width:100%}
   </div>
 </div>
 <script>
-const START="2026-10-07", END="2026-12-17", LS="checklistOB.v1";
+const START="2026-10-09", END="2026-12-17", LS="checklistOB.v1";
 const SESS=[{id:"manha",nome:"Manhã",h:"09:00–11:30"},{id:"tarde",nome:"Tarde",h:"14:00–16:30"}];
 const QS=[
   {id:"hor",k:"Horário",t:"Estou dentro da janela da sessão e sem notícia forte nos próximos minutos?"},
@@ -126,14 +126,15 @@ function render(){
 }
 function drawCal(){
   const cal=$("cal");cal.innerHTML="";const t=today();
-  let cur=new Date(2026,9,1,12);const end=new Date(END+"T12:00:00");
+  let cur=new Date(+START.slice(0,4),+START.slice(5,7)-1,1,12);const end=new Date(END+"T12:00:00");
   while(cur<=end){
     const y=cur.getFullYear(),m=cur.getMonth();
     const box=document.createElement("div");box.className="month";
     box.innerHTML="<h3>"+cur.toLocaleDateString("pt-BR",{month:"long",year:"numeric"})+"</h3><div class='dow'><span>dom</span><span>seg</span><span>ter</span><span>qua</span><span>qui</span><span>sex</span><span>sáb</span></div>";
     const g=document.createElement("div");g.className="grid";
-    for(let i=0;i<new Date(y,m,1).getDay();i++){const b=document.createElement("div");b.className="day blank";g.appendChild(b)}
-    for(let d=1;d<=new Date(y,m+1,0).getDate();d++){
+    const sd=new Date(START+"T12:00:00"), d0=(y===sd.getFullYear()&&m===sd.getMonth())?sd.getDate():1;
+    for(let i=0;i<new Date(y,m,d0).getDay();i++){const b=document.createElement("div");b.className="day blank";g.appendChild(b)}
+    for(let d=d0;d<=new Date(y,m+1,0).getDate();d++){
       const ds=y+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
       const b=document.createElement("button");b.type="button";b.textContent=d;
       if(ds>END)break;

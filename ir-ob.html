@@ -39,6 +39,25 @@ input{font:inherit;font-family:var(--f-num);color:var(--fg);background:var(--bg)
 .note p{margin:0;max-width:65ch}
 .wrap>*{min-width:0}
 img,svg{max-width:100%}
+.btn{appearance:none;font:inherit;font-weight:600;border-radius:7px;padding:9px 14px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--surface)}
+.btn.ghost{background:var(--surface);color:var(--fg);border-color:var(--line)}
+.btn.sm{padding:5px 10px;font-size:.8rem;font-weight:500}
+.btn[disabled]{opacity:.5;cursor:default}
+.imp{display:grid;gap:12px}
+.imp label{display:grid;gap:4px;font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.imp textarea,.imp select,.imp input[type=file]{font:inherit;font-size:.9rem;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px;width:100%;min-width:0;text-transform:none;letter-spacing:0}
+.imp textarea{min-height:80px;resize:vertical;font-family:var(--f-num);font-size:.8rem}
+.imp input.cot{width:110px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:end}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(180px,100%),1fr));gap:10px}
+.chk{display:flex!important;gap:6px;align-items:center;text-transform:none!important;letter-spacing:0!important;font-size:.85rem!important;color:var(--fg)!important}
+.msg{font-size:.85rem;color:var(--muted)}
+.msg.err{color:var(--loss)}
+.prev td,.prev th{font-size:.8rem;padding:5px 6px}
+.prev td.off{opacity:.4;text-decoration:line-through}
+.mres{display:grid;gap:6px}
+.mres div{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.mres b{font-family:var(--f-num)}
 </style>
 <div class="wrap">
   <div class="top">
@@ -51,6 +70,29 @@ img,svg{max-width:100%}
     <div class="panel"><div class="lbl">Prejuízo de anos anteriores</div><div class="big" id="kPrej">R$ 0,00</div></div>
     <div class="panel"><div class="lbl">Base tributável</div><div class="big" id="kBase">R$ 0,00</div></div>
     <div class="panel"><div class="lbl">IR estimado (15%)</div><div class="big" id="kIR">R$ 0,00</div><div class="sub" id="kQuando"></div></div>
+  </div>
+  <div class="panel imp" id="imp">
+    <h2>Ler extrato da Quotex</h2>
+    <p class="msg" style="margin:0">Escolha o arquivo do extrato (Excel, CSV, PDF ou página salva) ou cole o texto das operações. A página soma o resultado de cada mês e você lança no campo com um toque.</p>
+    <label for="impFile">Arquivo do extrato<input id="impFile" type="file" accept=".csv,.txt,.xlsx,.xls,.pdf,.html,.htm"></label>
+    <label for="impTxt">Ou cole o texto aqui<textarea id="impTxt" placeholder="Copie a lista de operações da Quotex e cole aqui"></textarea></label>
+    <div class="row">
+      <label for="impCot">Cotação do dólar<input id="impCot" class="cot" type="number" step="0.0001" min="0" inputmode="decimal" value="1"></label>
+      <button type="button" class="btn" id="impGo">Ler extrato</button>
+      <button type="button" class="btn ghost" id="impClear">Limpar</button>
+    </div>
+    <p class="msg" style="margin:0">Conta em reais: deixe a cotação em 1. Conta em dólar: coloque a cotação do dólar do mês.</p>
+    <div class="msg" id="impMsg" role="status"></div>
+    <div id="impOut" hidden style="display:grid;gap:12px">
+      <div class="opts">
+        <label for="impCol">Coluna do resultado<select id="impCol"></select></label>
+        <label for="impMode">Esse valor é<select id="impMode"><option value="net">Lucro/prejuízo (já vem + e -)</option><option value="gross">Retorno total (desconta o valor investido)</option></select></label>
+        <label for="impInv" id="impInvL" hidden>Coluna do valor investido<select id="impInv"></select></label>
+      </div>
+      <label class="chk"><input type="checkbox" id="impSkip" checked> Ignorar depósitos, saques e bônus</label>
+      <div class="mres" id="impMonths"></div>
+      <details><summary class="msg" style="cursor:pointer">Ver as operações lidas</summary><div class="tbl" style="margin-top:8px"><table class="prev" id="impPrev"></table></div></details>
+    </div>
   </div>
   <div class="panel"><div class="tbl"><table id="tbl"></table></div></div>
   <div class="panel note">
@@ -88,17 +130,34 @@ function render(){
   const rows=months(year).map(k=>{
     const v=res[k]; const n=+v||0; acc+=n;
     const nome=new Date(k+"-15T12:00:00").toLocaleDateString("pt-BR",{month:"long"});
-    return "<tr><td>"+nome+"</td><td><label class='sr' for='m"+k+"' style='position:absolute;left:-9999px'>"+nome+"</label><input id='m"+k+"' data-k='"+k+"' type='number' step='0.01' inputmode='decimal' value='"+(v??"")+"' placeholder='0,00'></td><td class='"+(acc>0?"pos":acc<0?"neg":"")+"'>"+brl(acc)+"</td></tr>";
+    return "<tr data-row='"+k+"'><td>"+nome+"</td><td><label class='sr' for='m"+k+"' style='position:absolute;left:-9999px'>"+nome+"</label><input id='m"+k+"' data-k='"+k+"' type='number' step='0.01' inputmode='decimal' value='"+(v??"")+"' placeholder='0,00'></td><td data-acc class='"+(acc>0?"pos":acc<0?"neg":"")+"'>"+brl(acc)+"</td><td><button type='button' class='btn ghost sm' data-clear='"+k+"'"+(v==null?" disabled":"")+">Zerar</button></td></tr>";
   }).join("");
-  $("tbl").innerHTML="<thead><tr><th>Mês</th><th>Resultado (R$)</th><th>Acumulado</th></tr></thead><tbody>"+rows+"</tbody>";
+  $("tbl").innerHTML="<thead><tr><th>Mês</th><th>Resultado (R$)</th><th>Acumulado</th><th></th></tr></thead><tbody>"+rows+"</tbody>";
 }
-$("tbl").addEventListener("change",async e=>{
-  const k=e.target.dataset.k;if(!k)return;
-  const v=parseFloat(e.target.value);
-  if(isNaN(v))delete res[k];else res[k]=v;
-  render();
-  if(db){try{isNaN(v)?await db.doc("meses/"+k).delete():await db.doc("meses/"+k).set({resultado:v});$("status").textContent="Salvo"}catch(err){$("status").textContent="Não salvou. Tente de novo."}}
+function renderKpis(){
+  const c=calc(year);
+  $("kAno").textContent=brl(c.sum);$("kAno").className="big "+(c.sum>0?"pos":c.sum<0?"neg":"");
+  $("kPrej").textContent=brl(c.prej);$("kBase").textContent=brl(c.base);$("kIR").textContent=brl(c.ir);
+  let acc=0;
+  document.querySelectorAll("#tbl tr[data-row]").forEach(tr=>{const k=tr.dataset.row;acc+=+res[k]||0;const td=tr.querySelector("[data-acc]");td.textContent=brl(acc);td.className=acc>0?"pos":acc<0?"neg":"";const b=tr.querySelector("[data-clear]");if(b)b.disabled=res[k]==null});
+}
+async function persist(k,v,soft){
+  if(v==null||isNaN(v))delete res[k];else res[k]=Math.round(v*100)/100;
+  if(soft)renderKpis();else render();
+  if(db){try{res[k]==null?await db.doc("meses/"+k).delete():await db.doc("meses/"+k).set({resultado:res[k]});$("status").textContent="Salvo"}catch(err){$("status").textContent="Não salvou. Tente de novo."}}
   else{try{localStorage.setItem(LS,JSON.stringify(res))}catch(err){}$("status").textContent="Salvo neste aparelho"}
+}
+$("tbl").addEventListener("change",e=>{
+  const k=e.target.dataset.k;if(!k)return;
+  persist(k,parseFloat(e.target.value),true);
+});
+window.IR_FIRST=FIRST;
+window.irPut=(k,v,y)=>{if(YEARS.includes(y))year=y;persist(k,v);$("status").textContent="Lançado em "+new Date(k+"-15T12:00:00").toLocaleDateString("pt-BR",{month:"long"})};
+$("tbl").addEventListener("click",e=>{
+  const b=e.target.closest("[data-clear]");if(!b)return;
+  const k=b.dataset.clear;
+  if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="Confirmar";b.style.borderColor="var(--loss)";b.style.color="var(--loss)";setTimeout(()=>{if(b.isConnected){b.dataset.armed="";b.textContent="Zerar";b.style.borderColor="";b.style.color=""}},4000);return}
+  persist(k,NaN);
 });
 load();render();$("status").textContent="Conectando…";
 (async()=>{
@@ -109,6 +168,202 @@ load();render();$("status").textContent="Conectando…";
     if(!document.activeElement||!document.activeElement.dataset||!document.activeElement.dataset.k) render();
     $("status").textContent="Sincronizado";
   },()=>{$("status").textContent="Sem conexão com o salvamento"});
+})();
+</script>
+<script>
+/* Leitura do extrato da Quotex: arquivo (xlsx/csv/pdf/html/txt) ou texto colado → soma por mês → lança no campo do mês. */
+(function(){
+const MESES={jan:1,fev:2,feb:2,mar:3,abr:4,apr:4,mai:5,may:5,jun:6,jul:7,ago:8,aug:8,set:9,sep:9,out:10,oct:10,nov:11,dez:12,dec:12};
+const SKIP=/dep[oó]sito|deposit|saque|withdraw|retirada|b[oô]nus|bonus|cashback|torneio|tournament|transfer/i;
+let recs=[], cols=[];
+
+function loadScript(src){return new Promise((ok,no)=>{if(document.querySelector('script[src="'+src+'"]'))return ok();const s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=()=>no(new Error("Não carregou "+src));document.head.appendChild(s)})}
+
+function ymd(y,m,d){if(y<100)y+=2000;if(m<1||m>12||d<1||d>31||y<2000||y>2100)return null;return {y,m,d}}
+function parseDate(v){
+  if(v instanceof Date&&!isNaN(v))return ymd(v.getFullYear(),v.getMonth()+1,v.getDate());
+  if(typeof v==="number"){if(v>30000&&v<80000){const d=new Date(Math.round((v-25569)*864e5));return ymd(d.getUTCFullYear(),d.getUTCMonth()+1,d.getUTCDate())}return null}
+  const t=String(v??"").trim(); if(!t)return null;
+  let m=t.match(/(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/); if(m)return ymd(+m[1],+m[2],+m[3]);
+  m=t.match(/(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/);
+  if(m){let a=+m[1],b=+m[2];if(b>12&&a<=12)[a,b]=[b,a];return ymd(+m[3],b,a)}
+  m=t.match(/(\d{1,2})\s*(?:de\s+)?([A-Za-zçÇ]{3,})\.?,?\s*(?:de\s+)?(\d{4})/); if(m&&MESES[m[2].slice(0,3).toLowerCase()])return ymd(+m[3],MESES[m[2].slice(0,3).toLowerCase()],+m[1]);
+  m=t.match(/([A-Za-z]{3,})\.?\s+(\d{1,2}),?\s+(\d{4})/); if(m&&MESES[m[1].slice(0,3).toLowerCase()])return ymd(+m[3],MESES[m[1].slice(0,3).toLowerCase()],+m[2]);
+  return null;
+}
+function parseNum(v){
+  if(typeof v==="number")return isFinite(v)?v:null;
+  let t=String(v??"").trim(); if(!t||/%/.test(t))return null;
+  if(!/\d/.test(t))return null;
+  if(/[A-Za-z]{4,}/.test(t.replace(/R\$|US\$|USD|BRL/g,"")))return null;
+  const neg=/^\s*\(|[-−–]\s*(R\$|US\$|\$|USD|BRL)?\s*\d|\d\s*[-−–]\s*$/.test(t);
+  t=t.replace(/[^\d.,]/g,""); if(!t)return null;
+  const lc=t.lastIndexOf(","), ld=t.lastIndexOf(".");
+  if(lc>=0&&ld>=0){const dec=lc>ld?",":".";t=t.split(dec==","?".":",").join("").replace(dec,".")}
+  else if(lc>=0){t=/,\d{1,2}$/.test(t)?t.replace(/\./g,"").replace(",","."):t.replace(/,/g,"")}
+  else if(ld>=0){const p=t.split(".");
+    if(p.length>2)t=p[p.length-1].length<=2?p.slice(0,-1).join("")+"."+p[p.length-1]:p.join("");
+    else if(p[1].length===3&&p[0].length<=3&&p[0]!=="0")t=p.join("");}
+  const n=parseFloat(t); if(isNaN(n))return null;
+  if(Math.abs(n)>=1e8)return null;
+  return neg?-n:n;
+}
+
+/* ---------- tabela (xlsx, csv, html) ---------- */
+function fromTable(rows){
+  rows=rows.map(r=>r.map(c=>c==null?"":c)).filter(r=>r.some(c=>String(c).trim()!==""));
+  if(!rows.length)return false;
+  const W=Math.max(...rows.map(r=>r.length));
+  // cabeçalho: primeira linha sem data e com maioria de textos
+  let hi=-1;
+  for(let i=0;i<Math.min(rows.length,15);i++){const r=rows[i];const txt=r.filter(c=>typeof c==="string"&&c.trim()&&parseNum(c)==null&&!parseDate(c)).length;if(txt>=Math.max(2,r.filter(c=>String(c).trim()).length*0.6)){hi=i;break}}
+  const head=hi>=0?rows[hi]:[];
+  const body=rows.slice(hi+1);
+  const dScore=[],nScore=[];
+  for(let c=0;c<W;c++){let d=0,n=0;body.forEach(r=>{if(parseDate(r[c]))d++;else if(parseNum(r[c])!=null)n++});dScore[c]=d;nScore[c]=n}
+  const dc=dScore.indexOf(Math.max(...dScore));
+  if(dScore[dc]<1)return false;
+  const ncs=[];for(let c=0;c<W;c++)if(c!==dc&&nScore[c]>=Math.max(1,body.length*0.3))ncs.push(c);
+  if(!ncs.length)return false;
+  cols=ncs.map((c,i)=>String(head[c]||"").trim()||("Coluna "+(c+1)));
+  recs=[];
+  body.forEach(r=>{const d=parseDate(r[dc]);if(!d)return;recs.push({d,nums:ncs.map(c=>parseNum(r[c])),txt:r.map(String).join(" · ")})});
+  return recs.length>0;
+}
+function splitDelim(text){
+  const lines=text.split(/\r?\n/).filter(l=>l.trim());
+  const sample=lines.slice(0,30).join("\n");
+  const cand=[["\t",(sample.match(/\t/g)||[]).length],[";",(sample.match(/;/g)||[]).length],["|",(sample.match(/\|/g)||[]).length]];
+  cand.sort((a,b)=>b[1]-a[1]);
+  if(cand[0][1]>=lines.slice(0,30).length) return lines.map(l=>l.split(cand[0][0]).map(c=>c.trim().replace(/^"|"$/g,"")));
+  // vírgula como separador só se não parecer número com vírgula decimal
+  const commaRows=lines.map(l=>csvSplit(l));
+  const w=commaRows.slice(0,30).map(r=>r.length);
+  if(w.length&&Math.min(...w)>=3&&Math.max(...w)===Math.min(...w))return commaRows;
+  return null;
+}
+function csvSplit(l){const out=[];let cur="",q=false;for(const ch of l){if(ch==='"'){q=!q;continue}if(ch===","&&!q){out.push(cur.trim());cur="";continue}cur+=ch}out.push(cur.trim());return out}
+
+/* ---------- texto livre (colado ou PDF) ---------- */
+const DATE_RE=/\d{4}[-\/.]\d{1,2}[-\/.]\d{1,2}|\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}|\d{1,2}\s*(?:de\s+)?[A-Za-zçÇ]{3,}\.?,?\s*(?:de\s+)?\d{4}|[A-Za-z]{3,}\.?\s+\d{1,2},?\s+\d{4}/;
+function fromText(text){
+  const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  const blocks=[];let cur=null;
+  lines.forEach(l=>{const m=l.match(DATE_RE);const d=m?parseDate(m[0]):null;if(d){cur={d,parts:[l]};blocks.push(cur)}else if(cur)cur.parts.push(l)});
+  if(!blocks.length)return false;
+  let maxN=0;
+  recs=blocks.map(b=>{
+    const txt=b.parts.join(" · ");
+    let clean=txt.replace(new RegExp(DATE_RE.source,"g")," ").replace(/\b\d{1,2}:\d{2}(:\d{2})?\b/g," ").replace(/[-+−]?\d+[.,]?\d*\s*%/g," ").replace(/#?\b\d{8,}\b/g," ").replace(/\b[A-Z]{3}\/[A-Z]{3}\b/g," ");
+    const toks=clean.match(/(?:[-+−–]\s?)?(?:R\$|US\$|\$)?\s?(?:[-+−–]\s?)?\d[\d.,]*/g)||[];
+    const nums=toks.map(parseNum).filter(n=>n!=null);
+    maxN=Math.max(maxN,nums.length);
+    return {d:b.d,nums,txt};
+  }).filter(r=>r.nums.length);
+  if(!recs.length)return false;
+  // posições pelo fim (o resultado costuma ser o último valor da linha)
+  const n=Math.min(maxN,6);
+  cols=[];for(let i=n;i>=1;i--)cols.push(i===1?"Último valor da linha":i===2?"Penúltimo valor":(i+"º valor de trás pra frente"));
+  recs.forEach(r=>{r.nums=cols.map((_,i)=>{const back=n-i;return r.nums.length>=back?r.nums[r.nums.length-back]:null})});
+  return true;
+}
+
+/* ---------- leitura dos arquivos ---------- */
+async function readFile(file){
+  const name=file.name.toLowerCase();
+  if(/\.(xlsx|xls)$/.test(name)){
+    await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
+    const wb=XLSX.read(await file.arrayBuffer(),{type:"array",cellDates:true});
+    for(const sn of wb.SheetNames){const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:""});if(fromTable(rows))return true}
+    return false;
+  }
+  if(/\.pdf$/.test(name)){
+    await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js");
+    pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+    let text="";
+    for(let p=1;p<=pdf.numPages;p++){
+      const tc=await (await pdf.getPage(p)).getTextContent();
+      const rows={};tc.items.forEach(it=>{const y=Math.round(it.transform[5]/3);(rows[y]=rows[y]||[]).push(it)});
+      Object.keys(rows).map(Number).sort((a,b)=>b-a).forEach(y=>{text+=rows[y].sort((a,b)=>a.transform[4]-b.transform[4]).map(i=>i.str).join("  ")+"\n"});
+    }
+    return fromText(text);
+  }
+  const text=await file.text();
+  if(/\.html?$/.test(name)||/<table|<html/i.test(text.slice(0,3000))){
+    const doc=new DOMParser().parseFromString(text,"text/html");
+    for(const t of doc.querySelectorAll("table")){const rows=[...t.rows].map(r=>[...r.cells].map(c=>c.textContent.trim()));if(fromTable(rows))return true}
+    return fromText(doc.body?doc.body.innerText||doc.body.textContent:"");
+  }
+  return readText(text);
+}
+function readText(text){const rows=splitDelim(text);if(rows&&fromTable(rows))return true;return fromText(text)}
+
+/* ---------- cálculo e tela ---------- */
+const $=id=>document.getElementById(id);
+const fmt=v=>(v<0?"-":"")+"R$ "+Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const keyOf=d=>d.y+"-"+String(d.m).padStart(2,"0");
+const mesNome=k=>{const t=new Date(k+"-15T12:00:00").toLocaleDateString("pt-BR",{month:"long",year:"numeric"});return t[0].toUpperCase()+t.slice(1)};
+function guess(){
+  const hasNeg=i=>recs.some(r=>r.nums[i]<0);
+  let col=cols.findIndex(c=>/lucro|profit|resultado|result|p\s*\/\s*l|pnl|ganho|l\/p/i.test(c));
+  if(col<0)col=cols.findIndex((c,i)=>hasNeg(i));
+  if(col<0)col=cols.length-1;
+  let inv=cols.findIndex(c=>/invest|aposta|entrada|amount|montante|valor da/i.test(c));
+  if(inv<0||inv===col)inv=col===0?Math.min(1,cols.length-1):0;
+  const ret=/retorno|payout|return|pagamento/i.test(cols[col]||"");
+  $("impCol").innerHTML=cols.map((c,i)=>"<option value='"+i+"'>"+c.replace(/</g,"&lt;")+"</option>").join("");
+  $("impInv").innerHTML=$("impCol").innerHTML;
+  $("impCol").value=col;$("impInv").value=inv;
+  $("impMode").value=(!hasNeg(col)&&ret&&cols.length>1)?"gross":"net";
+}
+function compute(){
+  const col=+$("impCol").value, inv=+$("impInv").value, gross=$("impMode").value==="gross";
+  const cot=parseFloat($("impCot").value)||1, skip=$("impSkip").checked;
+  $("impInvL").hidden=!gross;
+  const tot={},cnt={};
+  let used=0;
+  const prev=recs.map(r=>{
+    const off=skip&&SKIP.test(r.txt);
+    let v=r.nums[col];
+    if(v!=null&&gross)v=v-(r.nums[inv]||0);
+    const ok=!off&&v!=null;
+    if(ok){const k=keyOf(r.d);tot[k]=(tot[k]||0)+v*cot;cnt[k]=(cnt[k]||0)+1;used++}
+    return {r,v:ok?v*cot:null,off:!ok};
+  });
+  const keys=Object.keys(tot).sort();
+  const first=window.IR_FIRST||"2026-10";
+  $("impMonths").innerHTML=keys.length?keys.map(k=>{
+    const t=Math.round(tot[k]*100)/100, fora=k<first;
+    return "<div><span><span>"+mesNome(k)+"</span> · "+cnt[k]+(cnt[k]===1?" operação":" operações")+"<br><b class='"+(t>0?"pos":t<0?"neg":"")+"'>"+fmt(t)+"</b></span>"+(fora?"<span class='msg'>antes de out/2026, fora da tabela</span>":"<button type='button' class='btn sm' data-put='"+k+"' data-v='"+t+"'>Lançar em "+mesNome(k).split(" ")[0]+"</button>")+"</div>";
+  }).join(""):"<p class='msg'>Nenhum valor nessa coluna. Troque a coluna do resultado.</p>";
+  $("impPrev").innerHTML="<thead><tr><th>Data</th><th>Valor</th><th>Linha lida</th></tr></thead><tbody>"+prev.slice(0,300).map(p=>"<tr><td>"+String(p.r.d.d).padStart(2,"0")+"/"+String(p.r.d.m).padStart(2,"0")+"/"+p.r.d.y+"</td><td class='"+(p.off?"off":p.v>0?"pos":p.v<0?"neg":"")+"'>"+(p.v==null?"–":fmt(p.v))+"</td><td style='text-align:left;white-space:normal;font-family:var(--f-body);max-width:28rem'>"+p.r.txt.slice(0,140).replace(/</g,"&lt;")+"</td></tr>").join("")+"</tbody>";
+  $("impMsg").className="msg";
+  $("impMsg").textContent=used+" operações somadas"+(recs.length-used?", "+(recs.length-used)+" ignoradas":"")+". Confira o total com o saldo da Quotex antes de lançar.";
+}
+async function go(){
+  const f=$("impFile").files[0], txt=$("impTxt").value.trim();
+  recs=[];cols=[];$("impOut").hidden=true;
+  if(!f&&!txt){$("impMsg").className="msg err";$("impMsg").textContent="Escolha o arquivo ou cole o texto do extrato.";return}
+  $("impMsg").className="msg";$("impMsg").textContent="Lendo…";$("impGo").disabled=true;
+  let ok=false;
+  try{ok=f?await readFile(f):readText(txt)}catch(e){$("impMsg").className="msg err";$("impMsg").textContent="Não consegui abrir o arquivo ("+e.message+"). Tente colar o texto.";$("impGo").disabled=false;return}
+  $("impGo").disabled=false;
+  if(!ok){$("impMsg").className="msg err";$("impMsg").textContent="Não encontrei operações com data e valor. Se puder, me mande esse arquivo para eu ajustar a leitura.";return}
+  guess();$("impOut").hidden=false;lastSig="";recompute();
+}
+$("impGo").onclick=go;
+$("impClear").onclick=()=>{$("impFile").value="";$("impTxt").value="";recs=[];$("impOut").hidden=true;$("impMsg").textContent=""};
+let lastSig="";
+function recompute(){if(!recs.length)return;const sig=[$("impCol").value,$("impInv").value,$("impMode").value,$("impSkip").checked,$("impCot").value].join("|");if(sig===lastSig)return;lastSig=sig;compute()}
+["impCol","impInv","impMode","impSkip","impCot"].forEach(id=>$(id).addEventListener("change",recompute));
+$("impCot").addEventListener("input",recompute);
+$("impMonths").addEventListener("click",e=>{
+  const b=e.target.closest("[data-put]");if(!b)return;
+  const k=b.dataset.put, v=parseFloat(b.dataset.v), y=+k.slice(0,4);
+  if(window.irPut){window.irPut(k,v,y);b.textContent="Lançado ✓";b.disabled=true}
+});
+window.__irTest={parseNum,parseDate,readText,get recs(){return recs},get cols(){return cols}};
 })();
 </script>
 </body></html>

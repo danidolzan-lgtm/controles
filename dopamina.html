@@ -1,7 +1,7 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1F5C7A"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="dopamina"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Tabela de Dopamina</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: placar no topo, check-in de hoje, calendário dom–sáb de 07/10 a 17/12. */
+/* Layout: placar no topo, check-in de hoje, calendário dom–sáb de 09/10 a 17/12. */
 :root{
   --bg:#EEF1F0; --surface:#FFFFFF; --line:#D5DCDA; --fg:#16201D; --muted:#5D6B67;
   --accent:#1F5C7A; --win:#1E7A4C; --win-soft:#DDF0E5; --loss:#B23A35; --loss-soft:#F6E0DE;
@@ -51,7 +51,7 @@ img,svg{max-width:100%}
 </style>
 <div class="wrap">
   <div class="top">
-    <div><h1>Tabela de Dopamina</h1><div class="sub">07/10 a 17/12/2026 · verde acertei, vermelho errei</div></div>
+    <div><h1>Tabela de Dopamina</h1><div class="sub">09/10 a 17/12/2026 · verde acertei, vermelho errei</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
   <div class="panel score">
@@ -72,7 +72,7 @@ img,svg{max-width:100%}
   <div class="panel" id="cal" style="display:grid;gap:18px"></div>
 </div>
 <script>
-const START="2026-10-07", END="2026-12-17", LS="dopamina.v1";
+const START="2026-10-09", END="2026-12-17", LS="dopamina.v1";
 let marks={}, db=null, sel=null, draft=null;
 const $=id=>document.getElementById(id);
 function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
@@ -92,19 +92,20 @@ function drawCheck(){
   $("cTitle").textContent=sel?fmt(sel):"Check-in";
   $("bW").classList.toggle("on",draft==="w");$("bL").classList.toggle("on",draft==="l");
   ["bW","bL","bSave","bCancel"].forEach(id=>$(id).disabled=!ok);
-  $("cHint").textContent= !sel?"Toque em um dia.": ok?(draft?"Toque em Salvar para gravar.":"Escolha Acertei ou Errei."):"Dia já marcado. Só visualização.";
+  $("cHint").textContent= !sel?"Toque em um dia.": ok?(draft&&marks[sel]===draft?"Marcado. Dá pra trocar até o fim do dia.":draft?"Toque em Salvar para gravar.":"Escolha Acertei ou Errei."):"Dia já marcado. Só visualização.";
 }
 function drawCal(){
   const cal=$("cal");cal.innerHTML="";const t=today();
-  let cur=new Date(2026,9,1,12);const end=new Date(END+"T12:00:00");
+  let cur=new Date(+START.slice(0,4),+START.slice(5,7)-1,1,12);const end=new Date(END+"T12:00:00");
   while(cur<=end){
     const y=cur.getFullYear(),m=cur.getMonth();
     const box=document.createElement("div");box.className="month";
     box.innerHTML="<h3>"+cur.toLocaleDateString("pt-BR",{month:"long",year:"numeric"})+"</h3><div class='dow'><span>dom</span><span>seg</span><span>ter</span><span>qua</span><span>qui</span><span>sex</span><span>sáb</span></div>";
     const g=document.createElement("div");g.className="grid";
-    for(let i=0;i<new Date(y,m,1).getDay();i++){const b=document.createElement("div");b.className="day blank";g.appendChild(b)}
+    const sd=new Date(START+"T12:00:00"), d0=(y===sd.getFullYear()&&m===sd.getMonth())?sd.getDate():1;
+    for(let i=0;i<new Date(y,m,d0).getDay();i++){const b=document.createElement("div");b.className="day blank";g.appendChild(b)}
     const last=new Date(y,m+1,0).getDate();
-    for(let d=1;d<=last;d++){
+    for(let d=d0;d<=last;d++){
       const ds=y+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
       const b=document.createElement("button");b.type="button";b.textContent=d;
       if(ds>END)break;

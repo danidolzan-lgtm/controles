@@ -1,14 +1,16 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1F5C7A"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="receitas"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Receitas</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: caderno de receitas — pedir ideia ao Claude, cadastrar a receita, lista de receitas salvas e leitura da escolhida. */
+/* Layout: caderno de receitas — buscar receita na internet, ver e salvar; escrever à mão; lista salva que abre no próprio item. */
 :root{
   --bg:#EEF1F0; --surface:#FFFFFF; --line:#D5DCDA; --fg:#16201D; --muted:#5D6B67;
-  --accent:#1F5C7A; --warm:#B8662A; --loss:#B23A35;
+  --accent:#1F5C7A; --accent-soft:#DCE9EF; --warm:#B8662A; --loss:#B23A35; --win:#1E7A4C;
   --f-display:"Archivo",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E; --accent:#6FB2D3; --warm:#E39A62; --loss:#EC7A73; color-scheme:dark}}
+  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E; --accent:#6FB2D3; --accent-soft:#1B3240; --warm:#E39A62; --loss:#EC7A73; --win:#5BC98E; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E; --accent:#6FB2D3; --accent-soft:#1B3240; --warm:#E39A62; --loss:#EC7A73; --win:#5BC98E; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15.5px;line-height:1.55}
 .wrap{max-width:720px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:16px}
@@ -22,45 +24,69 @@ h3{font-family:var(--f-display);font-size:1rem;margin:0}
 label{display:grid;gap:4px;font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
 input,textarea{font:inherit;text-transform:none;letter-spacing:0;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:100%;min-width:0}
 textarea{min-height:110px;resize:vertical}
-input:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.search{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}
 .btn{appearance:none;font:inherit;font-weight:600;border-radius:7px;padding:10px 16px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--surface);text-decoration:none;display:inline-block}
 .btn.ghost{background:var(--surface);color:var(--fg);border-color:var(--line)}
-.hint{font-size:.82rem;color:var(--muted)}
-.list{display:grid;gap:6px}
-.it{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
-.it button.open{appearance:none;font:inherit;text-align:left;background:none;border:0;color:var(--fg);cursor:pointer;padding:0;min-width:0;font-family:var(--f-display);font-weight:700;overflow-wrap:anywhere}
-.x{appearance:none;font:inherit;font-size:.8rem;border:1px solid var(--line);background:var(--bg);color:var(--muted);border-radius:6px;padding:5px 9px;cursor:pointer;white-space:nowrap}
-.x.confirm{border-color:var(--loss);color:var(--loss)}
+.btn.danger{background:var(--surface);color:var(--loss);border-color:var(--loss)}
+.btn[disabled]{opacity:.55;cursor:default}
+.hint{font-size:.82rem;color:var(--muted);margin:0}
+.hint.err{color:var(--loss)}
+.results{display:grid;gap:6px}
+.res{appearance:none;font:inherit;text-align:left;cursor:pointer;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:2px}
+.res:hover{border-color:var(--accent)}
+.res b{font-family:var(--f-display);font-weight:700;overflow-wrap:anywhere}
+.res span{font-size:.75rem;color:var(--muted)}
 .read{display:grid;gap:14px}
+.read ul,.read ol{margin:0;padding-left:1.3em;display:grid;gap:4px}
+.read li{max-width:66ch}
 .read pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;margin:0;max-width:66ch}
+.src{font-size:.8rem;color:var(--muted);overflow-wrap:anywhere}
+.src a{color:var(--accent)}
+details.manual summary{cursor:pointer;font-family:var(--f-display);font-weight:700}
+details.manual[open] summary{margin-bottom:12px}
+.list{display:grid;gap:8px}
+.it{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.it>button.open{appearance:none;font:inherit;width:100%;text-align:left;background:var(--surface);border:0;color:var(--fg);cursor:pointer;padding:12px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.it>button.open b{font-family:var(--f-display);font-weight:700;overflow-wrap:anywhere;min-width:0}
+.it>button.open span{color:var(--muted);font-size:.85rem;flex:none}
+.it.on>button.open{background:var(--accent-soft)}
+.it .body{padding:14px 12px;border-top:1px solid var(--line);display:grid;gap:14px}
 .empty{color:var(--muted);font-size:.9rem}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;vertical-align:-2px;margin-right:6px}
+@media (prefers-reduced-motion:no-preference){.spin{animation:r .8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}}
 </style>
 <div class="wrap">
   <div class="top">
-    <div><h1>Receitas</h1><div class="sub">Seu caderno de receitas</div></div>
+    <div><h1>Receitas</h1><div class="sub">Busque, salve e consulte suas receitas</div></div>
     <div class="status" id="status"></div>
   </div>
 
-  <div class="panel">
-    <h3>Pedir uma receita ao Claude</h3>
-    <label for="pedido">O que você quer fazer?<input id="pedido" type="text" placeholder="Ex.: escondidinho de carne seca para 4 pessoas"></label>
-    <div class="row"><a class="btn" id="ask" href="https://claude.ai/new" target="_blank" rel="noopener">Abrir no Claude</a><button type="button" class="btn ghost" id="copy">Copiar pedido</button></div>
-    <p class="hint">Abre o Claude com o pedido. Se ele não aparecer escrito, use Copiar pedido e cole lá. Depois copie a resposta e cole no cadastro abaixo.</p>
-  </div>
-
-  <form class="panel" id="form">
-    <h3 id="formTitle">Nova receita</h3>
-    <label for="nome">Nome<input id="nome" type="text" autocomplete="off" placeholder="Ex.: Escondidinho de carne seca"></label>
-    <label for="ing">Ingredientes<textarea id="ing" placeholder="Um ingrediente por linha"></textarea></label>
-    <label for="prep">Modo de preparo<textarea id="prep" placeholder="Passo a passo"></textarea></label>
-    <div class="row"><button class="btn" type="submit" id="bSave">Salvar receita</button><button type="button" class="btn ghost" id="bClear">Limpar</button></div>
+  <form class="panel" id="fBusca">
+    <h3>Buscar receita na internet</h3>
+    <div class="search">
+      <label for="q">O que você quer fazer?<input id="q" type="search" placeholder="Ex.: escondidinho de carne seca" autocomplete="off" enterkeyhint="search"></label>
+      <button class="btn" type="submit" id="bBusca">Buscar</button>
+    </div>
+    <p class="hint" id="bMsg">A busca é feita no TudoGostoso. Toque numa receita para ver e salvar.</p>
+    <div class="results" id="results"></div>
   </form>
 
-  <div class="panel" id="view" hidden>
-    <div class="read" id="read"></div>
-    <div class="row"><button type="button" class="btn ghost" id="bEdit">Editar</button><button type="button" class="btn ghost" id="bClose">Fechar</button></div>
+  <div class="panel" id="found" hidden>
+    <div class="read" id="fRead"></div>
+    <div class="row"><button type="button" class="btn" id="fSave">Salvar no caderno</button><button type="button" class="btn ghost" id="fEdit">Ajustar antes de salvar</button><button type="button" class="btn ghost" id="fClose">Fechar</button></div>
   </div>
+
+  <details class="panel manual" id="manual">
+    <summary id="formTitle">Escrever receita à mão</summary>
+    <form id="form" style="display:grid;gap:12px">
+      <label for="nome">Nome<input id="nome" type="text" autocomplete="off" placeholder="Ex.: Escondidinho de carne seca"></label>
+      <label for="ing">Ingredientes<textarea id="ing" placeholder="Um ingrediente por linha"></textarea></label>
+      <label for="prep">Modo de preparo<textarea id="prep" placeholder="Um passo por linha"></textarea></label>
+      <div class="row"><button class="btn" type="submit">Salvar receita</button><button type="button" class="btn ghost" id="bClear">Limpar</button></div>
+    </form>
+  </details>
 
   <div class="panel">
     <h3>Receitas salvas</h3>
@@ -68,60 +94,188 @@ input:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible{
   </div>
 </div>
 <script>
-const $=id=>document.getElementById(id), LS="receitas.v1";
-let db=null, items=[], editId=null, openId=null, pendingDel=null;
+const $=id=>document.getElementById(id), LS="receitas.v1", READER="https://r.jina.ai/";
+let db=null, items=[], editId=null, openId=null, pendingDel=null, found=null, editFonte="";
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function lsLoad(){try{items=JSON.parse(localStorage.getItem(LS)||"[]")}catch(e){items=[]}}
 function lsSave(){try{localStorage.setItem(LS,JSON.stringify(items))}catch(e){}}
-function updAsk(){
-  const q=$("pedido").value.trim();
-  const p="Escreva uma receita completa, em português do Brasil, com nome, ingredientes (um por linha, com quantidades em medidas caseiras) e modo de preparo em passos numerados. Pedido: "+(q||"uma receita prática para o dia a dia");
-  $("ask").href="https://claude.ai/new?q="+encodeURIComponent(p);
+function setStatus(t){$("status").textContent=t}
+const norm=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+function txt(s){const d=document.createElement("div");d.innerHTML=String(s??"");return (d.textContent||"").replace(/\s+/g," ").trim()}
+
+/* ---------- busca na internet ---------- */
+async function getPage(url,html){
+  const c=new AbortController(), t=setTimeout(()=>c.abort(),30000);
+  try{
+    const r=await fetch(READER+url,{signal:c.signal,headers:html?{"X-Return-Format":"html"}:{}});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    return await r.text();
+  }finally{clearTimeout(t)}
 }
-$("pedido").addEventListener("input",updAsk);updAsk();
-$("copy").onclick=async()=>{const t=decodeURIComponent($("ask").href.split("q=")[1]||"");try{await navigator.clipboard.writeText(t);$("status").textContent="Pedido copiado"}catch(e){$("pedido").select();$("status").textContent="Selecione e copie o pedido"}};
+function parseResults(md,q){
+  const seen=new Set(), out=[];
+  for(const m of md.matchAll(/\[((?:!\[[^\]]*\]\([^)]*\)\s*)*[^\[\]]{3,160})\]\((https:\/\/www\.tudogostoso\.com\.br\/receita\/[^)\s]+\.html)/g)){
+    const nome=m[1].replace(/!\[[^\]]*\]\([^)]*\)/g,"").replace(/[*_#]/g,"").trim(), url=m[2];
+    if(!nome||seen.has(url))continue; seen.add(url); out.push({nome,url});
+  }
+  const words=norm(q).split(/[^a-z0-9]+/).filter(w=>w.length>=3&&!["com","para","sem","que","das","dos"].includes(w));
+  const score=r=>{const h=norm(r.nome+" "+r.url);return words.filter(w=>h.includes(w)).length};
+  const hits=out.map(r=>({...r,s:score(r)})).filter(r=>r.s>0).sort((a,b)=>b.s-a.s);
+  return (hits.length?hits:[]).slice(0,12);
+}
+function findRecipe(o){
+  if(!o||typeof o!=="object")return null;
+  if(Array.isArray(o)){for(const x of o){const r=findRecipe(x);if(r)return r}return null}
+  const t=o["@type"]; if(t==="Recipe"||(Array.isArray(t)&&t.includes("Recipe")))return o;
+  if(o["@graph"])return findRecipe(o["@graph"]);
+  return null;
+}
+function steps(ins){
+  if(!ins)return [];
+  if(typeof ins==="string")return txt(ins).split(/(?<=\.)\s+(?=[A-ZÁÉÍÓÚÂÊÔÃÕÇ0-9])|\n+/).map(s=>s.trim()).filter(Boolean);
+  if(Array.isArray(ins))return ins.flatMap(x=>typeof x==="string"?[txt(x)]:x.itemListElement?steps(x.itemListElement):[txt(x.text||x.name||"")]).filter(Boolean);
+  if(ins.itemListElement)return steps(ins.itemListElement);
+  return [txt(ins.text||"")].filter(Boolean);
+}
+function fromJsonLd(html){
+  for(const m of html.matchAll(/<script[^>]*application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi)){
+    let j;try{j=JSON.parse(m[1].trim())}catch(e){continue}
+    const r=findRecipe(j); if(!r)continue;
+    const ing=(r.recipeIngredient||r.ingredients||[]).map(txt).filter(Boolean);
+    const prep=steps(r.recipeInstructions);
+    if(ing.length||prep.length)return {nome:txt(r.name),ing,prep,rend:txt(Array.isArray(r.recipeYield)?r.recipeYield[0]:r.recipeYield||"")};
+  }
+  return null;
+}
+function cleanMd(l){return l.replace(/!\[[^\]]*\]\([^)]*\)/g,"").replace(/\[([^\]]*)\]\([^)]*\)/g,"$1").replace(/^\s*(?:[-*+]|\d+[.)])\s+/,"").replace(/[*_`#>]/g,"").replace(/\s+/g," ").trim()}
+function fromMarkdown(md){
+  const L=md.split(/\r?\n/);
+  const isHead=l=>/^\s*(#{1,6}\s|[A-ZÁÉÍÓÚÂÊÔÃÕÇ][^.!?]{2,40}\n?$)/.test(l)&&!/^\s*[-*+]\s/.test(l);
+  const iI=L.findIndex(l=>/^\s*#{0,6}\s*ingredientes\s*:?\s*$/i.test(l.replace(/[*_]/g,"")));
+  const iP=L.findIndex((l,i)=>i>iI&&/^\s*#{0,6}\s*(modo de preparo|preparo|como fazer)\s*:?\s*$/i.test(l.replace(/[*_]/g,"")));
+  if(iI<0||iP<0)return null;
+  const isItem=l=>/^\s*(?:[-*+]|\d+[.)])\s+\S/.test(l);
+  const ing=L.slice(iI+1,iP).filter(l=>isItem(l)||(l.trim()&&!/^\s*#/.test(l)&&l.trim().length<120)).map(cleanMd).filter(l=>l&&!/^ingredientes:?$/i.test(l));
+  const prep=[];
+  for(let i=iP+1;i<L.length;i++){const l=L[i];if(/^\s*#/.test(l)||/^\s*(informa|veja tamb|receitas relacionadas|avalia|coment|dicas? |publicidade)/i.test(cleanMd(l)))break;const c=cleanMd(l);if(c&&c.length>3)prep.push(c);if(prep.length>40)break}
+  return ing.length?{nome:"",ing,prep,rend:""}:null;
+}
+async function loadRecipe(r){
+  let rec=null;
+  try{rec=fromJsonLd(await getPage(r.url,true))}catch(e){}
+  if(!rec){const md=await getPage(r.url,false);rec=fromMarkdown(md);if(rec&&!rec.nome){const t=md.match(/^Title:\s*(.+)$/m);rec.nome=t?t[1].replace(/\s*\|.*$/,""):""}}
+  if(!rec)throw new Error("sem receita");
+  rec.nome=rec.nome||r.nome; rec.fonte=r.url;
+  return rec;
+}
+function busy(el,on,label){el.disabled=on;if(on){el.dataset.l=el.textContent;el.innerHTML="<span class='spin'></span>"+label}else if(el.dataset.l)el.textContent=el.dataset.l}
+$("fBusca").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const q=$("q").value.trim(); if(!q){$("q").focus();return}
+  $("results").innerHTML="";$("bMsg").className="hint";$("bMsg").textContent="Buscando receitas…";busy($("bBusca"),true,"Buscando");
+  try{
+    const md=await getPage("https://www.tudogostoso.com.br/busca?q="+encodeURIComponent(q),false);
+    const res=parseResults(md,q);
+    if(!res.length){$("bMsg").textContent="Não achei receitas com esse nome. Tente escrever de outro jeito (ex.: só o nome do prato).";return}
+    $("bMsg").textContent=res.length+" receitas encontradas. Toque numa para ver.";
+    $("results").innerHTML=res.map((r,i)=>"<button type='button' class='res' data-i='"+i+"'><b>"+esc(r.nome)+"</b><span>TudoGostoso</span></button>").join("");
+    $("results")._res=res;
+  }catch(err){$("bMsg").className="hint err";$("bMsg").textContent="A busca não respondeu agora. Confira a internet e tente de novo em 1 minuto."}
+  finally{busy($("bBusca"),false)}
+});
+$("results").addEventListener("click",async e=>{
+  const b=e.target.closest("[data-i]");if(!b)return;
+  const r=$("results")._res[+b.dataset.i];
+  [...$("results").children].forEach(x=>x.disabled=true);
+  const old=b.innerHTML; b.innerHTML="<b><span class='spin'></span>Abrindo receita…</b><span>"+esc(r.nome)+"</span>";
+  try{found=await loadRecipe(r);showFound()}
+  catch(err){$("bMsg").className="hint err";$("bMsg").textContent="Não consegui abrir essa receita. Tente outra da lista."}
+  finally{b.innerHTML=old;[...$("results").children].forEach(x=>x.disabled=false)}
+});
+function recipeHTML(nome,ing,prep,fonte,rend){
+  return "<h2>"+esc(nome)+"</h2>"+(rend?"<div class='src'>Rendimento: "+esc(rend)+"</div>":"")+
+    "<div style='display:grid;gap:6px'><h3>Ingredientes</h3><ul>"+ing.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul></div>"+
+    "<div style='display:grid;gap:6px'><h3>Modo de preparo</h3><ol>"+prep.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ol></div>"+
+    (fonte?"<div class='src'>Fonte: <a href='"+esc(fonte)+"' target='_blank' rel='noopener'>"+esc(fonte.replace(/^https?:\/\/(www\.)?/,"").split("/")[0])+"</a></div>":"");
+}
+function showFound(){
+  $("fRead").innerHTML=recipeHTML(found.nome,found.ing,found.prep,found.fonte,found.rend);
+  $("found").hidden=false; $("fSave").disabled=false; $("fSave").textContent="Salvar no caderno";
+  $("found").scrollIntoView({behavior:"smooth",block:"start"});
+}
+$("fClose").onclick=()=>{$("found").hidden=true;found=null};
+$("fSave").onclick=async()=>{
+  if(!found)return;
+  const ok=await saveRecipe({nome:found.nome,ing:found.ing.join("\n"),prep:found.prep.map((p,i)=>(i+1)+". "+p).join("\n"),fonte:found.fonte});
+  if(ok){$("fSave").textContent="Salva ✓";$("fSave").disabled=true}
+};
+$("fEdit").onclick=()=>{
+  if(!found)return;
+  editId=null;editFonte=found.fonte||"";
+  $("nome").value=found.nome;$("ing").value=found.ing.join("\n");$("prep").value=found.prep.map((p,i)=>(i+1)+". "+p).join("\n");
+  $("formTitle").textContent="Ajustar e salvar receita";$("manual").open=true;$("manual").scrollIntoView({behavior:"smooth",block:"start"});
+};
+
+/* ---------- caderno ---------- */
+async function saveRecipe(data,id){
+  id=id||Math.random().toString(36).slice(2,10);
+  const old=items.find(x=>x.id===id);
+  const r={id,nome:data.nome,ing:data.ing,prep:data.prep,fonte:data.fonte||(old&&old.fonte)||"",criada:old?old.criada:new Date().toISOString()};
+  if(!db)r.local=true;
+  items=items.filter(x=>x.id!==id).concat([r]); lsSave(); draw();
+  if(db){try{await db.doc("receitas/"+id).set(r);setStatus("Receita salva")}catch(err){setStatus("Não salvou na conta. Ficou neste aparelho.");return true}}
+  else setStatus("Receita salva neste aparelho");
+  return true;
+}
 function draw(){
   const L=$("list");
   if(!items.length){L.innerHTML="<p class='empty'>Nenhuma receita salva ainda.</p>";return}
-  L.innerHTML=items.slice().sort((a,b)=>(b.criada||"").localeCompare(a.criada||"")).map(r=>"<div class='it'><button type='button' class='open' data-open='"+r.id+"'>"+esc(r.nome)+"</button><button type='button' class='x"+(pendingDel===r.id?" confirm":"")+"' data-del='"+r.id+"'>"+(pendingDel===r.id?"Confirmar":"Excluir")+"</button></div>").join("");
-}
-function show(id){
-  const r=items.find(x=>x.id===id);if(!r)return;openId=id;
-  $("read").innerHTML="<h2>"+esc(r.nome)+"</h2><div style='display:grid;gap:6px'><h3>Ingredientes</h3><pre>"+esc(r.ing)+"</pre></div><div style='display:grid;gap:6px'><h3>Modo de preparo</h3><pre>"+esc(r.prep)+"</pre></div>";
-  $("view").hidden=false;$("view").scrollIntoView({behavior:"smooth",block:"start"});
+  L.innerHTML=items.slice().sort((a,b)=>(b.criada||"").localeCompare(a.criada||"")).map(r=>{
+    const on=openId===r.id;
+    const lines=s=>String(s||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+    return "<div class='it"+(on?" on":"")+"'><button type='button' class='open' data-open='"+esc(r.id)+"' aria-expanded='"+on+"'><b>"+esc(r.nome)+"</b><span>"+(on?"fechar ▲":"abrir ▼")+"</span></button>"+
+      (on?"<div class='body'><div class='read'>"+recipeHTML(r.nome,lines(r.ing),lines(r.prep).map(x=>x.replace(/^\d+[.)]\s*/,"")),r.fonte,"").replace(/^<h2>.*?<\/h2>/,"")+"</div><div class='row'><button type='button' class='btn ghost' data-edit='"+esc(r.id)+"'>Editar</button><button type='button' class='btn "+(pendingDel===r.id?"danger":"ghost")+"' data-del='"+esc(r.id)+"'>"+(pendingDel===r.id?"Confirmar exclusão":"Excluir")+"</button></div></div>":"")+
+    "</div>";
+  }).join("");
 }
 $("list").addEventListener("click",async e=>{
-  const o=e.target.closest("[data-open]");if(o)return show(o.dataset.open);
+  const o=e.target.closest("[data-open]");
+  if(o){openId=openId===o.dataset.open?null:o.dataset.open;pendingDel=null;draw();return}
+  const ed=e.target.closest("[data-edit]");
+  if(ed){const r=items.find(x=>x.id===ed.dataset.edit);if(!r)return;editId=r.id;editFonte=r.fonte||"";$("nome").value=r.nome;$("ing").value=r.ing;$("prep").value=r.prep;$("formTitle").textContent="Editando receita";$("manual").open=true;$("manual").scrollIntoView({behavior:"smooth",block:"start"});return}
   const d=e.target.closest("[data-del]");if(!d)return;
   const id=d.dataset.del;
   if(pendingDel!==id){pendingDel=id;draw();return}
-  pendingDel=null;
-  if(db){try{await db.doc("receitas/"+id).delete()}catch(err){$("status").textContent="Não excluiu. Tente de novo."}}
-  else{items=items.filter(x=>x.id!==id);lsSave();draw()}
-  if(openId===id)$("view").hidden=true;
+  pendingDel=null;openId=null;
+  items=items.filter(x=>x.id!==id);lsSave();draw();
+  if(db){try{await db.doc("receitas/"+id).delete();setStatus("Receita excluída")}catch(err){setStatus("Não excluiu. Tente de novo.")}}
+  else setStatus("Receita excluída");
 });
-$("bClose").onclick=()=>{$("view").hidden=true;openId=null};
-$("bEdit").onclick=()=>{
-  const r=items.find(x=>x.id===openId);if(!r)return;
-  editId=r.id;$("nome").value=r.nome;$("ing").value=r.ing;$("prep").value=r.prep;$("formTitle").textContent="Editando receita";
-  $("form").scrollIntoView({behavior:"smooth",block:"start"});
-};
-$("bClear").onclick=()=>{editId=null;$("form").reset();$("formTitle").textContent="Nova receita"};
+function resetForm(){editId=null;editFonte="";$("form").reset();$("formTitle").textContent="Escrever receita à mão"}
+$("bClear").onclick=resetForm;
 $("form").addEventListener("submit",async e=>{
   e.preventDefault();
   const nome=$("nome").value.trim();if(!nome){$("nome").focus();return}
-  const id=editId||Math.random().toString(36).slice(2,10);
-  const old=items.find(x=>x.id===id);
-  const r={id,nome,ing:$("ing").value,prep:$("prep").value,criada:old?old.criada:new Date().toISOString()};
-  if(db){try{await db.doc("receitas/"+id).set(r);$("status").textContent="Receita salva"}catch(err){$("status").textContent="Não salvou. Tente de novo.";return}}
-  else{items=items.filter(x=>x.id!==id).concat([r]);lsSave();draw();$("status").textContent="Salva neste aparelho"}
-  editId=null;$("form").reset();$("formTitle").textContent="Nova receita";
+  const id=editId; openId=null;
+  await saveRecipe({nome,ing:$("ing").value,prep:$("prep").value,fonte:editFonte},id||undefined);
+  resetForm();$("manual").open=false;
 });
 lsLoad();draw();
 (async()=>{
   try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
   if(!db)return;
-  db.collection("receitas").onSnapshot(q=>{items=q.docs.map(d=>d.data());draw()},()=>{$("status").textContent="Sem conexão com o salvamento"});
+  let first=true;
+  db.collection("receitas").onSnapshot(q=>{
+    const remote=q.docs.map(d=>d.data()), ids=new Set(remote.map(r=>r.id));
+    let pend=[];
+    if(first){first=false;
+      // receitas salvas só neste aparelho antes de entrar na conta sobem uma vez
+      pend=items.filter(r=>r.local&&!ids.has(r.id));
+      pend.forEach(r=>{const c={id:r.id,nome:r.nome,ing:r.ing,prep:r.prep,fonte:r.fonte||"",criada:r.criada||new Date().toISOString()};db.doc("receitas/"+r.id).set(c).catch(()=>{})});
+    }
+    items=remote.concat(pend.map(r=>{const c={...r};delete c.local;return c}));lsSave();draw();
+  },()=>setStatus("Sem conexão com o salvamento"));
 })();
+window.__rec={parseResults,fromJsonLd,fromMarkdown};
 </script>
 </body></html>

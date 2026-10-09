@@ -143,8 +143,8 @@ img,svg{max-width:100%}
 </div>
 
 <script>
-const START = "2026-10-07";
-const END = "2026-12-31";
+const START = "2026-10-09";
+const END = "2026-12-17";
 const EST = [
   {id:"virada", nome:"Virada", desc:"cruzamento 9×21 a favor da 50"},
   {id:"respiro", nome:"Respiro", desc:"pullback na zona 9–21"},
@@ -230,9 +230,9 @@ function renderCal(){
     ["dom","seg","ter","qua","qui","sex","sáb"].forEach(x=>{const sp=document.createElement("span");sp.textContent=x;dow.appendChild(sp)});
     box.appendChild(dow);
     const g=document.createElement("div"); g.className="grid";
-    const first=new Date(y,m,1).getDay(), last=new Date(y,m+1,0).getDate();
+    const d0=(y===s.getFullYear()&&m===s.getMonth())?s.getDate():1, first=new Date(y,m,d0).getDay(), last=new Date(y,m+1,0).getDate();
     for(let i=0;i<first;i++){const b=document.createElement("div");b.className="day blank";g.appendChild(b)}
-    for(let d=1;d<=last;d++){
+    for(let d=d0;d<=last;d++){
       const ds=y+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
       const btn=document.createElement("button"); btn.type="button"; btn.className="day";
       if(ds<START||ds>END){btn.className="day blank";g.appendChild(btn);continue}
@@ -293,7 +293,7 @@ function calcValor(op){ const p=(+cfg.payout||0)/100; return op.resultado==="win
 function drawModal(){
   const m=$("modal"); m.className="modal"+(readOnly?" ro":"");
   const d=new Date(draft.date+"T12:00:00");
-  let h="<div class='mhead'><h2 id='mTitle'>"+d.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit"})+"</h2><span class='num "+(dayNet(draft)>0?"pos":dayNet(draft)<0?"neg":"")+"'>"+n2(dayNet(draft))+"</span></div>";
+  let h="<div class='mhead'><h2 id='mTitle'>"+d.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit"})+"</h2><span id='mNet' class='num "+(dayNet(draft)>0?"pos":dayNet(draft)<0?"neg":"")+"'>"+n2(dayNet(draft))+"</span></div>";
   if(readOnly) h+="<div class='lock'>Dia encerrado. Só visualização.</div>";
   SESS.forEach(s=>{
     const ss=draft[s.id];
@@ -312,7 +312,7 @@ function drawModal(){
           }
         }
         if(!op) break;
-        h+="<div class='op'><div class='t'><span>"+(i===0?"1ª entrada":"2ª entrada · Soros")+"</span>"+(op.resultado?"<span class='num "+(op.resultado==="win"?"pos":"neg")+"'>"+n2(opValue(op))+"</span>":"")+"</div>";
+        h+="<div class='op'><div class='t'><span>"+(i===0?"1ª entrada":"2ª entrada · Soros")+"</span>"+(op.resultado?"<span id='rv-"+s.id+i+"' class='num "+(op.resultado==="win"?"pos":"neg")+"'>"+n2(opValue(op))+"</span>":"")+"</div>";
         h+="<div class='seg'>"+EST.map(e=>"<button type='button' data-a='est' data-s='"+s.id+"' data-i='"+i+"' data-v='"+e.id+"' class='"+(op.estrategia===e.id?"on":"")+"' title='"+e.desc+"'>"+e.nome+"</button>").join("")+"</div>";
         h+="<div class='seg'><button type='button' data-a='dir' data-s='"+s.id+"' data-i='"+i+"' data-v='CALL' class='"+(op.direcao==="CALL"?"on":"")+"'>CALL ▲</button><button type='button' data-a='dir' data-s='"+s.id+"' data-i='"+i+"' data-v='PUT' class='"+(op.direcao==="PUT"?"on":"")+"'>PUT ▼</button>";
         h+="<button type='button' data-a='res' data-s='"+s.id+"' data-i='"+i+"' data-v='win' class='w "+(op.resultado==="win"?"on":"")+"'>Win</button><button type='button' data-a='res' data-s='"+s.id+"' data-i='"+i+"' data-v='loss' class='l "+(op.resultado==="loss"?"on":"")+"'>Loss</button></div>";
@@ -360,12 +360,21 @@ $("modal").addEventListener("change",ev=>{
   const ss=draft[el.dataset.s], i=+el.dataset.i, op=ss.ops[i], v=parseFloat(el.value);
   if(el.dataset.a==="entrada"){op.entrada=isNaN(v)?null:v; if(op.resultado&&!isNaN(v)) op.valor=calcValor(op); if(i===0&&ss.ops[1]) ss.ops[1].entrada=+defaultStake(ss,1).toFixed(2)}
   if(el.dataset.a==="valor"){op.valor=isNaN(v)?null:Math.abs(v); if(i===0&&ss.ops[1]) ss.ops[1].entrada=+defaultStake(ss,1).toFixed(2)}
-  drawModal();
-  const again=document.getElementById(el.id); again&&again.focus();
+  softUpdate();
 });
 $("ov").addEventListener("click",ev=>{ if(ev.target.id==="ov") closeModal() });
 document.addEventListener("keydown",ev=>{ if(ev.key==="Escape" && !$("ov").hidden) closeModal() });
 
+function softUpdate(){
+  // atualiza valores sem redesenhar a janela (redesenhar no meio do toque perdia o clique no Salvar)
+  SESS.forEach(s=>{(draft[s.id].ops||[]).forEach((op,i)=>{
+    const en=document.getElementById("en-"+s.id+i), va=document.getElementById("va-"+s.id+i), rv=document.getElementById("rv-"+s.id+i);
+    if(en&&document.activeElement!==en) en.value=op.entrada??"";
+    if(va&&document.activeElement!==va) va.value=op.valor??"";
+    if(rv){rv.textContent=n2(opValue(op))}
+  })});
+  const net=dayNet(draft), m=document.getElementById("mNet"); if(m){m.textContent=n2(net);m.className="num "+(net>0?"pos":net<0?"neg":"")}
+}
 function doSave(){
   const err=$("mErr");
   for(const s of SESS){
@@ -383,8 +392,8 @@ function doSave(){
 /* ---------- config inputs ---------- */
 function bindCfg(){
   $("cfgBase").value=cfg.base; $("cfgPayout").value=cfg.payout;
-  $("cfgBase").addEventListener("change",e=>{const v=parseFloat(e.target.value);if(!isNaN(v)){cfg.base=v;saveCfg();render()}});
-  $("cfgPayout").addEventListener("change",e=>{const v=parseFloat(e.target.value);if(!isNaN(v)){cfg.payout=v;saveCfg();render()}});
+  $("cfgBase").addEventListener("change",e=>{const v=parseFloat(e.target.value);if(!isNaN(v)&&v!==cfg.base){cfg.base=v;saveCfg();renderKpis();renderCfgHint()}});
+  $("cfgPayout").addEventListener("change",e=>{const v=parseFloat(e.target.value);if(!isNaN(v)&&v!==cfg.payout){cfg.payout=v;saveCfg();renderKpis();renderCfgHint()}});
 }
 
 /* ---------- boot ---------- */

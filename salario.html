@@ -64,7 +64,7 @@ img,svg{max-width:100%}
 </style>
 <div class="wrap">
   <div class="top">
-    <div><h1>Controle Salário</h1><div class="sub">Salário e gastos de Danrlei e Cristiane, mês a mês</div></div>
+    <div><h1>Controle Salário</h1><div class="sub">Salário líquido menos gastos, de Danrlei e Cristiane, mês a mês</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
   <div class="bar">
@@ -86,7 +86,7 @@ const $=id=>document.getElementById(id);
 const brl=v=>(v<0?"-":"")+"R$ "+Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
 const uid=()=>Math.random().toString(36).slice(2,9);
 function blank(){return{orig:{salario:null,comBase:null,comPct:0.02,gastos:[]},dan:{salario:null,comBase:null,comPct:0.03,gastos:[]},cris:{salario:null,gastos:[]}}}
-function cur(){if(!months[ym])months[ym]=blank();return months[ym]}
+function cur(){if(!months[ym])months[ym]=blank();const M=months[ym];if(M.orig&&M.dan&&M.dan.comBase==null&&M.orig.comBase!=null)M.dan.comBase=M.orig.comBase;return M}
 function shift(n){const [y,m]=ym.split("-").map(Number);const d=new Date(y,m-1+n,1);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")}
 function load(){try{const r=JSON.parse(localStorage.getItem(LS)||"null");if(r)months=r}catch(e){}}
 let tmr=null;
@@ -101,30 +101,37 @@ function save(){
 }
 function gastosDe(who){
   const M=cur();
-  if(who==="dan") return [...M.orig.gastos.filter(g=>g.rep).map(g=>({...g,herdado:true})),...M.dan.gastos];
+  if(who==="dan") return [...M.dan.gastos,...M.orig.gastos.filter(g=>g.rep).map(g=>({...g,herdado:"orig"}))];
+  if(who==="orig") return [...M.orig.gastos,...M.dan.gastos.filter(g=>g.rep).map(g=>({...g,herdado:"dan"}))];
   return M[who].gastos;
 }
 function totals(who){const M=cur(),s=+M[who].salario||0,g=gastosDe(who).reduce((a,x)=>a+(+x.valor||0),0);return{s,g,saldo:s-g}}
 function personPanel(who,nome,editableKey){
   const M=cur(), P=M[editableKey], p=document.createElement("div"); p.className="panel";
   const t=totals(who);
-  let h="<h2>"+nome+"</h2><div class='f2'><label for='sal-"+who+"'>Salário (R$)<input id='sal-"+who+"' type='number' step='0.01' inputmode='decimal' data-f='salario' data-w='"+editableKey+"' value='"+(P.salario??"")+"'></label>";
+  let h="<h2>"+nome+"</h2><div class='f2'><label for='sal-"+who+"'>Salário líquido (R$)<input id='sal-"+who+"' type='number' step='0.01' inputmode='decimal' data-f='salario' data-w='"+editableKey+"' value='"+(P.salario??"")+"'></label>";
   if(who!=="cris"){
     h+="<label for='pct-"+who+"'>Comissão (%)<input id='pct-"+who+"' type='number' step='0.01' inputmode='decimal' data-f='comPct' data-w='"+editableKey+"' value='"+(P.comPct??"")+"'></label></div>";
-    h+="<div class='f2'><label for='cb-"+who+"'>Base da comissão (R$)<input id='cb-"+who+"' type='number' step='0.01' inputmode='decimal' data-f='comBase' data-w='"+editableKey+"' value='"+(P.comBase??"")+"'></label><div class='com'>Comissão calculada<br><b>"+brl((+P.comBase||0)*(+P.comPct||0)/100)+"</b><br>só cálculo, não entra no saldo</div></div>";
+    h+="<div class='f2'><label for='cb-"+who+"'>Base da comissão (vale p/ os dois)<input id='cb-"+who+"' type='number' step='0.01' inputmode='decimal' data-f='comBase' data-w='"+editableKey+"' value='"+(P.comBase??"")+"'></label><div class='com'>Comissão calculada<br><b id='com-"+who+"'>"+brl((+P.comBase||0)*(+P.comPct||0)/100)+"</b><br>só cálculo, não entra no saldo</div></div>";
   } else h+="<div></div></div>";
   h+="<div class='list'>";
   const gs=gastosDe(who);
   if(!gs.length) h+="<div class='empty'>Nenhum gasto lançado neste mês.</div>";
   gs.forEach(g=>{
-    if(g.herdado) h+="<div class='item rep'><span class='d'><span class='tag'>vem do Danrlei original</span>"+esc(g.desc)+"</span><span class='v'>-"+brl(+g.valor||0).replace("R$ ","")+"</span><span></span></div>";
+    if(g.herdado) h+="<div class='item rep'><span class='d'><span class='tag'>vem do "+(g.herdado==="orig"?"Danrlei original":"Danrlei")+"</span>"+esc(g.desc)+"</span><span class='v'>-"+brl(+g.valor||0).replace("R$ ","")+"</span><span></span></div>";
     else{
-      h+="<div class='item'><span class='d'>"+esc(g.desc)+(who==="orig"?"<label class='repbox'><input type='checkbox' data-rep='"+g.id+"' "+(g.rep?"checked":"")+"> replicar no Danrlei</label>":"")+"</span><span class='v'>-"+brl(+g.valor||0).replace("R$ ","")+"</span><button type='button' class='x' data-del='"+g.id+"' data-w='"+editableKey+"' aria-label='Excluir "+esc(g.desc)+"'>✕</button></div>";
+      h+="<div class='item'><span class='d'>"+esc(g.desc)+(who!=="cris"?"<label class='repbox'><input type='checkbox' data-rep='"+g.id+"' data-w='"+who+"' "+(g.rep?"checked":"")+"> repetir no "+(who==="orig"?"Danrlei":"Danrlei original")+"</label>":"")+"</span><span class='v'>-"+brl(+g.valor||0).replace("R$ ","")+"</span><button type='button' class='x' data-del='"+g.id+"' data-w='"+editableKey+"' aria-label='Excluir "+esc(g.desc)+"'>✕</button></div>";
     }
   });
   h+="</div><form class='add' data-w='"+editableKey+"'><label for='gd-"+who+"'>Gasto<input id='gd-"+who+"' type='text' name='d' placeholder='Ex.: mercado' autocomplete='off'></label><label for='gv-"+who+"'>Valor<input id='gv-"+who+"' type='number' name='v' step='0.01' inputmode='decimal'></label><button class='btn' type='submit'>Adicionar</button></form>";
-  h+="<div class='tot'><div><span>Salário</span><span>"+brl(t.s)+"</span></div><div><span>Gastos</span><span class='neg'>-"+brl(t.g).replace("R$ ","R$ ")+"</span></div><div class='big'><span>Sobra</span><span class='"+(t.saldo>=0?"pos":"neg")+"'>"+brl(t.saldo)+"</span></div></div>";
+  h+="<div class='tot' id='tot-"+who+"'><div><span>Salário líquido</span><span>"+brl(t.s)+"</span></div><div><span>Gastos</span><span class='neg'>-"+brl(t.g).replace("R$ ","R$ ")+"</span></div><div class='big'><span>Sobra</span><span class='"+(t.saldo>=0?"pos":"neg")+"'>"+brl(t.saldo)+"</span></div></div>";
   p.innerHTML=h; return p;
+}
+function totHTML(t){return "<div><span>Salário líquido</span><span>"+brl(t.s)+"</span></div><div><span>Gastos</span><span class='neg'>-"+brl(t.g)+"</span></div><div class='big'><span>Sobra</span><span class='"+(t.saldo>=0?"pos":"neg")+"'>"+brl(t.saldo)+"</span></div>"}
+function refresh(){
+  // atualiza totais sem redesenhar os campos e botões
+  [tab,"cris"].forEach(w=>{const el=document.getElementById("tot-"+w);if(el)el.innerHTML=totHTML(totals(w));const c=document.getElementById("com-"+w);if(c){const P=cur()[w];c.textContent=brl((+P.comBase||0)*(+P.comPct||0)/100)}});
+  summary();
 }
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function render(){
@@ -135,14 +142,19 @@ function render(){
   const c=$("cols");c.innerHTML="";
   c.appendChild(personPanel(tab,tab==="orig"?"Danrlei original":"Danrlei",tab));
   c.appendChild(personPanel("cris","Cristiane","cris"));
+  summary();
+}
+function summary(){
   const a=totals(tab),b=totals("cris"),s=a.s+b.s,g=a.g+b.g;
   $("sumTitle").textContent="Resumo do casal · "+(tab==="orig"?"Danrlei original":"Danrlei")+" + Cristiane";
-  $("summary").innerHTML=[["Salários",brl(s),""],["Gastos","-"+brl(g).replace("R$ ","R$ "),"neg"],["Sobra do mês",brl(s-g),(s-g)>=0?"pos":"neg"]].map(([l,v,cl])=>"<div class='k'><div class='lbl'>"+l+"</div><div class='big "+cl+"'>"+v+"</div></div>").join("");
+  $("summary").innerHTML=[["Salários líquidos",brl(s),""],["Gastos","-"+brl(g).replace("R$ ","R$ "),"neg"],["Sobra do mês",brl(s-g),(s-g)>=0?"pos":"neg"]].map(([l,v,cl])=>"<div class='k'><div class='lbl'>"+l+"</div><div class='big "+cl+"'>"+v+"</div></div>").join("");
 }
 $("cols").addEventListener("change",e=>{
   const el=e.target;
-  if(el.dataset.f){const v=parseFloat(el.value);cur()[el.dataset.w][el.dataset.f]=isNaN(v)?null:v;save();render();return}
-  if(el.dataset.rep){const g=cur().orig.gastos.find(x=>x.id===el.dataset.rep);if(g){g.rep=el.checked;save();render()}}
+  if(el.dataset.f){const v=parseFloat(el.value),n=isNaN(v)?null:v;
+    if(el.dataset.f==="comBase"&&el.dataset.w!=="cris"){cur().orig.comBase=n;cur().dan.comBase=n}else cur()[el.dataset.w][el.dataset.f]=n;
+    save();refresh();return}
+  if(el.dataset.rep){const g=cur()[el.dataset.w].gastos.find(x=>x.id===el.dataset.rep);if(g){g.rep=el.checked;save();refresh()}}
 });
 $("cols").addEventListener("click",e=>{
   const b=e.target.closest("[data-del]");if(!b)return;
