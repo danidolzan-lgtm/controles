@@ -1,7 +1,7 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1F5C7A"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="dopamina-b3"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Tabela de Dopamina</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: placar no topo, check-in de hoje, calendário dom–sáb de 13/10 a 17/12. */
+/* Layout: placar no topo, check-in de hoje, calendário dom–sáb de 09/10 a 17/12. */
 :root{
   --bg:#EEF1F0; --surface:#FFFFFF; --line:#D5DCDA; --fg:#16201D; --muted:#5D6B67;
   --accent:#1F5C7A; --win:#1E7A4C; --win-soft:#DDF0E5; --loss:#B23A35; --loss-soft:#F6E0DE;
@@ -57,7 +57,7 @@ img,svg{max-width:100%}
 </style>
 <div class="wrap">
   <div class="top">
-    <div><h1>Tabela de Dopamina</h1><div class="sub">13/10 a 17/12/2026 · verde acertei, vermelho errei</div></div>
+    <div><h1>Tabela de Dopamina</h1><div class="sub">09/10 a 17/12/2026 · verde acertei, vermelho errei</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
   <div class="panel pctp">
@@ -83,7 +83,7 @@ img,svg{max-width:100%}
   <div class="panel" id="cal" style="display:grid;gap:18px"></div>
 </div>
 <script>
-const START="2026-10-13", END="2026-12-17", LS="dopaminaB3.v1";
+const START="2026-10-09", END="2026-12-17", LS="dopaminaB3.v1";
 let marks={}, db=null, sel=null, draft=null;
 const $=id=>document.getElementById(id);
 function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}

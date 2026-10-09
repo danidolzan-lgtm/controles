@@ -59,6 +59,8 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
 .k .lbl{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .k .big{font-family:var(--f-num);font-weight:600;font-size:1.4rem}
 .empty{font-size:.85rem;color:var(--muted)}
+.calc{justify-self:start;display:inline-block;font-weight:600;font-size:.9rem;color:var(--accent);text-decoration:none;border:1px solid var(--accent);border-radius:7px;padding:8px 14px;background:var(--surface)}
+.calc:hover{background:var(--accent-soft)}
 .wrap>*{min-width:0}
 img,svg{max-width:100%}
 </style>
@@ -67,6 +69,7 @@ img,svg{max-width:100%}
     <div><h1>Controle Salário</h1><div class="sub">Salário líquido menos gastos, de Danrlei e Cristiane, mês a mês</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
+  <a class="calc" href="https://www.idinheiro.com.br/calculadoras/calculadora-de-salario-liquido/" target="_blank" rel="noopener">Calcular salário líquido (iDinheiro) ↗</a>
   <div class="bar">
     <div class="month"><button type="button" class="ic" id="prev" aria-label="Mês anterior">‹</button><b id="mes"></b><button type="button" class="ic" id="next" aria-label="Próximo mês">›</button></div>
     <div class="tabs" id="tabs"></div>
