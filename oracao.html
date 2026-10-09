@@ -34,9 +34,16 @@ textarea{min-height:70px;resize:vertical}
 .btn.ghost{background:var(--surface);color:var(--fg);border-color:var(--line)}
 .btn[disabled]{opacity:.6;cursor:default}
 .list{display:grid;gap:8px}
-.it{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:2px}
-.it b{font-family:var(--f-read);font-size:1.05rem;font-weight:500}
-.it span{font-size:.78rem;color:var(--muted)}
+.it{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.it .open{appearance:none;font:inherit;width:100%;text-align:left;background:var(--surface);border:0;color:var(--fg);cursor:pointer;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.it.on .open{background:var(--accent-soft)}
+.it .nm{display:grid;gap:2px;min-width:0}
+.it .nm b{font-family:var(--f-read);font-size:1.05rem;font-weight:500;overflow-wrap:anywhere}
+.it .nm span{font-size:.78rem;color:var(--muted);overflow-wrap:anywhere}
+.it .ar{font-size:.8rem;color:var(--gold);flex:none}
+.it .body{padding:16px 14px;border-top:1px solid var(--line);display:grid;gap:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.btn.danger{color:#B23A35;border-color:#B23A35}
 .empty{color:var(--muted);font-size:.9rem}
 .wrap>*{min-width:0}
 img,svg{max-width:100%}
@@ -92,6 +99,14 @@ img,svg{max-width:100%}
 const $=id=>document.getElementById(id);
 let db=null, last=null, items=[];
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function consText(o,p){
+  return "<p>Senhor Deus, diante de Ti eu me coloco com o coração aberto. Hoje eu Te consagro <b>"+esc(o)+"</b>.</p>"+
+    "<p>Tudo o que sou e tudo o que tenho vem de Ti. Por isso entrego em Tuas mãos o que agora Te consagro: que seja Teu desde o começo, guardado pela Tua proteção e conduzido pela Tua vontade.</p>"+
+    (p?"<p>Coloco também diante de Ti este pedido: <b>"+esc(p)+"</b>. Que ele se cumpra se for da Tua vontade, e que eu tenha fé para esperar o Teu tempo.</p>":"")+
+    "<p>Afasta disso todo mal, toda inveja e todo desânimo. Que cresça em paz, que dê frutos bons e que cada passo me aproxime mais de Ti. Que eu seja fiel no pouco, para que Tu me confies o muito.</p>"+
+    "<p>Recebe esta consagração, Senhor, e faz dela um sinal da Tua presença na minha vida.</p>"+
+    "<p class='amen'>Em nome de Jesus. Amém.</p>";
+}
 function tab(n){
   const a=n==="noite";
   $("tNoite").classList.toggle("on",a);$("tCons").classList.toggle("on",!a);
@@ -106,13 +121,7 @@ $("form").addEventListener("submit",e=>{
   const o=$("oque").value.trim(), p=$("pedido").value.trim();
   if(!o){$("oque").focus();return}
   last={oque:o,pedido:p};
-  $("texto").innerHTML=
-    "<p>Senhor Deus, diante de Ti eu me coloco com o coração aberto. Hoje eu Te consagro <b>"+esc(o)+"</b>.</p>"+
-    "<p>Tudo o que sou e tudo o que tenho vem de Ti. Por isso entrego em Tuas mãos o que agora Te consagro: que seja Teu desde o começo, guardado pela Tua proteção e conduzido pela Tua vontade.</p>"+
-    (p?"<p>Coloco também diante de Ti este pedido: <b>"+esc(p)+"</b>. Que ele se cumpra se for da Tua vontade, e que eu tenha fé para esperar o Teu tempo.</p>":"")+
-    "<p>Afasta disso todo mal, toda inveja e todo desânimo. Que cresça em paz, que dê frutos bons e que cada passo me aproxime mais de Ti. Que eu seja fiel no pouco, para que Tu me confies o muito.</p>"+
-    "<p>Recebe esta consagração, Senhor, e faz dela um sinal da Tua presença na minha vida.</p>"+
-    "<p class='amen'>Em nome de Jesus. Amém.</p>";
+  $("texto").innerHTML=consText(o,p);
   $("salvar").hidden=false;$("salvar").disabled=false;$("salvar").textContent="Guardar esta consagração";
 });
 const LSC="oracao.consagracoes";
@@ -124,15 +133,31 @@ $("salvar").onclick=async()=>{
   else{const l=lsItems();l.unshift(item);try{localStorage.setItem(LSC,JSON.stringify(l))}catch(e){}items=l;draw();$("status").textContent="Consagração guardada neste aparelho"}
   $("salvar").textContent="Guardada ✓";$("salvar").disabled=true;
 };
+let openIx=-1, delIx=-1;
 function draw(){
   if(!items.length){$("lista").innerHTML="<p class='empty'>As consagrações que você guardar aparecem aqui com a data.</p>";return}
-  $("lista").innerHTML=items.map(i=>"<div class='it'><b>"+esc(i.oque)+"</b><span>"+new Date(i.data).toLocaleDateString("pt-BR",{day:"2-digit",month:"long",year:"numeric"})+(i.pedido?" · "+esc(i.pedido):"")+"</span></div>").join("");
+  $("lista").innerHTML=items.map((i,ix)=>{
+    const on=ix===openIx;
+    return "<div class='it"+(on?" on":"")+"'><button type='button' class='open' data-ix='"+ix+"' aria-expanded='"+on+"'><span class='nm'><b>"+esc(i.oque)+"</b><span>"+new Date(i.data).toLocaleDateString("pt-BR",{day:"2-digit",month:"long",year:"numeric"})+(i.pedido?" · "+esc(i.pedido):"")+"</span></span><span class='ar'>"+(on?"fechar ▲":"orar ▼")+"</span></button>"+
+      (on?"<div class='body'><div class='read'>"+consText(i.oque,i.pedido)+"</div><div class='row'><button type='button' class='btn ghost' data-close>Fechar</button><button type='button' class='btn ghost"+(delIx===ix?" danger":"")+"' data-del='"+ix+"'>"+(delIx===ix?"Confirmar exclusão":"Excluir")+"</button></div></div>":"")+"</div>";
+  }).join("");
 }
+$("lista").addEventListener("click",async e=>{
+  const o=e.target.closest("[data-ix]");
+  if(o){const ix=+o.dataset.ix;openIx=openIx===ix?-1:ix;delIx=-1;draw();if(openIx>=0)o.scrollIntoView({behavior:"smooth",block:"start"});return}
+  if(e.target.closest("[data-close]")){openIx=-1;delIx=-1;draw();return}
+  const d=e.target.closest("[data-del]");if(!d)return;
+  const ix=+d.dataset.del;
+  if(delIx!==ix){delIx=ix;draw();return}
+  const it=items[ix];openIx=-1;delIx=-1;
+  if(db&&it._id){try{await db.collection("consagracoes").doc(it._id).delete();$("status").textContent="Consagração excluída"}catch(err){$("status").textContent="Não excluiu. Tente de novo."}}
+  else{items.splice(ix,1);try{localStorage.setItem(LSC,JSON.stringify(items))}catch(err){}draw();$("status").textContent="Consagração excluída"}
+});
 items=lsItems();draw();
 (async()=>{
   try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
   if(!db)return;
-  db.collection("consagracoes").orderBy("data","desc").onSnapshot(q=>{items=q.docs.map(d=>d.data());draw()},()=>{$("status").textContent="Sem conexão com o salvamento"});
+  db.collection("consagracoes").orderBy("data","desc").onSnapshot(q=>{items=q.docs.map(d=>Object.assign({_id:d.id},d.data()));draw()},()=>{$("status").textContent="Sem conexão com o salvamento"});
 })();
 </script>
 </body></html>
