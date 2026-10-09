@@ -1,0 +1,187 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1F5C7A"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="ir-b3"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>IR B3</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: seletor de ano, resumo (IR do ano, prejuízos a compensar), um cartão por mês com os lançamentos e o DARF calculado, regras no fim. */
+:root{
+  --bg:#EEF1F0; --surface:#FFFFFF; --line:#D5DCDA; --fg:#16201D; --muted:#5D6B67;
+  --accent:#1F5C7A; --accent-soft:#DCE9EF; --win:#1E7A4C; --loss:#B23A35; --warn:#A06A12; --warn-soft:#F5EBD6;
+  --f-display:"Archivo",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E; --accent:#6FB2D3; --accent-soft:#1B3240; --win:#5BC98E; --loss:#EC7A73; --warn:#E2B457; --warn-soft:#3A2F17; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E; --accent:#6FB2D3; --accent-soft:#1B3240; --win:#5BC98E; --loss:#EC7A73; --warn:#E2B457; --warn-soft:#3A2F17; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
+.wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:16px}
+.wrap>*{min-width:0}
+h1{font-family:var(--f-display);font-weight:800;font-size:1.6rem;margin:0}
+h2{font-family:var(--f-display);font-size:1rem;margin:0}
+.sub,.status,.hint{color:var(--muted);font-size:.84rem}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(160px,100%),1fr));gap:12px}
+.lbl{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.big{font-family:var(--f-num);font-weight:600;font-size:1.35rem;font-variant-numeric:tabular-nums}
+.pos{color:var(--win)} .neg{color:var(--loss)}
+.years{display:flex;gap:6px}
+.years button{appearance:none;font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:6px;padding:6px 12px;cursor:pointer;font-family:var(--f-num)}
+.years button.on{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mes{display:grid;gap:12px}
+.mh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.mh h2::first-letter{text-transform:uppercase}
+.darf{font-family:var(--f-num);font-weight:600}
+.darf small{font-family:var(--f-body);font-weight:400;color:var(--muted);font-size:.78rem;margin-left:6px}
+.f{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:8px}
+label{display:grid;gap:3px;font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+input[type=number]{font:inherit;font-family:var(--f-num);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%;min-width:0;text-align:right}
+.chk{display:flex;gap:6px;align-items:center;text-transform:none;letter-spacing:0;font-size:.85rem;color:var(--fg)}
+details summary{cursor:pointer;font-size:.85rem;color:var(--accent);font-weight:600}
+details[open] summary{margin-bottom:10px}
+.calc{font-size:.84rem;color:var(--muted);display:grid;gap:2px;border-top:1px dashed var(--line);padding-top:10px}
+.calc b{color:var(--fg);font-family:var(--f-num);font-weight:600}
+.pend{background:var(--warn-soft);color:var(--warn);border-radius:6px;padding:6px 10px;font-size:.84rem}
+.btn{appearance:none;font:inherit;font-weight:600;border-radius:7px;padding:6px 12px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--fg);font-size:.82rem}
+.btn.danger{color:var(--loss);border-color:var(--loss)}
+.note{display:grid;gap:8px;font-size:.85rem}
+.note p{margin:0;max-width:66ch;color:var(--muted)}
+.note b{color:var(--fg)}
+</style>
+<div class="wrap">
+  <div class="top">
+    <div><h1>IR B3</h1><div class="sub">Lance o resultado líquido de cada mês (já com custos). O DARF sai calculado.</div></div>
+    <div class="status" id="status">Carregando…</div>
+  </div>
+  <div class="years" id="years"></div>
+  <div class="kpis">
+    <div class="panel"><div class="lbl">Resultado do ano</div><div class="big" id="kRes">R$ 0,00</div></div>
+    <div class="panel"><div class="lbl">DARFs do ano</div><div class="big" id="kIR">R$ 0,00</div></div>
+    <div class="panel"><div class="lbl">Prejuízo day trade a compensar</div><div class="big" id="kPdt">R$ 0,00</div></div>
+    <div class="panel"><div class="lbl">Prejuízo swing a compensar</div><div class="big" id="kPsw">R$ 0,00</div></div>
+  </div>
+  <div id="meses" style="display:grid;gap:12px"></div>
+  <div class="panel note">
+    <h2>Regras usadas no cálculo</h2>
+    <p><b>Day trade</b> (abre e fecha no mesmo dia, como mini índice e mini dólar): 20% sobre o lucro líquido do mês. A corretora retém 1% do lucro do dia (o "dedo-duro"), que é descontado do imposto.</p>
+    <p><b>Swing trade</b> (operação que passa de um dia): 15% sobre o lucro líquido do mês, com retenção de 0,005% sobre as vendas. Venda de ações à vista até R$ 20 mil no mês é isenta; essa isenção não vale para day trade nem para mini contratos.</p>
+    <p><b>Prejuízo</b> fica guardado sem prazo e abate lucro futuro, mas só da mesma modalidade: prejuízo de day trade abate só day trade, e de swing só swing.</p>
+    <p><b>DARF</b> código 6015, pago até o último dia útil do mês seguinte. Abaixo de R$ 10,00 não se paga: o valor acumula para o próximo mês. Retenção que sobra num mês abate os meses seguintes do mesmo ano.</p>
+    <p>A data de vencimento considera fins de semana, mas não feriados. Confira os números com um contador antes de pagar e de declarar.</p>
+  </div>
+</div>
+<script>
+const YEARS=[2026,2027,2028], FIRST="2026-10", LS="irB3.v1";
+const FIELDS=["dt","dtIrrf","sw","swIrrf"];
+let res={}, db=null, year=(new Date().getFullYear()>2026&&new Date().getFullYear()<=2028)?new Date().getFullYear():2026;
+const $=id=>document.getElementById(id);
+const brl=v=>(v<0?"-":"")+"R$ "+Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const r2=v=>Math.round(v*100)/100;
+function load(){try{const r=JSON.parse(localStorage.getItem(LS)||"null");if(r)res=r}catch(e){}}
+function lsSave(){try{localStorage.setItem(LS,JSON.stringify(res))}catch(e){}}
+function allMonths(){const a=[];YEARS.forEach(y=>{for(let m=1;m<=12;m++){const k=y+"-"+String(m).padStart(2,"0");if(k>=FIRST)a.push(k)}});return a}
+function venc(k){const [y,m]=k.split("-").map(Number);const d=new Date(y,m+1,0,12);while(d.getDay()===0||d.getDay()===6)d.setDate(d.getDate()-1);return d.toLocaleDateString("pt-BR")}
+const nome=k=>new Date(k+"-15T12:00:00").toLocaleDateString("pt-BR",{month:"long",year:"numeric"});
+
+/* ---------- cálculo mês a mês, levando prejuízo e retenção adiante ---------- */
+function compute(){
+  const out={};let pDT=0,pSW=0,sDT=0,sSW=0,pend=0,lastY=null;
+  for(const k of allMonths()){
+    const y=+k.slice(0,4); if(y!==lastY){sDT=0;sSW=0;lastY=y}
+    const r=res[k]||{}, dt=+r.dt||0, sw=+r.sw||0, iDT=+r.dtIrrf||0, iSW=+r.swIrrf||0;
+    const o={dt,sw,pDTini:pDT,pSWini:pSW};
+    // day trade
+    let bDT=0; if(dt>=0){bDT=Math.max(0,dt-pDT);pDT=Math.max(0,pDT-dt)}else pDT+= -dt;
+    let irDT=r2(bDT*0.20); sDT+=iDT; const dDT=Math.min(irDT,sDT); sDT=r2(sDT-dDT); irDT=r2(irDT-dDT);
+    // swing
+    let bSW=0; if(r.isento&&sw>0)bSW=0; else if(sw>=0){bSW=Math.max(0,sw-pSW);pSW=Math.max(0,pSW-sw)}else pSW+= -sw;
+    let irSW=r2(bSW*0.15); sSW+=iSW; const dSW=Math.min(irSW,sSW); sSW=r2(sSW-dSW); irSW=r2(irSW-dSW);
+    const tot=r2(irDT+irSW+pend);
+    Object.assign(o,{bDT,bSW,irDTb:r2(bDT*0.20),irSWb:r2(bSW*0.15),dDT,dSW,irDT,irSW,pendIn:pend,tot});
+    if(tot>0&&tot<10){o.darf=0;o.acum=tot;pend=tot}else{o.darf=tot;o.acum=0;pend=0}
+    o.pDT=r2(pDT);o.pSW=r2(pSW);o.sobraDT=sDT;o.sobraSW=sSW;
+    out[k]=o;
+  }
+  return out;
+}
+
+/* ---------- tela ---------- */
+function val(k,f){const v=(res[k]||{})[f];return v==null?"":v}
+function cardHTML(k){
+  const r=res[k]||{}, swOpen=r.sw!=null||r.swIrrf!=null||r.isento;
+  return "<div class='panel mes' data-k='"+k+"'>"+
+    "<div class='mh'><h2>"+nome(k)+"</h2><span class='darf' data-out='darf'></span></div>"+
+    "<div class='f'><label for='dt-"+k+"'>Day trade: resultado (R$)<input id='dt-"+k+"' type='number' step='0.01' inputmode='decimal' data-f='dt' value='"+val(k,"dt")+"' placeholder='0,00'></label>"+
+    "<label for='dti-"+k+"'>IRRF retido 1% (R$)<input id='dti-"+k+"' type='number' step='0.01' min='0' inputmode='decimal' data-f='dtIrrf' value='"+val(k,"dtIrrf")+"' placeholder='0,00'></label></div>"+
+    "<details"+(swOpen?" open":"")+"><summary>Swing trade (operações que passaram de um dia)</summary><div class='f'>"+
+    "<label for='sw-"+k+"'>Swing: resultado (R$)<input id='sw-"+k+"' type='number' step='0.01' inputmode='decimal' data-f='sw' value='"+val(k,"sw")+"' placeholder='0,00'></label>"+
+    "<label for='swi-"+k+"'>IRRF retido 0,005% (R$)<input id='swi-"+k+"' type='number' step='0.01' min='0' inputmode='decimal' data-f='swIrrf' value='"+val(k,"swIrrf")+"' placeholder='0,00'></label></div>"+
+    "<label class='chk' style='margin-top:8px'><input type='checkbox' data-f='isento'"+(r.isento?" checked":"")+"> Lucro de ações à vista com vendas até R$ 20 mil no mês (isento)</label></details>"+
+    "<div class='calc' data-out='calc'></div>"+
+    "<div><button type='button' class='btn' data-zero='"+k+"'>Zerar mês</button></div></div>";
+}
+function render(){
+  $("years").innerHTML="";
+  YEARS.forEach(y=>{const b=document.createElement("button");b.type="button";b.textContent=y;b.className=y===year?"on":"";b.onclick=()=>{year=y;render()};$("years").appendChild(b)});
+  $("meses").innerHTML=allMonths().filter(k=>+k.slice(0,4)===year).map(cardHTML).join("");
+  update();
+}
+function update(){
+  const C=compute(), ks=allMonths().filter(k=>+k.slice(0,4)===year);
+  let resAno=0,irAno=0;
+  ks.forEach(k=>{
+    const c=C[k], card=document.querySelector(".mes[data-k='"+k+"']"); resAno+=c.dt+c.sw; irAno+=c.darf;
+    if(!card)return;
+    const has=res[k]&&FIELDS.some(f=>res[k][f]!=null);
+    card.querySelector("[data-out=darf]").innerHTML=!has&&!c.pendIn?"<small>sem lançamento</small>":c.darf>0?brl(c.darf)+"<small>vence "+venc(k)+"</small>":c.acum>0?"<span class='hint'>acumula "+brl(c.acum)+"</span>":"<small>sem DARF</small>";
+    let h="";
+    if(has||c.pendIn){
+      h+="<div>Day trade: base <b>"+brl(c.bDT)+"</b>"+(c.pDTini&&c.dt>0?" (abateu "+brl(Math.min(c.pDTini,c.dt))+" de prejuízo)":"")+" → 20% = <b>"+brl(c.irDTb)+"</b>"+(c.dDT?" − IRRF "+brl(c.dDT):"")+" = <b>"+brl(c.irDT)+"</b></div>";
+      if(c.sw||c.irSWb) h+="<div>Swing: base <b>"+brl(c.bSW)+"</b> → 15% = <b>"+brl(c.irSWb)+"</b>"+(c.dSW?" − IRRF "+brl(c.dSW):"")+" = <b>"+brl(c.irSW)+"</b></div>";
+      if(c.pendIn) h+="<div>DARF acumulado do mês anterior: <b>"+brl(c.pendIn)+"</b></div>";
+      if(c.pDT) h+="<div>Prejuízo de day trade que segue para o próximo mês: <b>"+brl(c.pDT)+"</b></div>";
+      if(c.pSW) h+="<div>Prejuízo de swing que segue: <b>"+brl(c.pSW)+"</b></div>";
+      if(c.sobraDT||c.sobraSW) h+="<div>IRRF que sobrou para os próximos meses do ano: <b>"+brl(c.sobraDT+c.sobraSW)+"</b></div>";
+      if(c.acum) h+="<div class='pend'>Total de "+brl(c.acum)+" é menor que R$ 10,00: não paga agora, soma no DARF do próximo mês.</div>";
+      else if(c.darf>0) h+="<div><b>DARF 6015: "+brl(c.darf)+"</b> até "+venc(k)+"</div>";
+    }
+    card.querySelector("[data-out=calc]").innerHTML=h;
+    card.querySelector("[data-out=calc]").hidden=!h;
+    const z=card.querySelector("[data-zero]"); z.disabled=!(res[k]&&Object.keys(res[k]).length);
+  });
+  const last=C[ks[ks.length-1]];
+  $("kRes").textContent=brl(resAno);$("kRes").className="big "+(resAno>0?"pos":resAno<0?"neg":"");
+  $("kIR").textContent=brl(irAno);$("kPdt").textContent=brl(last?last.pDT:0);$("kPsw").textContent=brl(last?last.pSW:0);
+}
+async function persist(k){
+  const r=res[k]; if(r&&!Object.keys(r).length)delete res[k];
+  lsSave();update();
+  if(db){try{res[k]?await db.doc("meses/"+k).set(res[k]):await db.doc("meses/"+k).delete();$("status").textContent="Salvo"}catch(e){$("status").textContent="Não salvou na conta. Ficou neste aparelho."}}
+  else $("status").textContent="Salvo neste aparelho";
+}
+$("meses").addEventListener("change",e=>{
+  const el=e.target, f=el.dataset.f; if(!f)return;
+  const k=el.closest(".mes").dataset.k; res[k]=res[k]||{};
+  if(f==="isento"){if(el.checked)res[k].isento=true;else delete res[k].isento}
+  else{const v=parseFloat(el.value);if(isNaN(v))delete res[k][f];else res[k][f]=f.endsWith("Irrf")?Math.abs(v):r2(v)}
+  persist(k);
+});
+$("meses").addEventListener("click",e=>{
+  const b=e.target.closest("[data-zero]");if(!b)return;
+  if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="Confirmar: apagar o mês";b.classList.add("danger");setTimeout(()=>{if(b.isConnected){b.dataset.armed="";b.textContent="Zerar mês";b.classList.remove("danger")}},4000);return}
+  const k=b.dataset.zero; delete res[k];
+  const card=b.closest(".mes"); card.outerHTML=cardHTML(k); persist(k);
+});
+load();render();$("status").textContent="Conectando…";
+(async()=>{
+  try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
+  if(!db){$("status").textContent="Salvando neste aparelho";return}
+  db.collection("meses").onSnapshot(q=>{
+    const r={};q.docs.forEach(d=>{r[d.id]=d.data()});res=r;lsSave();
+    const a=document.activeElement; if(!(a&&a.closest&&a.closest("#meses")))render(); else update();
+    $("status").textContent="Sincronizado";
+  },()=>{$("status").textContent="Sem conexão com o salvamento"});
+})();
+window.__ir={compute,get res(){return res}};
+</script>
+</body></html>
