@@ -36,7 +36,7 @@
     bar = document.createElement("div");
     bar.setAttribute("role", "region");
     bar.setAttribute("aria-label", "Conta");
-    bar.style.cssText = "display:grid;gap:10px;margin:12px 16px 0;padding:12px;border-radius:10px;border:1px solid rgba(127,140,136,.45);font:14px/1.4 system-ui,sans-serif;max-width:640px";
+    bar.style.cssText = "display:grid;gap:8px;margin:10px auto 0;padding:8px 12px;border-radius:10px;border:1px solid rgba(127,140,136,.45);font:13px/1.4 system-ui,sans-serif;width:calc(100% - 32px);max-width:420px;box-sizing:border-box";
     var ref = document.body.firstChild;
     if (ref && ref.classList && ref.classList.contains("voltar")) ref = ref.nextSibling;
     document.body.insertBefore(bar, ref);
@@ -105,9 +105,9 @@
     if (!SHOW_USER) { if (bar) bar.hidden = true; return; }
     var b = ensureBar(); b.innerHTML = ""; b.hidden = false;
     b.style.gridTemplateColumns = "1fr auto"; b.style.alignItems = "center";
-    var s = document.createElement("span"); s.style.cssText = "min-width:0;overflow-wrap:anywhere"; s.textContent = "Sincronizando como " + (u.email || "sua conta"); b.appendChild(s);
+    var s = document.createElement("span"); s.style.cssText = "min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.8"; var dot = document.createElement("span"); dot.textContent = "● "; dot.style.color = "#2E9E62"; s.appendChild(dot); s.appendChild(document.createTextNode("Online · " + (u.email || "sua conta"))); b.appendChild(s);
     var out = document.createElement("button"); out.type = "button"; out.textContent = "Sair";
-    out.style.cssText = css + "border:1px solid rgba(127,140,136,.6);background:transparent;color:inherit";
+    out.style.cssText = "font:600 12px system-ui,sans-serif;padding:4px 10px;border-radius:6px;cursor:pointer;border:1px solid rgba(127,140,136,.6);background:transparent;color:inherit";
     out.onclick = function () { auth.signOut().then(function () { location.reload(); }); };
     b.appendChild(out);
   }

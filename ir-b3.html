@@ -45,6 +45,18 @@ details[open] summary{margin-bottom:10px}
 .btn{appearance:none;font:inherit;font-weight:600;border-radius:7px;padding:6px 12px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--fg);font-size:.82rem}
 .btn.danger{color:var(--loss);border-color:var(--loss)}
 .note{display:grid;gap:8px;font-size:.85rem}
+.st{border-radius:9px;padding:12px 14px;display:grid;gap:2px;border:1px solid var(--line);background:var(--bg)}
+.st .tag{font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700}
+.st b{font-family:var(--f-num);font-size:1.5rem;font-weight:600}
+.st span{font-size:.82rem;color:var(--muted)}
+.st .chk{margin-top:6px}
+.st.deve{background:#FBE3E1;border-color:var(--loss)} .st.deve .tag,.st.deve b{color:var(--loss)}
+.st.pago{background:var(--accent-soft);border-color:var(--accent)} .st.pago .tag,.st.pago b{color:var(--accent)}
+.st.acum{background:var(--warn-soft);border-color:var(--warn)} .st.acum .tag,.st.acum b{color:var(--warn)}
+.st.ok{background:#DDF0E5;border-color:var(--win)} .st.ok .tag,.st.ok b{color:var(--win)}
+.st.prej{background:#DDF0E5;border-color:var(--win)} .st.prej .tag{color:var(--win)} .st.prej b{color:var(--muted);font-size:1.15rem}
+.st.vazio .tag{display:none} .st.vazio b{font-size:1rem;font-family:var(--f-body)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .st.deve{background:#3A1E1C} :root:not([data-theme="light"]) .st.ok,:root:not([data-theme="light"]) .st.prej{background:#173327}}
 .ib{display:grid;gap:10px}
 .ib input[type=file],.ib select{font:inherit;font-size:.9rem;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px;width:100%;min-width:0;text-transform:none;letter-spacing:0}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface);font-size:.9rem;padding:9px 14px}
@@ -66,7 +78,7 @@ details[open] summary{margin-bottom:10px}
   <div class="years" id="years"></div>
   <div class="kpis">
     <div class="panel"><div class="lbl">Resultado do ano</div><div class="big" id="kRes">R$ 0,00</div></div>
-    <div class="panel"><div class="lbl">DARFs do ano</div><div class="big" id="kIR">R$ 0,00</div></div>
+    <div class="panel"><div class="lbl">DARFs do ano</div><div class="big" id="kIR">R$ 0,00</div><div class="hint" id="kAberto"></div></div>
     <div class="panel"><div class="lbl">Prejuízo day trade a compensar</div><div class="big" id="kPdt">R$ 0,00</div></div>
     <div class="panel"><div class="lbl">Prejuízo swing a compensar</div><div class="big" id="kPsw">R$ 0,00</div></div>
   </div>
@@ -133,6 +145,7 @@ function cardHTML(k){
   const r=res[k]||{}, swOpen=r.sw!=null||r.swIrrf!=null||r.isento;
   return "<div class='panel mes' data-k='"+k+"'>"+
     "<div class='mh'><h2>"+nome(k)+"</h2><span class='darf' data-out='darf'></span></div>"+
+    "<div class='st' data-out='st'></div>"+
     "<div class='f'><label for='dt-"+k+"'>Day trade: resultado (R$)<input id='dt-"+k+"' type='number' step='0.01' inputmode='decimal' data-f='dt' value='"+val(k,"dt")+"' placeholder='0,00'></label>"+
     "<label for='dti-"+k+"'>IRRF retido 1% (R$)<input id='dti-"+k+"' type='number' step='0.01' min='0' inputmode='decimal' data-f='dtIrrf' value='"+val(k,"dtIrrf")+"' placeholder='0,00'></label></div>"+
     "<details"+(swOpen?" open":"")+"><summary>Swing trade (operações que passaram de um dia)</summary><div class='f'>"+
@@ -155,7 +168,7 @@ function update(){
     const c=C[k], card=document.querySelector(".mes[data-k='"+k+"']"); resAno+=c.dt+c.sw; irAno+=c.darf;
     if(!card)return;
     const has=res[k]&&FIELDS.some(f=>res[k][f]!=null);
-    card.querySelector("[data-out=darf]").innerHTML=!has&&!c.pendIn?"<small>sem lançamento</small>":c.darf>0?brl(c.darf)+"<small>vence "+venc(k)+"</small>":c.acum>0?"<span class='hint'>acumula "+brl(c.acum)+"</span>":"<small>sem DARF</small>";
+    card.querySelector("[data-out=darf]").innerHTML="";0&&!has&&!c.pendIn?"<small>sem lançamento</small>":c.darf>0?brl(c.darf)+"<small>vence "+venc(k)+"</small>":c.acum>0?"<span class='hint'>acumula "+brl(c.acum)+"</span>":"<small>sem DARF</small>";
     let h="";
     if(has||c.pendIn){
       if(c.dt<0) h+="<div>Day trade: prejuízo de <b class='neg'>"+brl(-c.dt)+"</b> no mês, sem imposto</div>";
@@ -170,12 +183,20 @@ function update(){
       else if(c.darf>0) h+="<div><b>DARF 6015: "+brl(c.darf)+"</b> até "+venc(k)+"</div>";
     }
     card.querySelector("[data-out=calc]").innerHTML=h;
+    const st=card.querySelector("[data-out=st]"), pago=!!(res[k]&&res[k].pago);
+    if(!has&&!c.pendIn){st.className="st vazio";st.innerHTML="<b>Sem lançamento</b><span>Suba o extrato do mês ou digite o resultado abaixo.</span>"}
+    else if(c.darf>0){st.className="st "+(pago?"pago":"deve");st.innerHTML="<span class='tag'>"+(pago?"DARF paga":"DARF devida")+"</span><b>"+brl(c.darf)+"</b><span>Código 6015 · vence "+venc(k)+"</span><label class='chk'><input type='checkbox' data-f='pago'"+(pago?" checked":"")+"> Já paguei</label>"}
+    else if(c.acum>0){st.className="st acum";st.innerHTML="<span class='tag'>Não paga agora</span><b>"+brl(c.acum)+"</b><span>Menor que R$ 10,00: soma no DARF do próximo mês.</span>"}
+    else if(c.dt<0||c.sw<0){st.className="st prej";st.innerHTML="<span class='tag'>Sem DARF · prejuízo</span><b>"+brl(c.pDT+c.pSW)+"</b><span>Prejuízo acumulado que abate lucro dos próximos meses.</span>"}
+    else{st.className="st ok";st.innerHTML="<span class='tag'>Sem DARF</span><b>"+brl(0)+"</b><span>"+(c.pDT+c.pSW>0?"Lucro abatido por prejuízo anterior. Ainda sobram "+brl(c.pDT+c.pSW)+" para abater.":"Nada a pagar neste mês.")+"</span>"}
     card.querySelector("[data-out=calc]").hidden=!h;
     const z=card.querySelector("[data-zero]"); z.disabled=!(res[k]&&Object.keys(res[k]).length);
   });
   const last=C[ks[ks.length-1]];
   $("kRes").textContent=brl(resAno);$("kRes").className="big "+(resAno>0?"pos":resAno<0?"neg":"");
-  $("kIR").textContent=brl(irAno);$("kPdt").textContent=brl(last?last.pDT:0);$("kPsw").textContent=brl(last?last.pSW:0);
+  $("kIR").textContent=brl(irAno);
+  const aberto=ks.reduce((a,k)=>a+(C[k].darf>0&&!(res[k]&&res[k].pago)?C[k].darf:0),0);
+  $("kAberto").textContent=aberto>0?"Em aberto: "+brl(aberto):irAno>0?"Tudo pago":"";$("kAberto").className="hint"+(aberto>0?" neg":"");$("kPdt").textContent=brl(last?last.pDT:0);$("kPsw").textContent=brl(last?last.pSW:0);
 }
 async function persist(k){
   const r=res[k]; if(r&&!Object.keys(r).length)delete res[k];
@@ -186,7 +207,7 @@ async function persist(k){
 $("meses").addEventListener("change",e=>{
   const el=e.target, f=el.dataset.f; if(!f)return;
   const k=el.closest(".mes").dataset.k; res[k]=res[k]||{};
-  if(f==="isento"){if(el.checked)res[k].isento=true;else delete res[k].isento}
+  if(f==="isento"||f==="pago"){if(el.checked)res[k][f]=true;else delete res[k][f]}
   else{const v=parseFloat(el.value);if(isNaN(v))delete res[k][f];else res[k][f]=f.endsWith("Irrf")?Math.abs(v):r2(v)}
   persist(k);
 });
