@@ -48,7 +48,8 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .hint{font-size:.8rem;color:var(--muted)}
 .pctp{display:grid;gap:8px}
 .pcth{display:flex;justify-content:space-between;align-items:baseline}
-.pcth .big{font-size:2rem}
+.pcth .big{font-size:2.4rem}
+.pctp{border-width:2px}
 .bar{height:12px;border-radius:6px;background:var(--loss-soft);overflow:hidden}
 .bar i{display:block;height:100%;background:var(--win);width:100%}
 .wrap>*{min-width:0}
@@ -59,16 +60,16 @@ img,svg{max-width:100%}
     <div><h1>Tabela de Dopamina</h1><div class="sub">13/10 a 17/12/2026 · verde acertei, vermelho errei</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
+  <div class="panel pctp">
+    <div class="pcth"><span class="lbl" style="font-size:.8rem">% de disciplina até 17/12</span><span class="big" id="sPct">100%</span></div>
+    <div class="bar" aria-hidden="true"><i id="sBar"></i></div>
+    <div class="hint" id="sPctTxt"></div>
+  </div>
   <div class="panel score">
     <div><span class="lbl">Acertei</span><span class="big pos" id="sW">0</span></div>
     <div><span class="lbl">Errei</span><span class="big neg" id="sL">0</span></div>
     <div><span class="lbl">Sequência</span><span class="big" id="sSeq">0</span></div>
     <div><span class="lbl">Melhor</span><span class="big" id="sBest">0</span></div>
-  </div>
-  <div class="panel pctp">
-    <div class="pcth"><span class="lbl">Nota do período</span><span class="big" id="sPct">100%</span></div>
-    <div class="bar" aria-hidden="true"><i id="sBar"></i></div>
-    <div class="hint" id="sPctTxt"></div>
   </div>
   <div class="panel check">
     <h2 id="cTitle">Check-in</h2>
@@ -97,7 +98,7 @@ function stats(){
   const total=Math.round((new Date(END+"T12:00:00")-new Date(START+"T12:00:00"))/864e5)+1;
   const p=Math.max(0,100-l/total*100);
   $("sPct").textContent=p.toLocaleString("pt-BR",{maximumFractionDigits:1})+"%";
-  $("sPct").className="big "+(p>=70?"pos":p>=40?"":"neg");
+  $("sPct").className="big "+(p>=90?"pos":"neg");$("sBar").style.background=p>=90?"var(--win)":"var(--loss)";
   $("sBar").style.width=p+"%";
   $("sPctTxt").textContent="Começa em 100% e cada \"errei\" tira "+(100/total).toLocaleString("pt-BR",{maximumFractionDigits:2})+"% ("+total+" dias até 17/12). "+(l?l+(l===1?" erro":" erros")+" até agora.":"Nenhum erro até agora.");
   $("sW").textContent=w;$("sL").textContent=l;$("sSeq").textContent=seq;$("sBest").textContent=best;

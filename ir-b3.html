@@ -45,12 +45,22 @@ details[open] summary{margin-bottom:10px}
 .btn{appearance:none;font:inherit;font-weight:600;border-radius:7px;padding:6px 12px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--fg);font-size:.82rem}
 .btn.danger{color:var(--loss);border-color:var(--loss)}
 .note{display:grid;gap:8px;font-size:.85rem}
+.ib{display:grid;gap:10px}
+.ib input[type=file],.ib select{font:inherit;font-size:.9rem;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px;width:100%;min-width:0;text-transform:none;letter-spacing:0}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface);font-size:.9rem;padding:9px 14px}
+.btn[disabled]{opacity:.55;cursor:default}
+.ibm{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:.88rem}
+.ibm b{font-family:var(--f-num)}
+.prev{border-collapse:collapse;width:100%;font-size:.8rem}
+.prev th,.prev td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;font-family:var(--f-num)}
+.prev th{font-family:var(--f-body);font-size:.68rem;text-transform:uppercase;color:var(--muted)}
+.hint.neg{color:var(--loss)}
 .note p{margin:0;max-width:66ch;color:var(--muted)}
 .note b{color:var(--fg)}
 </style>
 <div class="wrap">
   <div class="top">
-    <div><h1>IR B3</h1><div class="sub">Lance o resultado líquido de cada mês (já com custos). O DARF sai calculado.</div></div>
+    <div><h1>IR B3</h1><div class="sub">Suba as notas de corretagem ou lance o resultado de cada mês. O DARF sai calculado.</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
   <div class="years" id="years"></div>
@@ -59,6 +69,18 @@ details[open] summary{margin-bottom:10px}
     <div class="panel"><div class="lbl">DARFs do ano</div><div class="big" id="kIR">R$ 0,00</div></div>
     <div class="panel"><div class="lbl">Prejuízo day trade a compensar</div><div class="big" id="kPdt">R$ 0,00</div></div>
     <div class="panel"><div class="lbl">Prejuízo swing a compensar</div><div class="big" id="kPsw">R$ 0,00</div></div>
+  </div>
+  <div class="panel ib">
+    <h2>Subir notas de corretagem ou extrato</h2>
+    <p class="hint" style="margin:0">Escolha os PDFs das notas de corretagem (pode marcar vários de uma vez) ou a planilha da corretora. A página lê cada pregão, soma o resultado de day trade, as taxas e o IRRF por mês, e você lança no mês com um toque.</p>
+    <label for="ibFile">Arquivos<input id="ibFile" type="file" multiple accept=".pdf,.xlsx,.xls,.csv,.txt"></label>
+    <div><button type="button" class="btn primary" id="ibGo">Ler arquivos</button></div>
+    <div class="hint" id="ibMsg" role="status"></div>
+    <div id="ibOut" hidden style="display:grid;gap:10px">
+      <label for="ibCol" id="ibColL" hidden>Coluna do resultado<select id="ibCol"></select></label>
+      <div id="ibMeses" style="display:grid;gap:8px"></div>
+      <details><summary>Ver o que foi lido</summary><div style="overflow-x:auto;margin-top:8px"><table class="prev" id="ibPrev"></table></div></details>
+    </div>
   </div>
   <div id="meses" style="display:grid;gap:12px"></div>
   <div class="panel note">
@@ -183,5 +205,174 @@ load();render();$("status").textContent="Conectando…";
   },()=>{$("status").textContent="Sem conexão com o salvamento"});
 })();
 window.__ir={compute,get res(){return res}};
+window.IRB3={FIRST,lancar(k,dt,irrf){res[k]=Object.assign({},res[k]||{},{dt:r2(dt),dtIrrf:r2(irrf)});const y=+k.slice(0,4);if(YEARS.includes(y)&&y!==year){year=y}render();persist(k);$("status").textContent="Lançado em "+nome(k)}};
+</script>
+<script>
+/* Leitura de notas de corretagem (PDF) e extratos/relatórios (Excel/CSV) → resultado de day trade por mês. */
+(function(){
+const $=id=>document.getElementById(id);
+const brl=v=>(v<0?"-":"")+"R$ "+Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const r2=v=>Math.round(v*100)/100;
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const MES={jan:1,fev:2,mar:3,abr:4,mai:5,jun:6,jul:7,ago:8,set:9,out:10,nov:11,dez:12};
+let notas=[], linhas=[], cols=[], modo="";
+
+function loadScript(src){return new Promise((ok,no)=>{if(document.querySelector('script[src="'+src+'"]'))return ok();const s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=()=>no(new Error("sem internet para abrir o leitor"));document.head.appendChild(s)})}
+function num(t){ // "1.234,56" → 1234.56
+  if(typeof t==="number")return t;
+  t=String(t||"").trim(); if(!/\d/.test(t))return null;
+  const neg=/^\(|^-|-$/.test(t); t=t.replace(/[^\d.,]/g,"");
+  if(t.includes(","))t=t.replace(/\./g,"").replace(",",".");
+  else if(/\.\d{3}$/.test(t))t=t.replace(/\./g,"");
+  const n=parseFloat(t); return isNaN(n)?null:(neg?-n:n);
+}
+function parseDate(v){
+  if(v instanceof Date&&!isNaN(v))return {y:v.getFullYear(),m:v.getMonth()+1,d:v.getDate()};
+  if(typeof v==="number"&&v>30000&&v<80000){const d=new Date(Math.round((v-25569)*864e5));return {y:d.getUTCFullYear(),m:d.getUTCMonth()+1,d:d.getUTCDate()}}
+  const t=String(v??"");let m=t.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(m)return {y:+m[3],m:+m[2],d:+m[1]};
+  m=t.match(/(\d{4})-(\d{2})-(\d{2})/);if(m)return {y:+m[1],m:+m[2],d:+m[3]};
+  m=t.match(/(\d{1,2})\s*(?:de\s+)?([a-zç]{3})[a-zç]*\.?\s*(?:de\s+)?(\d{4})/i);if(m&&MES[m[2].toLowerCase()])return {y:+m[3],m:MES[m[2].toLowerCase()],d:+m[1]};
+  return null;
+}
+const keyOf=d=>d.y+"-"+String(d.m).padStart(2,"0");
+const dstr=d=>String(d.d).padStart(2,"0")+"/"+String(d.m).padStart(2,"0")+"/"+d.y;
+
+/* ---------- PDF: texto por linha ---------- */
+async function pdfPages(file){
+  await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js");
+  pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise, pages=[];
+  for(let p=1;p<=pdf.numPages;p++){
+    const tc=await (await pdf.getPage(p)).getTextContent(), rows={};
+    tc.items.forEach(it=>{if(!it.str.trim())return;const y=Math.round(it.transform[5]/2.5);(rows[y]=rows[y]||[]).push(it)});
+    const lines=Object.keys(rows).map(Number).sort((a,b)=>b-a).map(y=>rows[y].sort((a,b)=>a.transform[4]-b.transform[4]).map(i=>i.str.trim()).join("  "));
+    pages.push(lines);
+  }
+  return pages;
+}
+
+/* ---------- nota de corretagem (padrão Sinacor, BM&F e Bovespa) ---------- */
+const VAL=/(-?\d{1,3}(?:\.\d{3})*,\d{2})(?:\s*\|?\s*([CD])\b)?/g;
+function vals(line){const out=[];let m;VAL.lastIndex=0;while((m=VAL.exec(line)))out.push({v:num(m[1]),cd:m[2]||""});return out}
+const signed=x=>x?(x.cd==="D"?-Math.abs(x.v):x.v):null;
+function findLabel(lines,re){
+  // 1) valor na mesma linha, logo depois do rótulo; 2) cabeçalho numa linha e valores na seguinte (mesma ordem)
+  for(let i=0;i<lines.length;i++){
+    const L=lines[i], m=L.match(re); if(!m)continue;
+    const after=L.slice(m.index+m[0].length), fi=after.search(/-?\d/);
+    if(fi>=0&&!/[A-Za-zÀ-ú]{3,}/.test(after.slice(0,fi))){const v=vals(after);if(v.length)return v[0]}
+    // posição do rótulo entre os rótulos da linha
+    const labels=L.split(/\s{2,}/).filter(x=>/[A-Za-zÀ-ú]/.test(x)), pos=labels.findIndex(x=>re.test(x));
+    for(let j=i+1;j<Math.min(lines.length,i+4);j++){const vv=vals(lines[j]);if(vv.length>=2&&pos>=0&&vv[pos])return vv[pos];if(vv.length===1&&labels.length===1)return vv[0]}
+  }
+  return null;
+}
+function parseNotas(pages,fname){
+  const out=[];
+  pages.forEach((lines,pi)=>{
+    const txt=lines.join("\n");
+    if(!/preg[aã]o|nota de (corretagem|negocia)/i.test(txt))return;
+    let d=null;const dm=txt.match(/Data\s*(?:do\s*)?preg[aã]o[\s\S]{0,80}?(\d{2}\/\d{2}\/\d{4})/i);d=parseDate(dm?dm[1]:txt);
+    if(!d)return;
+    const nr=(txt.match(/N[rº°o]\.?\s*(?:da\s*)?nota[\s\S]{0,40}?(\d{3,})/i)||[])[1]||("p"+pi);
+    // linhas de negócios day trade: ... DAY TRADE  valor  C/D
+    let ajTrades=0,nt=0;
+    lines.forEach(l=>{if(/day\s*-?\s*trade/i.test(l)&&/\b(C|V)\b/.test(l)){const v=vals(l).filter(x=>x.cd);if(v.length){ajTrades+=signed(v[0]);nt++}}});
+    const aj=findLabel(lines,/Ajuste\s+(de\s+)?day\s*-?\s*trade/i);
+    const vneg=findLabel(lines,/Valor\s+(l[ií]quido\s+)?(das\s+opera[cç][oõ]es|dos\s+neg[oó]cios)/i);
+    const desp=findLabel(lines,/Total\s+(das\s+)?(despesas|custos)/i);
+    const irrf=findLabel(lines,/I\.?R\.?R\.?F\.?\s*(s\/\s*opera[cç][oõ]es\s*)?(day\s*-?\s*trade|DT)|IRRF\s*Day\s*-?\s*Trade/i);
+    const liq=findLabel(lines,/Total\s+l[ií]quido\s+da\s+nota|L[ií]quido\s+para/i);
+    let taxas=null;
+    if(desp)taxas=Math.abs(desp.v);
+    else{let s=0,f=false;[/Taxa\s+operacional/i,/Taxa\s+(de\s+)?registro/i,/Taxas?\s+BM&?F|Emolumentos/i,/Taxa\s+de\s+liquida[cç][aã]o/i,/\bISS\b/i,/Outros\s+custos/i].forEach(re=>{const x=findLabel(lines,re);if(x){s+=Math.abs(x.v);f=true}});if(f)taxas=s}
+    let bruto=nt?ajTrades:aj?signed(aj):vneg?signed(vneg):null, como="";
+    let res=null;
+    if(bruto!=null){res=r2(bruto-(taxas||0));como=nt?"negócios":"resumo"}
+    else if(liq){res=r2(signed(liq)+(irrf?Math.abs(irrf.v):0));como="total líquido"}
+    out.push({arq:fname,nr,d,bruto:bruto==null?null:r2(bruto),taxas:taxas==null?0:r2(taxas),irrf:irrf?r2(Math.abs(irrf.v)):0,res,como,cont:/continua/i.test(txt)&&!liq});
+  });
+  // nota com várias páginas: junta pelo número
+  const by={};
+  out.forEach(n=>{const k=n.nr+"|"+keyOf(n.d)+n.d.d;if(!by[k]){by[k]=n;return}const a=by[k];
+    if(n.bruto!=null){if(a.bruto!=null&&a.como==="negócios"&&n.como==="negócios")a.bruto=r2(a.bruto+n.bruto);else if(a.bruto==null){a.bruto=n.bruto;a.como=n.como}}
+    a.taxas=Math.max(a.taxas,n.taxas);a.irrf=Math.max(a.irrf,n.irrf);if(a.bruto!=null)a.res=r2(a.bruto-a.taxas);else if(n.res!=null)a.res=n.res});
+  return Object.values(by);
+}
+
+/* ---------- planilha / texto genérico ---------- */
+function fromTable(rows){
+  rows=rows.filter(r=>r&&r.some(c=>String(c??"").trim()!==""));
+  if(!rows.length)return false;
+  const W=Math.max(...rows.map(r=>r.length));
+  let hi=rows.findIndex(r=>r.filter(c=>typeof c==="string"&&/[A-Za-zÀ-ú]/.test(c)&&!parseDate(c)).length>=2);
+  const head=hi>=0?rows[hi]:[], body=rows.slice(hi+1);
+  const ds=[],ns=[];for(let c=0;c<W;c++){let d=0,n=0;body.forEach(r=>{if(parseDate(r[c]))d++;else if(num(r[c])!=null)n++});ds[c]=d;ns[c]=n}
+  const dc=ds.indexOf(Math.max(...ds)); if(ds[dc]<1)return false;
+  const nc=[];for(let c=0;c<W;c++)if(c!==dc&&ns[c]>=Math.max(1,body.length*0.3))nc.push(c);
+  if(!nc.length)return false;
+  cols=nc.map(c=>String(head[c]||"").trim()||"Coluna "+(c+1));
+  linhas=body.map(r=>({d:parseDate(r[dc]),nums:nc.map(c=>num(r[c])),txt:r.map(x=>x instanceof Date?x.toLocaleDateString("pt-BR"):String(x??"")).join(" · ")})).filter(x=>x.d);
+  return linhas.length>0;
+}
+function fromLines(lines){
+  const recs=[];let cur=null;
+  lines.forEach(l=>{const d=parseDate(l);const v=vals(l.replace(/\d{1,2}\/\d{1,2}\/\d{4}/g," "));if(d){cur={d,nums:v.map(signed),txt:l};recs.push(cur)}else if(cur&&v.length){cur.nums.push(...v.map(signed));cur.txt+=" · "+l}});
+  const ok=recs.filter(r=>r.nums.length);if(!ok.length)return false;
+  const n=Math.min(6,Math.max(...ok.map(r=>r.nums.length)));
+  cols=[];for(let i=n;i>=1;i--)cols.push(i===1?"Último valor da linha":i===2?"Penúltimo valor":i+"º valor de trás pra frente");
+  linhas=ok.map(r=>({d:r.d,txt:r.txt,nums:cols.map((_,i)=>{const b=n-i;return r.nums.length>=b?r.nums[r.nums.length-b]:null})}));
+  return true;
+}
+
+/* ---------- tela ---------- */
+function mesNome(k){const t=new Date(k+"-15T12:00:00").toLocaleDateString("pt-BR",{month:"long",year:"numeric"});return t[0].toUpperCase()+t.slice(1)}
+function resumo(){
+  const tot={};
+  if(modo==="notas")notas.forEach(n=>{if(n.res==null)return;const k=keyOf(n.d);const t=tot[k]=tot[k]||{res:0,irrf:0,taxas:0,n:0};t.res+=n.res;t.irrf+=n.irrf;t.taxas+=n.taxas;t.n++});
+  else{const c=+$("ibCol").value;linhas.forEach(l=>{const v=l.nums[c];if(v==null)return;const k=keyOf(l.d);const t=tot[k]=tot[k]||{res:0,irrf:0,taxas:0,n:0};t.res+=v;t.n++})}
+  const ks=Object.keys(tot).sort();
+  $("ibMeses").innerHTML=ks.length?ks.map(k=>{const t=tot[k];return "<div class='ibm'><div><b>"+mesNome(k)+"</b> · "+t.n+(modo==="notas"?(t.n===1?" nota":" notas"):" linhas")+"<br>Resultado day trade <b class='"+(t.res>0?"pos":t.res<0?"neg":"")+"'>"+brl(r2(t.res))+"</b>"+(modo==="notas"?" · taxas "+brl(r2(t.taxas))+" · IRRF "+brl(r2(t.irrf)):"")+"</div>"+
+    (k<window.IRB3.FIRST?"<span class='hint'>antes de julho/2026</span>":"<button type='button' class='btn' data-lanca='"+k+"' data-res='"+r2(t.res)+"' data-irrf='"+r2(t.irrf)+"'>Lançar</button>")+"</div>"}).join("")+
+    (ks.length>1?"<div><button type='button' class='btn primary' id='ibTodos'>Lançar todos os meses</button></div>":""):"<p class='hint'>Não achei valores. Me mande o arquivo para eu ajustar a leitura.</p>";
+  if(modo==="notas"){
+    $("ibPrev").innerHTML="<thead><tr><th>Pregão</th><th>Nota</th><th>Operações</th><th>Taxas</th><th>IRRF</th><th>Resultado</th></tr></thead><tbody>"+notas.slice().sort((a,b)=>(keyOf(a.d)+String(a.d.d).padStart(2,"0")).localeCompare(keyOf(b.d)+String(b.d.d).padStart(2,"0"))).map(n=>"<tr><td>"+dstr(n.d)+"</td><td>"+esc(n.nr)+"</td><td>"+(n.bruto==null?"–":brl(n.bruto))+"</td><td>"+brl(n.taxas)+"</td><td>"+brl(n.irrf)+"</td><td class='"+(n.res>0?"pos":n.res<0?"neg":"")+"'>"+(n.res==null?"não lido":brl(n.res))+"</td></tr>").join("")+"</tbody>";
+  }else{
+    const c=+$("ibCol").value;
+    $("ibPrev").innerHTML="<thead><tr><th>Data</th><th>Valor</th><th style='text-align:left'>Linha</th></tr></thead><tbody>"+linhas.slice(0,300).map(l=>"<tr><td>"+dstr(l.d)+"</td><td>"+(l.nums[c]==null?"–":brl(l.nums[c]))+"</td><td style='text-align:left;white-space:normal;font-family:var(--f-body)'>"+esc(l.txt.slice(0,120))+"</td></tr>").join("")+"</tbody>";
+  }
+}
+async function ler(){
+  const fs=[...$("ibFile").files]; if(!fs.length){$("ibMsg").className="hint neg";$("ibMsg").textContent="Escolha o arquivo primeiro.";return}
+  $("ibMsg").className="hint";$("ibMsg").textContent="Lendo "+fs.length+(fs.length===1?" arquivo…":" arquivos…");$("ibGo").disabled=true;$("ibOut").hidden=true;
+  notas=[];linhas=[];cols=[];modo="";
+  try{
+    const linhasTxt=[];
+    for(const f of fs){
+      const n=f.name.toLowerCase();
+      if(n.endsWith(".pdf")){const pages=await pdfPages(f);const ns=parseNotas(pages,f.name);if(ns.length)notas.push(...ns);else pages.forEach(p=>linhasTxt.push(...p))}
+      else if(/\.(xlsx|xls)$/.test(n)){await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");const wb=XLSX.read(await f.arrayBuffer(),{type:"array",cellDates:true});for(const sn of wb.SheetNames){if(fromTable(XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:""})))break}}
+      else{const t=await f.text();const rows=t.split(/\r?\n/).map(l=>l.split(/;|\t/));if(!(rows[0]&&rows[0].length>2&&fromTable(rows)))linhasTxt.push(...t.split(/\r?\n/))}
+    }
+    if(notas.length)modo="notas";
+    else if(linhas.length||(linhasTxt.length&&fromLines(linhasTxt)))modo="linhas";
+  }catch(e){$("ibMsg").className="hint neg";$("ibMsg").textContent="Não consegui abrir: "+e.message;$("ibGo").disabled=false;return}
+  $("ibGo").disabled=false;
+  if(!modo){$("ibMsg").className="hint neg";$("ibMsg").textContent="Não reconheci notas nem valores nesse arquivo. Me mande ele aqui no chat que eu ajusto a leitura.";return}
+  $("ibColL").hidden=modo==="notas";
+  if(modo==="linhas"){$("ibCol").innerHTML=cols.map((c,i)=>"<option value='"+i+"'>"+esc(c)+"</option>").join("");const g=cols.findIndex(c=>/result|lucro|l[ií]quido|p\s*\/\s*l|ganho/i.test(c));$("ibCol").value=g>=0?g:cols.length-1}
+  const semRes=notas.filter(n=>n.res==null).length;
+  $("ibMsg").textContent=modo==="notas"?notas.length+" notas lidas"+(semRes?", "+semRes+" sem valor (confira na tabela)":"")+". Confira os totais com a corretora antes de lançar.":linhas.length+" linhas com data lidas. Escolha a coluna do resultado.";
+  $("ibOut").hidden=false;resumo();
+}
+$("ibGo").onclick=ler;
+$("ibCol").addEventListener("change",resumo);
+$("ibOut").addEventListener("click",e=>{
+  const b=e.target.closest("[data-lanca]");
+  if(b){window.IRB3.lancar(b.dataset.lanca,+b.dataset.res,+b.dataset.irrf);b.textContent="Lançado ✓";b.disabled=true;return}
+  if(e.target.id==="ibTodos"){document.querySelectorAll("#ibMeses [data-lanca]:not([disabled])").forEach(x=>x.click());e.target.disabled=true}
+});
+window.__irb3={parseNotas,findLabel,vals};
+})();
 </script>
 </body></html>
