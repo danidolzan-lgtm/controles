@@ -46,6 +46,11 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .day.sel{box-shadow:0 0 0 3px var(--accent) inset}
 .day[disabled]{cursor:default;opacity:.55}
 .hint{font-size:.8rem;color:var(--muted)}
+.pctp{display:grid;gap:8px}
+.pcth{display:flex;justify-content:space-between;align-items:baseline}
+.pcth .big{font-size:2rem}
+.bar{height:12px;border-radius:6px;background:var(--loss-soft);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--win);width:100%}
 .wrap>*{min-width:0}
 img,svg{max-width:100%}
 </style>
@@ -59,6 +64,11 @@ img,svg{max-width:100%}
     <div><span class="lbl">Errei</span><span class="big neg" id="sL">0</span></div>
     <div><span class="lbl">Sequência</span><span class="big" id="sSeq">0</span></div>
     <div><span class="lbl">Melhor</span><span class="big" id="sBest">0</span></div>
+  </div>
+  <div class="panel pctp">
+    <div class="pcth"><span class="lbl">Nota do período</span><span class="big" id="sPct">100%</span></div>
+    <div class="bar" aria-hidden="true"><i id="sBar"></i></div>
+    <div class="hint" id="sPctTxt"></div>
   </div>
   <div class="panel check">
     <h2 id="cTitle">Check-in</h2>
@@ -84,6 +94,12 @@ function stats(){
   let w=0,l=0,best=0,run=0;
   keys.forEach(k=>{if(marks[k]==="w"){w++;run++;best=Math.max(best,run)}else{l++;run=0}});
   let seq=0; for(let i=keys.length-1;i>=0;i--){if(marks[keys[i]]==="w")seq++;else break}
+  const total=Math.round((new Date(END+"T12:00:00")-new Date(START+"T12:00:00"))/864e5)+1;
+  const p=Math.max(0,100-l/total*100);
+  $("sPct").textContent=p.toLocaleString("pt-BR",{maximumFractionDigits:1})+"%";
+  $("sPct").className="big "+(p>=70?"pos":p>=40?"":"neg");
+  $("sBar").style.width=p+"%";
+  $("sPctTxt").textContent="Começa em 100% e cada \"errei\" tira "+(100/total).toLocaleString("pt-BR",{maximumFractionDigits:2})+"% ("+total+" dias até 17/12). "+(l?l+(l===1?" erro":" erros")+" até agora.":"Nenhum erro até agora.");
   $("sW").textContent=w;$("sL").textContent=l;$("sSeq").textContent=seq;$("sBest").textContent=best;
 }
 function pick(ds){sel=ds;draft=marks[ds]||null;drawCheck();drawCal()}
