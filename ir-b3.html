@@ -79,8 +79,8 @@ details[open] summary{margin-bottom:10px}
   <div class="kpis">
     <div class="panel"><div class="lbl">Resultado do ano</div><div class="big" id="kRes">R$ 0,00</div></div>
     <div class="panel"><div class="lbl">DARFs do ano</div><div class="big" id="kIR">R$ 0,00</div><div class="hint" id="kAberto"></div></div>
-    <div class="panel"><div class="lbl">Prejuízo day trade a compensar</div><div class="big" id="kPdt">R$ 0,00</div></div>
-    <div class="panel"><div class="lbl">Prejuízo swing a compensar</div><div class="big" id="kPsw">R$ 0,00</div></div>
+    <div class="panel"><div class="lbl">Prejuízo day trade a compensar</div><div class="big" id="kPdt">R$ 0,00</div><div class="hint" id="kPdtC"></div></div>
+    <div class="panel"><div class="lbl">Prejuízo swing a compensar</div><div class="big" id="kPsw">R$ 0,00</div><div class="hint" id="kPswC"></div></div>
   </div>
   <div class="panel ib">
     <h2>Subir notas de corretagem ou extrato</h2>
@@ -106,7 +106,7 @@ details[open] summary{margin-bottom:10px}
 </div>
 <script>
 const YEARS=[2026,2027,2028], FIRST="2026-07", LS="irB3.v1";
-const FIELDS=["dt","dtIrrf","sw","swIrrf"];
+const FIELDS=["dt","dtIrrf","dtTaxas","sw","swIrrf","swTaxas"];
 let res={}, db=null, year=(new Date().getFullYear()>2026&&new Date().getFullYear()<=2028)?new Date().getFullYear():2026;
 const $=id=>document.getElementById(id);
 const brl=v=>(v<0?"-":"")+"R$ "+Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -119,21 +119,22 @@ const nome=k=>new Date(k+"-15T12:00:00").toLocaleDateString("pt-BR",{month:"long
 
 /* ---------- cálculo mês a mês, levando prejuízo e retenção adiante ---------- */
 function compute(){
-  const out={};let pDT=0,pSW=0,sDT=0,sSW=0,pend=0,lastY=null;
+  const out={};let pDT=0,pSW=0,sDT=0,sSW=0,pend=0,lastY=null,dOp=0,dTx=0,wOp=0,wTx=0;
   for(const k of allMonths()){
     const y=+k.slice(0,4); if(y!==lastY){sDT=0;sSW=0;lastY=y}
     const r=res[k]||{}, dt=+r.dt||0, sw=+r.sw||0, iDT=+r.dtIrrf||0, iSW=+r.swIrrf||0;
-    const o={dt,sw,pDTini:pDT,pSWini:pSW};
+    const txD=Math.abs(+r.dtTaxas)||0, txW=Math.abs(+r.swTaxas)||0, opD=r2(dt+txD), opW=r2(sw+txW);
+    const o={dt,sw,pDTini:pDT,pSWini:pSW,dtTx:txD,dtOp:opD,swTx:txW,swOp:opW};
     // day trade
-    let bDT=0; if(dt>=0){bDT=Math.max(0,dt-pDT);pDT=Math.max(0,pDT-dt)}else pDT+= -dt;
+    let bDT=0; if(dt>=0){bDT=Math.max(0,dt-pDT);const nP=Math.max(0,pDT-dt);if(pDT>0){const f=nP/pDT;dOp=r2(dOp*f);dTx=r2(dTx*f)}pDT=nP}else{const L=-dt,lo=Math.min(L,Math.max(0,-opD));pDT+=L;dOp=r2(dOp+lo);dTx=r2(dTx+(L-lo))}
     let irDT=r2(bDT*0.20); sDT+=iDT; const dDT=Math.min(irDT,sDT); sDT=r2(sDT-dDT); irDT=r2(irDT-dDT);
     // swing
-    let bSW=0; if(r.isento&&sw>0)bSW=0; else if(sw>=0){bSW=Math.max(0,sw-pSW);pSW=Math.max(0,pSW-sw)}else pSW+= -sw;
+    let bSW=0; if(r.isento&&sw>0)bSW=0; else if(sw>=0){bSW=Math.max(0,sw-pSW);const nP=Math.max(0,pSW-sw);if(pSW>0){const f=nP/pSW;wOp=r2(wOp*f);wTx=r2(wTx*f)}pSW=nP}else{const L=-sw,lo=Math.min(L,Math.max(0,-opW));pSW+=L;wOp=r2(wOp+lo);wTx=r2(wTx+(L-lo))}
     let irSW=r2(bSW*0.15); sSW+=iSW; const dSW=Math.min(irSW,sSW); sSW=r2(sSW-dSW); irSW=r2(irSW-dSW);
     const tot=r2(irDT+irSW+pend);
     Object.assign(o,{bDT,bSW,irDTb:r2(bDT*0.20),irSWb:r2(bSW*0.15),dDT,dSW,irDT,irSW,pendIn:pend,tot});
     if(tot>0&&tot<10){o.darf=0;o.acum=tot;pend=tot}else{o.darf=tot;o.acum=0;pend=0}
-    o.pDT=r2(pDT);o.pSW=r2(pSW);o.sobraDT=sDT;o.sobraSW=sSW;
+    o.pDT=r2(pDT);o.pSW=r2(pSW);o.sobraDT=sDT;o.sobraSW=sSW;o.cDOp=dOp;o.cDTx=dTx;o.cWOp=wOp;o.cWTx=wTx;
     out[k]=o;
   }
   return out;
@@ -146,10 +147,12 @@ function cardHTML(k){
   return "<div class='panel mes' data-k='"+k+"'>"+
     "<div class='mh'><h2>"+nome(k)+"</h2><span class='darf' data-out='darf'></span></div>"+
     "<div class='st' data-out='st'></div>"+
-    "<div class='f'><label for='dt-"+k+"'>Day trade: resultado (R$)<input id='dt-"+k+"' type='number' step='0.01' inputmode='decimal' data-f='dt' value='"+val(k,"dt")+"' placeholder='0,00'></label>"+
+    "<div class='f'><label for='dt-"+k+"'>Day trade: resultado líquido (R$)<input id='dt-"+k+"' type='number' step='0.01' inputmode='decimal' data-f='dt' value='"+val(k,"dt")+"' placeholder='0,00'></label>"+
+    "<label for='dtt-"+k+"'>Taxas já descontadas (R$)<input id='dtt-"+k+"' type='number' step='0.01' min='0' inputmode='decimal' data-f='dtTaxas' value='"+val(k,"dtTaxas")+"' placeholder='0,00'></label>"+
     "<label for='dti-"+k+"'>IRRF retido 1% (R$)<input id='dti-"+k+"' type='number' step='0.01' min='0' inputmode='decimal' data-f='dtIrrf' value='"+val(k,"dtIrrf")+"' placeholder='0,00'></label></div>"+
     "<details"+(swOpen?" open":"")+"><summary>Swing trade (operações que passaram de um dia)</summary><div class='f'>"+
-    "<label for='sw-"+k+"'>Swing: resultado (R$)<input id='sw-"+k+"' type='number' step='0.01' inputmode='decimal' data-f='sw' value='"+val(k,"sw")+"' placeholder='0,00'></label>"+
+    "<label for='sw-"+k+"'>Swing: resultado líquido (R$)<input id='sw-"+k+"' type='number' step='0.01' inputmode='decimal' data-f='sw' value='"+val(k,"sw")+"' placeholder='0,00'></label>"+
+    "<label for='swt-"+k+"'>Taxas já descontadas (R$)<input id='swt-"+k+"' type='number' step='0.01' min='0' inputmode='decimal' data-f='swTaxas' value='"+val(k,"swTaxas")+"' placeholder='0,00'></label>"+
     "<label for='swi-"+k+"'>IRRF retido 0,005% (R$)<input id='swi-"+k+"' type='number' step='0.01' min='0' inputmode='decimal' data-f='swIrrf' value='"+val(k,"swIrrf")+"' placeholder='0,00'></label></div>"+
     "<label class='chk' style='margin-top:8px'><input type='checkbox' data-f='isento'"+(r.isento?" checked":"")+"> Lucro de ações à vista com vendas até R$ 20 mil no mês (isento)</label></details>"+
     "<div class='calc' data-out='calc'></div>"+
@@ -174,10 +177,13 @@ function update(){
       if(c.dt<0) h+="<div>Day trade: prejuízo de <b class='neg'>"+brl(-c.dt)+"</b> no mês, sem imposto</div>";
       else if(c.dt>0&&c.bDT===0) h+="<div>Day trade: lucro de <b>"+brl(c.dt)+"</b>, todo abatido pelo prejuízo anterior. Sem imposto.</div>";
       else h+="<div>Day trade: base <b>"+brl(c.bDT)+"</b>"+(c.pDTini&&c.dt>0?" (abateu "+brl(Math.min(c.pDTini,c.dt))+" de prejuízo)":"")+" → 20% = <b>"+brl(c.irDTb)+"</b>"+(c.dDT?" − IRRF "+brl(c.dDT):"")+" = <b>"+brl(c.irDT)+"</b></div>";
+      if(c.dtTx>0) h+="<div>Day trade: operação <b class='"+(c.dtOp<0?"neg":"")+"'>"+brl(c.dtOp)+"</b> − taxas <b>"+brl(c.dtTx)+"</b> = resultado <b class='"+(c.dt<0?"neg":"")+"'>"+brl(c.dt)+"</b></div>";
+      else if(c.dt!==0&&(res[k]||{}).dtTaxas==null) h+="<div class='hint'>Day trade: taxas não informadas. Lance as taxas para separar operação e taxa.</div>";
       if(c.sw||c.irSWb) h+="<div>Swing: base <b>"+brl(c.bSW)+"</b> → 15% = <b>"+brl(c.irSWb)+"</b>"+(c.dSW?" − IRRF "+brl(c.dSW):"")+" = <b>"+brl(c.irSW)+"</b></div>";
       if(c.pendIn) h+="<div>DARF acumulado do mês anterior: <b>"+brl(c.pendIn)+"</b></div>";
-      if(c.pDT) h+="<div>Prejuízo de day trade que segue para o próximo mês: <b>"+brl(c.pDT)+"</b></div>";
-      if(c.pSW) h+="<div>Prejuízo de swing que segue: <b>"+brl(c.pSW)+"</b></div>";
+      if(c.swTx>0) h+="<div>Swing: operação <b>"+brl(c.swOp)+"</b> − taxas <b>"+brl(c.swTx)+"</b> = resultado <b>"+brl(c.sw)+"</b></div>";
+      if(c.pDT) h+="<div>Prejuízo de day trade que segue para o próximo mês: <b>"+brl(c.pDT)+"</b> <span class='hint'>(operação "+brl(c.cDOp)+" + taxas "+brl(c.cDTx)+")</span></div>";
+      if(c.pSW) h+="<div>Prejuízo de swing que segue: <b>"+brl(c.pSW)+"</b> <span class='hint'>(operação "+brl(c.cWOp)+" + taxas "+brl(c.cWTx)+")</span></div>";
       if(c.sobraDT||c.sobraSW) h+="<div>IRRF que sobrou para os próximos meses do ano: <b>"+brl(c.sobraDT+c.sobraSW)+"</b></div>";
       if(c.acum) h+="<div class='pend'>Total de "+brl(c.acum)+" é menor que R$ 10,00: não paga agora, soma no DARF do próximo mês.</div>";
       else if(c.darf>0) h+="<div><b>DARF 6015: "+brl(c.darf)+"</b> até "+venc(k)+"</div>";
@@ -196,7 +202,7 @@ function update(){
   $("kRes").textContent=brl(resAno);$("kRes").className="big "+(resAno>0?"pos":resAno<0?"neg":"");
   $("kIR").textContent=brl(irAno);
   const aberto=ks.reduce((a,k)=>a+(C[k].darf>0&&!(res[k]&&res[k].pago)?C[k].darf:0),0);
-  $("kAberto").textContent=aberto>0?"Em aberto: "+brl(aberto):irAno>0?"Tudo pago":"";$("kAberto").className="hint"+(aberto>0?" neg":"");$("kPdt").textContent=brl(last?last.pDT:0);$("kPsw").textContent=brl(last?last.pSW:0);
+  $("kAberto").textContent=aberto>0?"Em aberto: "+brl(aberto):irAno>0?"Tudo pago":"";$("kAberto").className="hint"+(aberto>0?" neg":"");$("kPdt").textContent=brl(last?last.pDT:0);$("kPdtC").textContent=last&&last.pDT>0?"operação "+brl(last.cDOp)+" + taxas "+brl(last.cDTx):"";$("kPswC").textContent=last&&last.pSW>0?"operação "+brl(last.cWOp)+" + taxas "+brl(last.cWTx):"";$("kPsw").textContent=brl(last?last.pSW:0);
 }
 async function persist(k){
   const r=res[k]; if(r&&!Object.keys(r).length)delete res[k];
@@ -208,7 +214,7 @@ $("meses").addEventListener("change",e=>{
   const el=e.target, f=el.dataset.f; if(!f)return;
   const k=el.closest(".mes").dataset.k; res[k]=res[k]||{};
   if(f==="isento"||f==="pago"){if(el.checked)res[k][f]=true;else delete res[k][f]}
-  else{const v=parseFloat(el.value);if(isNaN(v))delete res[k][f];else res[k][f]=f.endsWith("Irrf")?Math.abs(v):r2(v)}
+  else{const v=parseFloat(el.value);if(isNaN(v))delete res[k][f];else res[k][f]=(f.endsWith("Irrf")||f.endsWith("Taxas"))?Math.abs(v):r2(v)}
   persist(k);
 });
 $("meses").addEventListener("click",e=>{
@@ -228,7 +234,7 @@ load();render();$("status").textContent="Conectando…";
   },()=>{$("status").textContent="Sem conexão com o salvamento"});
 })();
 window.__ir={compute,get res(){return res}};
-window.IRB3={FIRST,lancar(k,dt,irrf){res[k]=Object.assign({},res[k]||{},{dt:r2(dt),dtIrrf:r2(irrf)});const y=+k.slice(0,4);if(YEARS.includes(y)&&y!==year){year=y}render();persist(k);$("status").textContent="Lançado em "+nome(k)}};
+window.IRB3={FIRST,lancar(k,dt,irrf,tx){res[k]=Object.assign({},res[k]||{},{dt:r2(dt),dtIrrf:r2(irrf),dtTaxas:r2(tx||0)});const y=+k.slice(0,4);if(YEARS.includes(y)&&y!==year){year=y}render();persist(k);$("status").textContent="Lançado em "+nome(k)}};
 </script>
 <script>
 /* Leitura de notas de corretagem (PDF) e extratos/relatórios (Excel/CSV) → resultado de day trade por mês. */
@@ -395,8 +401,8 @@ function resumo(){
   if(modo==="notas")notas.forEach(n=>{if(n.res==null)return;const k=keyOf(n.d);const t=tot[k]=tot[k]||{res:0,irrf:0,taxas:0,n:0};t.res+=n.res;t.irrf+=n.irrf;t.taxas+=n.taxas;t.n++});
   else{const c=+$("ibCol").value;linhas.forEach(l=>{const v=l.nums[c];if(v==null)return;const k=keyOf(l.d);const t=tot[k]=tot[k]||{res:0,irrf:0,taxas:0,n:0};t.res+=v;t.n++})}
   const ks=Object.keys(tot).sort();
-  $("ibMeses").innerHTML=ks.length?ks.map(k=>{const t=tot[k];return "<div class='ibm'><div><b>"+mesNome(k)+"</b> · "+t.n+(modo==="notas"?(t.n===1?" pregão":" pregões"):" linhas")+"<br>Resultado day trade <b class='"+(t.res>0?"pos":t.res<0?"neg":"")+"'>"+brl(r2(t.res))+"</b>"+(modo==="notas"?" · taxas "+brl(r2(t.taxas))+" · IRRF "+brl(r2(t.irrf)):"")+"</div>"+
-    (k<window.IRB3.FIRST?"<span class='hint'>antes de julho/2026</span>":"<button type='button' class='btn' data-lanca='"+k+"' data-res='"+r2(t.res)+"' data-irrf='"+r2(t.irrf)+"'>Lançar</button>")+"</div>"}).join("")+
+  $("ibMeses").innerHTML=ks.length?ks.map(k=>{const t=tot[k];return "<div class='ibm'><div><b>"+mesNome(k)+"</b> · "+t.n+(modo==="notas"?(t.n===1?" pregão":" pregões"):" linhas")+"<br>Resultado day trade <b class='"+(t.res>0?"pos":t.res<0?"neg":"")+"'>"+brl(r2(t.res))+"</b>"+(modo==="notas"?" · operação "+brl(r2(t.res+t.taxas))+" · taxas "+brl(r2(t.taxas))+" · IRRF "+brl(r2(t.irrf)):"")+"</div>"+
+    (k<window.IRB3.FIRST?"<span class='hint'>antes de julho/2026</span>":"<button type='button' class='btn' data-lanca='"+k+"' data-res='"+r2(t.res)+"' data-irrf='"+r2(t.irrf)+"' data-taxas='"+r2(t.taxas)+"'>Lançar</button>")+"</div>"}).join("")+
     (ks.length>1?"<div><button type='button' class='btn primary' id='ibTodos'>Lançar todos os meses</button></div>":""):"<p class='hint'>Não achei valores. Me mande o arquivo para eu ajustar a leitura.</p>";
   if(modo==="notas"){
     $("ibPrev").innerHTML="<thead><tr><th>Pregão</th><th>Nota</th><th>Ajuste</th><th>Taxas</th><th>IRRF</th><th>Resultado</th></tr></thead><tbody>"+notas.slice().sort((a,b)=>(keyOf(a.d)+String(a.d.d).padStart(2,"0")).localeCompare(keyOf(b.d)+String(b.d.d).padStart(2,"0"))).map(n=>"<tr><td>"+dstr(n.d)+"</td><td>"+esc(n.nr)+"</td><td>"+(n.bruto==null?"–":brl(n.bruto))+"</td><td>"+brl(n.taxas)+"</td><td>"+brl(n.irrf)+"</td><td class='"+(n.res>0?"pos":n.res<0?"neg":"")+"'>"+(n.res==null?"não lido":brl(n.res))+"</td></tr>").join("")+"</tbody>";
@@ -432,7 +438,7 @@ $("ibGo").onclick=ler;
 $("ibCol").addEventListener("change",resumo);
 $("ibOut").addEventListener("click",e=>{
   const b=e.target.closest("[data-lanca]");
-  if(b){window.IRB3.lancar(b.dataset.lanca,+b.dataset.res,+b.dataset.irrf);b.textContent="Lançado ✓";b.disabled=true;return}
+  if(b){window.IRB3.lancar(b.dataset.lanca,+b.dataset.res,+b.dataset.irrf,+b.dataset.taxas||0);b.textContent="Lançado ✓";b.disabled=true;return}
   if(e.target.id==="ibTodos"){document.querySelectorAll("#ibMeses [data-lanca]:not([disabled])").forEach(x=>x.click());e.target.disabled=true}
 });
 window.__irb3={parseNotas,parseExtrato,parseExtratoToks,findLabel,vals};
