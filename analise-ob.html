@@ -13,20 +13,25 @@
   --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7; --accent:#60A5FA; --accent-soft:#1E3A8A; --win:#4ADE80; --win-soft:#123D26; --loss:#FB7185; --loss-soft:#4A1A28; --warn:#FBBF24; --warn-soft:#3F2A06; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
-.wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:16px}
+.wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
 .wrap>*{min-width:0}
 h1{font-family:var(--f-display);font-weight:800;font-size:1.6rem;margin:0}
 h2{font-family:var(--f-display);font-weight:700;font-size:1.05rem;margin:0}
 .sub,.status,.hint{color:var(--muted);font-size:.84rem}
 .top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:12px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:12px;min-width:0;grid-template-columns:minmax(0,1fr)}
+.panel>*{min-width:0;max-width:100%}
 .kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.kpis>*{min-width:0}.kpis .lbl{letter-spacing:.03em}
+.step{box-shadow:none!important}
 .big{font-family:var(--f-num);font-weight:600;font-size:1.3rem}
 .pos{color:var(--win)} .neg{color:var(--loss)}
 .step{display:flex;gap:8px;align-items:center;font-family:var(--f-display);font-weight:700}
 .step i{font-style:normal;display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--surface);font-size:.8rem;flex:none}
-.drop{border:2px dashed var(--line);border-radius:10px;padding:18px;text-align:center;display:grid;gap:8px;place-items:center;color:var(--muted)}
+.drop{border:2px dashed var(--line);border-radius:10px;padding:18px;text-align:center;display:grid;gap:8px;place-items:center;color:var(--muted);grid-template-columns:minmax(0,1fr)}
+.drop>*{max-width:100%;min-width:0}
+.drop input{width:100%;font-size:.85rem}
 .drop.on{border-color:var(--accent);background:var(--accent-soft)}
 input[type=file]{font:inherit;font-size:.9rem;max-width:100%}
 .shot{position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--line);touch-action:manipulation;cursor:crosshair;background:#000}
@@ -92,7 +97,7 @@ textarea#ctx,textarea#q{min-height:52px}
   <div class="kpis">
     <div class="panel"><div class="lbl">Dentro da regra</div><div class="big" id="kOk">–</div><div class="hint" id="kOkW"></div></div>
     <div class="panel"><div class="lbl">Fora da regra</div><div class="big" id="kNo">–</div><div class="hint" id="kNoW"></div></div>
-    <div class="panel"><div class="lbl">Analisadas</div><div class="big" id="kTot">0</div></div>
+    <div class="panel"><div class="lbl">Total</div><div class="big" id="kTot">0</div></div>
   </div>
 
   <details class="panel" id="cfgKey">

@@ -22,6 +22,7 @@
       "@keyframes uispin{to{transform:rotate(360deg)}}" +
       /* "← Meus Controles" fixo no topo enquanto rola a página */
       "html,body{overflow-x:clip!important}" +
+      ".wrap{grid-template-columns:minmax(0,1fr)!important}.panel{min-width:0;max-width:100%;grid-template-columns:minmax(0,1fr)}.panel>*,.wrap>*{min-width:0;max-width:100%}input[type=file]{max-width:100%;min-width:0}img,canvas,video{max-width:100%}" +
       ".voltar{position:sticky!important;top:8px;z-index:60;display:flex!important;width:max-content;align-items:center;gap:4px;margin:10px 16px 0!important;padding:7px 14px;border-radius:999px;opacity:1!important;color:#2563EB!important;background:rgba(255,255,255,.88);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(37,99,235,.25);box-shadow:0 4px 14px -4px rgba(19,32,59,.25)}" +
       "@media (prefers-color-scheme: dark){.voltar{background:rgba(22,33,58,.88);color:#93C5FD!important;border-color:rgba(147,197,253,.3)}}" +
       /* visual mais vivo em todas as páginas */

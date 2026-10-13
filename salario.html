@@ -48,6 +48,7 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
 .x:hover{color:var(--loss)}
 .repbox{display:flex;align-items:center;gap:5px;font-size:.72rem;color:var(--rep);text-transform:none;letter-spacing:0;cursor:pointer}
 .add{display:grid;grid-template-columns:1fr 7rem auto;gap:6px;align-items:end}
+@media (max-width:420px){.add{grid-template-columns:1fr 1fr}.add>:last-child{grid-column:1/-1}}
 .btn{appearance:none;font:inherit;font-weight:600;border-radius:7px;padding:8px 14px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--surface)}
 .btn.ghost{background:var(--surface);color:var(--fg);border-color:var(--line)}
 .tot{display:grid;gap:4px;border-top:1px solid var(--line);padding-top:10px;font-size:.9rem}

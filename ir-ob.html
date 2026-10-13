@@ -35,6 +35,7 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--mut
 td{font-family:var(--f-num);font-variant-numeric:tabular-nums}
 td:first-child{font-family:var(--f-body)}
 input{font:inherit;font-family:var(--f-num);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:130px;text-align:right}
+@media (max-width:420px){#tbl th,#tbl td{padding:6px 3px}#tbl{font-size:.78rem}#tbl input{width:84px;padding:6px 5px}#tbl [data-clear]{font-size:0;padding:5px 9px}#tbl [data-clear]::after{content:"✕";font-size:.8rem}#tbl th{letter-spacing:.02em}}
 .note{font-size:.82rem;color:var(--muted);display:grid;gap:6px}
 .note p{margin:0;max-width:65ch}
 .wrap>*{min-width:0}
@@ -58,6 +59,7 @@ img,svg{max-width:100%}
 .mres{display:grid;gap:6px}
 .mres div{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
 .mres b{font-family:var(--f-num)}
+#impOut{grid-template-columns:minmax(0,1fr)}#impOut>*{min-width:0}.mres b{white-space:nowrap}
 </style>
 <div class="wrap">
   <div class="top">
