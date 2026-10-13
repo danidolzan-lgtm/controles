@@ -1,18 +1,18 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1F5C7A"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="progresso-ob"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Progresso OB</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="progresso-ob2"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Progresso OB</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 /* Layout: escada vertical de metas de banca, resumo da meta atual no topo. */
 :root{
-  --bg:#EEF1F0; --surface:#FFFFFF; --line:#D5DCDA; --fg:#16201D; --muted:#5D6B67;
-  --accent:#1F5C7A; --accent-soft:#DCE9EF; --win:#1E7A4C; --win-soft:#DDF0E5;
+  --bg:#EEF3FC; --surface:#FFFFFF; --line:#DDE4F2; --fg:#13203B; --muted:#58668A;
+  --accent:#2563EB; --accent-soft:#DCE7FF; --win:#15803D; --win-soft:#DCFCE7;
   --f-display:"Archivo",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E;
-  --accent:#6FB2D3; --accent-soft:#1B3240; --win:#5BC98E; --win-soft:#173327; color-scheme:dark}}
+  --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7;
+  --accent:#60A5FA; --accent-soft:#1E3A8A; --win:#4ADE80; --win-soft:#123D26; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E;
-  --accent:#6FB2D3; --accent-soft:#1B3240; --win:#5BC98E; --win-soft:#173327; color-scheme:dark}
+  --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7;
+  --accent:#60A5FA; --accent-soft:#1E3A8A; --win:#4ADE80; --win-soft:#123D26; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
 .wrap{max-width:640px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:16px}
@@ -46,14 +46,14 @@ img,svg{max-width:100%}
 </style>
 <div class="wrap">
   <div class="top">
-    <div><h1>Progresso OB</h1><div class="sub">Entrada = banca ÷ 5 · toque na meta para marcar como conquistada</div></div>
+    <div><h1>Progresso OB</h1><div class="sub">Mão base = banca ÷ 5 · toque no degrau quando chegar nele</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
   <div class="panel goal">
     <div class="row">
       <div><span class="lbl">Nível atual</span><span class="big" id="gNivel">–</span></div>
-      <div><span class="lbl">Entrada</span><span class="big num" id="gEntrada">–</span></div>
-      <div><span class="lbl">Próxima meta</span><span class="big num" id="gProx">–</span></div>
+      <div><span class="lbl">Mão base</span><span class="big num" id="gEntrada">–</span></div>
+      <div><span class="lbl">Próxima meta</span><span class="big num" id="gProx">–</span><span class="hint" id="gProxC"></span></div>
     </div>
     <div class="row">
       <label for="banca">Banca atual (R$)<input id="banca" type="number" min="0" step="0.01" inputmode="decimal"></label>
@@ -66,7 +66,7 @@ img,svg{max-width:100%}
 <script>
 const LV=[50,100,150,250,350,500,750,1000,1500,2500,3500,5000,7500,10000];
 let st={conquistados:[],banca:null}, db=null, ref=null;
-const LS="progressoOB.v1";
+const LS="progressoOB2.v1";
 const $=id=>document.getElementById(id);
 const brl=v=>"R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:0,maximumFractionDigits:2});
 function load(){try{const r=JSON.parse(localStorage.getItem(LS)||"null");if(r)st=r}catch(e){}}
@@ -77,8 +77,9 @@ async function save(){
 function render(){
   const done=new Set(st.conquistados);
   let last=-1; LV.forEach((v,i)=>{if(done.has(i))last=i});
-  const nextI=LV.findIndex((v,i)=>!done.has(i));
+  const nextI=LV.findIndex((v,i)=>i>last&&!done.has(i));
   $("gNivel").textContent= last>=0 ? brl(LV[last]) : "início";
+  $("gProxC").textContent= nextI>=0 ? "mão base passa a "+brl(LV[nextI]/5) : "";
   $("gEntrada").textContent= brl((last>=0?LV[last]:LV[0])/5);
   $("gProx").textContent= nextI>=0 ? brl(LV[nextI]) : "concluído";
   const b=st.banca;
@@ -92,17 +93,17 @@ function render(){
   if(!L.children.length){
     LV.forEach((v,i)=>{
       const b=document.createElement("button"); b.type="button";
-      b.innerHTML="<span class='n'>"+String(i+1).padStart(2,"0")+"</span><span class='b'>"+brl(v)+"</span><span class='e'><small>entrada</small>"+brl(v/5)+"</span>";
+      b.innerHTML="<span class='n'>"+String(i+1).padStart(2,"0")+"</span><span class='b'>"+brl(v)+"</span><span class='e'><small>mão base</small>"+brl(v/5)+"</span>";
       b.addEventListener("click",()=>{
         const s=new Set(st.conquistados); s.has(i)?s.delete(i):s.add(i);
-        st.conquistados=[...s].sort((a,c)=>a-c); render(); save();
+        st.conquistados=[...s].sort((a,c)=>a-c); render(); save();window.ui&&ui.toast(s.has(i)?"✓ Degrau conquistado":"Degrau desmarcado");
       });
       L.appendChild(b);
     });
   }
   [...L.children].forEach((b,i)=>{b.className="step"+(done.has(i)?" done":"")+(i===nextI?" next":"");b.setAttribute("aria-pressed",done.has(i))});
 }
-$("banca").addEventListener("change",e=>{const v=parseFloat(e.target.value),n=isNaN(v)?null:v;if(n===st.banca)return;st.banca=n;render();save()});
+$("banca").addEventListener("change",e=>{const v=parseFloat(e.target.value),n=isNaN(v)?null:v;if(n===st.banca)return;st.banca=n;render();save();window.ui&&ui.toast("✓ Banca salva")});
 load(); if(st.banca!=null) $("banca").value=st.banca; render(); $("status").textContent="Conectando…";
 (async()=>{
   try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}

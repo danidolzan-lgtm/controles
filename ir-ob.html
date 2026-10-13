@@ -1,16 +1,16 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1F5C7A"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="ir-ob"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>IR Opções Binárias</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="ir-ob2"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>IR Opções Binárias</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 /* Layout: resumo do ano no topo, tabela mês a mês com o resultado lançado, nota curta sobre a regra. */
 :root{
-  --bg:#EEF1F0; --surface:#FFFFFF; --line:#D5DCDA; --fg:#16201D; --muted:#5D6B67;
-  --accent:#1F5C7A; --win:#1E7A4C; --loss:#B23A35;
+  --bg:#EEF3FC; --surface:#FFFFFF; --line:#DDE4F2; --fg:#13203B; --muted:#58668A;
+  --accent:#2563EB; --win:#15803D; --loss:#E11D48;
   --f-display:"Archivo",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E; --accent:#6FB2D3; --win:#5BC98E; --loss:#EC7A73; color-scheme:dark}}
+  --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7; --accent:#60A5FA; --win:#4ADE80; --loss:#FB7185; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E; --accent:#6FB2D3; --win:#5BC98E; --loss:#EC7A73; color-scheme:dark}
+  --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7; --accent:#60A5FA; --win:#4ADE80; --loss:#FB7185; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
 .wrap{max-width:720px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:16px}
@@ -61,7 +61,7 @@ img,svg{max-width:100%}
 </style>
 <div class="wrap">
   <div class="top">
-    <div><h1>IR Opções Binárias</h1><div class="sub">Lance o resultado líquido de cada mês em reais (lucro positivo, prejuízo negativo)</div></div>
+    <div><h1>IR Opções Binárias</h1><div class="sub">Suba o relatório do mês (Excel) ou digite o resultado em reais: lucro positivo, perda negativa</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
   <div class="years" id="years"></div>
@@ -103,8 +103,8 @@ img,svg{max-width:100%}
   </div>
 </div>
 <script>
-const YEARS=[2026,2027,2028], FIRST="2026-10", LS="irOB.v1";
-let res={}, db=null, year=2026;
+const YEARS=[2025,2026,2027,2028], FIRST="2025-01", LS="irOB2.v1";
+let res={}, db=null, year=Math.min(2028,Math.max(2025,new Date().getFullYear()));
 const $=id=>document.getElementById(id);
 const brl=v=>(v<0?"-":"")+"R$ "+Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
 function load(){try{const r=JSON.parse(localStorage.getItem(LS)||"null");if(r)res=r}catch(e){}}
@@ -149,15 +149,16 @@ async function persist(k,v,soft){
 }
 $("tbl").addEventListener("change",e=>{
   const k=e.target.dataset.k;if(!k)return;
-  persist(k,parseFloat(e.target.value),true);
+  persist(k,parseFloat(e.target.value),true);window.ui&&ui.toast("✓ Salvo");
 });
 window.IR_FIRST=FIRST;
+window.irYear=y=>{if(YEARS.includes(y)){year=y;render()}};
 window.irPut=(k,v,y)=>{if(YEARS.includes(y))year=y;persist(k,v);$("status").textContent="Lançado em "+new Date(k+"-15T12:00:00").toLocaleDateString("pt-BR",{month:"long"})};
 $("tbl").addEventListener("click",e=>{
   const b=e.target.closest("[data-clear]");if(!b)return;
   const k=b.dataset.clear;
   if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="Confirmar";b.style.borderColor="var(--loss)";b.style.color="var(--loss)";setTimeout(()=>{if(b.isConnected){b.dataset.armed="";b.textContent="Zerar";b.style.borderColor="";b.style.color=""}},4000);return}
-  persist(k,NaN);
+  persist(k,NaN);window.ui&&ui.toast("Mês zerado");
 });
 load();render();$("status").textContent="Conectando…";
 (async()=>{
@@ -269,12 +270,31 @@ function fromText(text){
 }
 
 /* ---------- leitura dos arquivos ---------- */
+/* Relatório da Quotex (Excel): colunas Informações, Lucro (%), ID, Hora de abertura, …, Modelo, Valor, Renda.
+   Resultado de cada operação = Renda − Valor (win: lucro; loss: −Valor; empate: 0). Mês pela hora de abertura. */
+function fromQuotex(rows){
+  const norm=x=>String(x??"").trim().toLowerCase();
+  const hi=rows.findIndex(r=>r&&r.some(c=>norm(c)==="valor")&&r.some(c=>norm(c)==="renda"));
+  if(hi<0)return false;
+  const H=rows[hi].map(norm), iV=H.indexOf("valor"), iR=H.indexOf("renda"), iD=H.findIndex(h=>/hora de abertura|abertura/.test(h)), iA=H.findIndex(h=>/informa|ativo/.test(h)), iM=H.indexOf("modelo");
+  recs=[];
+  rows.slice(hi+1).forEach(r=>{
+    if(!r)return; const d=parseDate(r[iD>=0?iD:3]); const v=parseNum(r[iV]), rd=parseNum(r[iR]);
+    if(!d||v==null||rd==null)return;
+    const res=Math.round((rd-v)*100)/100;
+    recs.push({d,nums:[res,v,rd],txt:[r[iA],r[iD],r[iM],"valor "+v,"renda "+rd].filter(x=>x!==undefined&&x!=="").join(" · ")});
+  });
+  cols=["Resultado (Renda − Valor)","Valor investido","Renda (retorno)"];
+  window.__qx=true;
+  return recs.length>0;
+}
 async function readFile(file){
   const name=file.name.toLowerCase();
   if(/\.(xlsx|xls)$/.test(name)){
     await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
     const wb=XLSX.read(await file.arrayBuffer(),{type:"array",cellDates:true});
-    for(const sn of wb.SheetNames){const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:""});if(fromTable(rows))return true}
+    window.__qx=false;
+    for(const sn of wb.SheetNames){const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:""});if(fromQuotex(rows)||fromTable(rows))return true}
     return false;
   }
   if(/\.pdf$/.test(name)){
@@ -305,6 +325,7 @@ const fmt=v=>(v<0?"-":"")+"R$ "+Math.abs(v).toLocaleString("pt-BR",{minimumFract
 const keyOf=d=>d.y+"-"+String(d.m).padStart(2,"0");
 const mesNome=k=>{const t=new Date(k+"-15T12:00:00").toLocaleDateString("pt-BR",{month:"long",year:"numeric"});return t[0].toUpperCase()+t.slice(1)};
 function guess(){
+  if(window.__qx){$("impCol").innerHTML=cols.map((c,i)=>"<option value='"+i+"'>"+c+"</option>").join("");$("impInv").innerHTML=$("impCol").innerHTML;$("impCol").value=0;$("impInv").value=1;$("impMode").value="net";$("impSkip").checked=false;return}
   const hasNeg=i=>recs.some(r=>r.nums[i]<0);
   let col=cols.findIndex(c=>/lucro|profit|resultado|result|p\s*\/\s*l|pnl|ganho|l\/p/i.test(c));
   if(col<0)col=cols.findIndex((c,i)=>hasNeg(i));
@@ -321,36 +342,36 @@ function compute(){
   const col=+$("impCol").value, inv=+$("impInv").value, gross=$("impMode").value==="gross";
   const cot=parseFloat($("impCot").value)||1, skip=$("impSkip").checked;
   $("impInvL").hidden=!gross;
-  const tot={},cnt={};
+  const tot={},cnt={},gan={},per={},nw={},nl={};
   let used=0;
   const prev=recs.map(r=>{
     const off=skip&&SKIP.test(r.txt);
     let v=r.nums[col];
     if(v!=null&&gross)v=v-(r.nums[inv]||0);
     const ok=!off&&v!=null;
-    if(ok){const k=keyOf(r.d);tot[k]=(tot[k]||0)+v*cot;cnt[k]=(cnt[k]||0)+1;used++}
+    if(ok){const k=keyOf(r.d),x=v*cot;tot[k]=(tot[k]||0)+x;cnt[k]=(cnt[k]||0)+1;if(x>=0)gan[k]=(gan[k]||0)+x;else per[k]=(per[k]||0)+x;if(x>0)nw[k]=(nw[k]||0)+1;else if(x<0)nl[k]=(nl[k]||0)+1;used++}
     return {r,v:ok?v*cot:null,off:!ok};
   });
   const keys=Object.keys(tot).sort();
   const first=window.IR_FIRST||"2026-10";
   $("impMonths").innerHTML=keys.length?keys.map(k=>{
     const t=Math.round(tot[k]*100)/100, fora=k<first;
-    return "<div><span><span>"+mesNome(k)+"</span> · "+cnt[k]+(cnt[k]===1?" operação":" operações")+"<br><b class='"+(t>0?"pos":t<0?"neg":"")+"'>"+fmt(t)+"</b></span>"+(fora?"<span class='msg'>antes de out/2026, fora da tabela</span>":"<button type='button' class='btn sm' data-put='"+k+"' data-v='"+t+"'>Lançar em "+mesNome(k).split(" ")[0]+"</button>")+"</div>";
-  }).join(""):"<p class='msg'>Nenhum valor nessa coluna. Troque a coluna do resultado.</p>";
+    return "<div><span><span>"+mesNome(k)+"</span> · "+cnt[k]+(cnt[k]===1?" operação":" operações")+" · <b class='pos'>"+(nw[k]||0)+"W</b> <b class='neg'>"+(nl[k]||0)+"L</b> · acerto "+((nw[k]||0)+(nl[k]||0)?Math.round((nw[k]||0)/((nw[k]||0)+(nl[k]||0))*100)+"%":"–")+"<br>Ganhos <b class='pos'>"+fmt(Math.round((gan[k]||0)*100)/100)+"</b> · Perdas <b class='neg'>"+fmt(Math.round((per[k]||0)*100)/100)+"</b><br>"+(t>=0?"Lucro":"Prejuízo")+" do mês <b class='"+(t>0?"pos":t<0?"neg":"")+"' style='font-size:1.1rem'>"+fmt(t)+"</b></span>"+(fora?"<span class='msg'>antes de 2025, fora da tabela</span>":"<button type='button' class='btn sm' data-put='"+k+"' data-v='"+t+"'>Lançar em "+mesNome(k).split(" ")[0]+"</button>")+"</div>";
+  }).join("")+(keys.filter(k=>k>=first).length>1?"<div style='border:0;padding:0'><button type='button' class='btn' id='impTodos'>Lançar todos os meses</button></div>":""):"<p class='msg'>Nenhum valor nessa coluna. Troque a coluna do resultado.</p>";
   $("impPrev").innerHTML="<thead><tr><th>Data</th><th>Valor</th><th>Linha lida</th></tr></thead><tbody>"+prev.slice(0,300).map(p=>"<tr><td>"+String(p.r.d.d).padStart(2,"0")+"/"+String(p.r.d.m).padStart(2,"0")+"/"+p.r.d.y+"</td><td class='"+(p.off?"off":p.v>0?"pos":p.v<0?"neg":"")+"'>"+(p.v==null?"–":fmt(p.v))+"</td><td style='text-align:left;white-space:normal;font-family:var(--f-body);max-width:28rem'>"+p.r.txt.slice(0,140).replace(/</g,"&lt;")+"</td></tr>").join("")+"</tbody>";
   $("impMsg").className="msg";
-  $("impMsg").textContent=used+" operações somadas"+(recs.length-used?", "+(recs.length-used)+" ignoradas":"")+". Confira o total com o saldo da Quotex antes de lançar.";
+  $("impMsg").textContent=used+" operações somadas"+(recs.length-used?", "+(recs.length-used)+" ignoradas":"")+". Confira o total com o saldo da corretora antes de lançar.";
 }
 async function go(){
   const f=$("impFile").files[0], txt=$("impTxt").value.trim();
   recs=[];cols=[];$("impOut").hidden=true;
   if(!f&&!txt){$("impMsg").className="msg err";$("impMsg").textContent="Escolha o arquivo ou cole o texto do extrato.";return}
-  $("impMsg").className="msg";$("impMsg").textContent="Lendo…";$("impGo").disabled=true;
+  $("impMsg").className="msg";$("impMsg").textContent="Lendo…";const fim=window.ui?ui.busy($("impGo"),"Lendo…"):()=>{};
   let ok=false;
-  try{ok=f?await readFile(f):readText(txt)}catch(e){$("impMsg").className="msg err";$("impMsg").textContent="Não consegui abrir o arquivo ("+e.message+"). Tente colar o texto.";$("impGo").disabled=false;return}
-  $("impGo").disabled=false;
+  try{ok=f?await readFile(f):readText(txt)}catch(e){$("impMsg").className="msg err";$("impMsg").textContent="Não consegui abrir o arquivo ("+e.message+"). Tente colar o texto.";fim();window.ui&&ui.toast("Não consegui abrir o arquivo",1);return}
+  fim();
   if(!ok){$("impMsg").className="msg err";$("impMsg").textContent="Não encontrei operações com data e valor. Se puder, me mande esse arquivo para eu ajustar a leitura.";return}
-  guess();$("impOut").hidden=false;lastSig="";recompute();
+  guess();$("impOut").hidden=false;lastSig="";recompute();window.ui&&ui.done($("impGo"),recs.length+" linhas lidas");
 }
 $("impGo").onclick=go;
 $("impClear").onclick=()=>{$("impFile").value="";$("impTxt").value="";recs=[];$("impOut").hidden=true;$("impMsg").textContent=""};
@@ -361,7 +382,14 @@ $("impCot").addEventListener("input",recompute);
 $("impMonths").addEventListener("click",e=>{
   const b=e.target.closest("[data-put]");if(!b)return;
   const k=b.dataset.put, v=parseFloat(b.dataset.v), y=+k.slice(0,4);
-  if(window.irPut){window.irPut(k,v,y);b.textContent="Lançado ✓";b.disabled=true}
+  if(window.irPut){window.irPut(k,v,y);window.ui?ui.done(b,"Lançado em "+mesNome(k).split(" ")[0].toLowerCase()):(b.textContent="Lançado ✓")}
+});
+$("impMonths").addEventListener("click",e=>{
+  if(e.target.id!=="impTodos")return;
+  const bs=[...document.querySelectorAll("#impMonths [data-put]")];
+  bs.forEach(b=>{const k=b.dataset.put;window.irPut(k,parseFloat(b.dataset.v),+k.slice(0,4))});
+  const y=new Date().getFullYear();if(window.irYear)window.irYear(y);
+  window.ui&&ui.done(e.target,bs.length+" meses lançados");
 });
 window.__irTest={parseNum,parseDate,readText,get recs(){return recs},get cols(){return cols}};
 })();

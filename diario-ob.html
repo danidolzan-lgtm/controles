@@ -1,57 +1,54 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1F5C7A"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="diario-ob"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Diário OB</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="diario-ob2"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Diário OB</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: coluna única de painel — resumo no topo, calendário de dias, tabelas por estratégia/sessão. Modal de check-in por dia. */
+/* Layout: resumo, mão base/payout, calendário seg–sex 13/10–17/12, tabelas. Janela do dia com manhã e tarde; cada sessão tem no máximo 2 entradas (mão base + Soros) e para no 1º loss. */
 :root{
-  --bg:#EEF1F0; --surface:#FFFFFF; --line:#D5DCDA; --fg:#16201D; --muted:#5D6B67;
-  --accent:#1F5C7A; --accent-soft:#DCE9EF;
-  --win:#1E7A4C; --win-soft:#DDF0E5; --loss:#B23A35; --loss-soft:#F6E0DE; --idle:#8A9693;
+  --bg:#EEF3FC; --surface:#FFFFFF; --line:#DDE4F2; --fg:#13203B; --muted:#58668A;
+  --accent:#2563EB; --accent-soft:#DCE7FF; --soros:#7C3AED; --soros-soft:#EDE9FE;
+  --win:#15803D; --win-soft:#DCFCE7; --loss:#E11D48; --loss-soft:#FFE4EA; --idle:#94A3B8;
   --f-display:"Archivo",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E;
-  --accent:#6FB2D3; --accent-soft:#1B3240;
-  --win:#5BC98E; --win-soft:#173327; --loss:#EC7A73; --loss-soft:#3A1E1C; --idle:#6C7A76; color-scheme:dark}}
+  --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7; --accent:#60A5FA; --accent-soft:#1E3A8A; --soros:#A78BFA; --soros-soft:#2E1F57;
+  --win:#4ADE80; --win-soft:#123D26; --loss:#FB7185; --loss-soft:#4A1A28; --idle:#64748B; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E;
-  --accent:#6FB2D3; --accent-soft:#1B3240;
-  --win:#5BC98E; --win-soft:#173327; --loss:#EC7A73; --loss-soft:#3A1E1C; --idle:#6C7A76; color-scheme:dark}
+  --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7; --accent:#60A5FA; --accent-soft:#1E3A8A; --soros:#A78BFA; --soros-soft:#2E1F57;
+  --win:#4ADE80; --win-soft:#123D26; --loss:#FB7185; --loss-soft:#4A1A28; --idle:#64748B; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
 .wrap{max-width:860px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:18px}
-h1{font-family:var(--f-display);font-weight:800;font-size:1.6rem;margin:0;letter-spacing:-.01em}
+.wrap>*{min-width:0}
+h1{font-family:var(--f-display);font-weight:800;font-size:1.6rem;margin:0}
 h2{font-family:var(--f-display);font-weight:700;font-size:1.05rem;margin:0}
 .top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
-.sub{color:var(--muted);font-size:.85rem}
+.sub,.status,.hint{color:var(--muted);font-size:.82rem}
 .num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(170px,100%),1fr));gap:12px}
-.kpi .lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
-.kpi .big{font-family:var(--f-num);font-weight:600;font-size:1.7rem;margin-top:2px}
-.kpi .row{display:flex;gap:14px;margin-top:6px;font-size:.85rem;color:var(--muted)}
+.kpi .lbl,.lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.kpi .big{font-family:var(--f-num);font-weight:600;font-size:1.6rem;margin-top:2px}
+.kpi .row{display:flex;gap:14px;margin-top:6px;font-size:.85rem;color:var(--muted);flex-wrap:wrap}
 .kpi .row b{color:var(--fg);font-family:var(--f-num);font-weight:600}
 .pos{color:var(--win)} .neg{color:var(--loss)}
-.be{font-size:.8rem;margin-top:6px}
 .cfg{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
-.cfg label{display:grid;gap:3px;font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
-input,select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-width:0}
-input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.cfg input{width:110px}
+label{display:grid;gap:3px;font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-width:0;width:100%;text-transform:none;letter-spacing:0}
+input[type=number]{font-family:var(--f-num)}
+.cfg label{width:120px}
+input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .month{display:grid;gap:8px}
 .month h3{font-family:var(--f-display);font-size:.95rem;margin:0}
 .month h3::first-letter{text-transform:uppercase}
-.dow,.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.dow,.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
 .dow span{font-size:.68rem;color:var(--muted);text-align:center;text-transform:uppercase;letter-spacing:.05em}
-.day{appearance:none;border:1px solid var(--line);background:var(--surface);border-radius:7px;min-height:58px;padding:5px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;cursor:pointer;color:var(--fg);font:inherit;text-align:left}
+.day{appearance:none;border:1px solid var(--line);background:var(--surface);border-radius:7px;min-height:58px;padding:5px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;cursor:pointer;color:var(--fg);font:inherit;text-align:left;min-width:0}
 .day:hover{border-color:var(--accent)}
 .day .d{font-family:var(--f-num);font-size:.78rem;color:var(--muted)}
-.day .v{font-family:var(--f-num);font-size:.72rem;font-weight:600}
+.day .v{font-family:var(--f-num);font-size:.7rem;font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .day.today{border:2px solid var(--accent)}
-.day.past{opacity:.75}
 .day.pos{background:var(--win-soft)} .day.neg{background:var(--loss-soft)}
 .day.blank{visibility:hidden}
-.dots{display:flex;gap:3px}
+.dots{display:flex;gap:3px;flex-wrap:wrap}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--idle)}
 .dot.w{background:var(--win)} .dot.l{background:var(--loss)}
 .tbl-wrap{overflow-x:auto}
@@ -60,71 +57,65 @@ th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white
 th:first-child,td:first-child{text-align:left}
 th{font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
 td{font-family:var(--f-num);font-variant-numeric:tabular-nums}
-td:first-child{font-family:var(--f-body)}
+td:first-child{font-family:var(--f-body);white-space:normal}
 .two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:12px}
 .two>*{min-width:0}
-.status{font-size:.78rem;color:var(--muted)}
-/* modal */
-.ov{position:fixed;inset:0;background:rgba(10,16,14,.55);display:flex;align-items:flex-end;justify-content:center;z-index:10;padding-top:env(safe-area-inset-top,0px)}
+.ov{position:fixed;inset:0;background:rgba(10,16,30,.55);display:flex;align-items:flex-end;justify-content:center;z-index:10}
 @media (min-width:640px){.ov{align-items:center}}
-.modal{background:var(--surface);color:var(--fg);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:12px 12px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));display:grid;gap:14px}
-@media (min-width:640px){.modal{border-radius:12px}}
+.modal{background:var(--surface);color:var(--fg);width:100%;max-width:580px;max-height:92vh;overflow:auto;border-radius:14px 14px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));display:grid;gap:14px}
+@media (min-width:640px){.modal{border-radius:14px}}
 .mhead{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.sess{border:1px solid var(--line);border-radius:9px;padding:12px;display:grid;gap:10px}
-.sess h4{margin:0;font-family:var(--f-display);font-size:.95rem;display:flex;justify-content:space-between;align-items:center}
+.mhead h2::first-letter{text-transform:uppercase}
+.stabs{display:flex;gap:6px}
+.stabs button{flex:1;appearance:none;font:inherit;font-weight:600;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:8px;padding:8px 10px;cursor:pointer;display:grid;gap:1px}
+.stabs button small{font-family:var(--f-num);font-weight:400;font-size:.75rem;opacity:.85}
+.stabs button.on{background:var(--accent);border-color:var(--accent);color:var(--surface)}
 .seg{display:flex;gap:6px;flex-wrap:wrap}
-.seg button{appearance:none;font:inherit;font-size:.85rem;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:6px;padding:7px 11px;cursor:pointer}
+.seg button{appearance:none;font:inherit;font-size:.88rem;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:6px;padding:8px 12px;cursor:pointer}
 .seg button.on{background:var(--accent);border-color:var(--accent);color:var(--surface)}
-.seg button.on.w{background:var(--win);border-color:var(--win)}
-.seg button.on.l{background:var(--loss);border-color:var(--loss)}
-.op{display:grid;gap:8px;border-top:1px dashed var(--line);padding-top:10px}
-.op .t{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:flex;justify-content:space-between}
+.seg button.w.on{background:var(--win);border-color:var(--win)}
+.seg button.l.on{background:var(--loss);border-color:var(--loss)}
+.big2 button{flex:1;padding:11px;font-weight:700}
+.op{display:grid;gap:10px;border:1px solid var(--line);border-radius:9px;padding:12px}
+.op.soros{border-color:var(--soros);background:linear-gradient(0deg,transparent,var(--soros-soft) 140%)}
+.op .t{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:flex;justify-content:space-between;gap:8px;align-items:center}
+.op .t .tp{font-weight:700;color:var(--accent)} .op.soros .t .tp{color:var(--soros)}
 .fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.fields label{display:grid;gap:3px;font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
-.hint{font-size:.78rem;color:var(--muted)}
-.lock{font-size:.82rem;color:var(--muted);font-style:italic}
+.lock{font-size:.88rem;border-radius:8px;padding:8px 10px;background:var(--bg);color:var(--muted)}
+.lock.stop{background:var(--loss-soft);color:var(--loss);font-weight:600}
+.lock.meta{background:var(--win-soft);color:var(--win);font-weight:600}
+.sinfo{display:flex;gap:12px;flex-wrap:wrap;font-size:.82rem;color:var(--muted)}
+.sinfo b{font-family:var(--f-num);color:var(--fg)}
 .actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 .btn{appearance:none;font:inherit;font-weight:600;border-radius:7px;padding:10px 16px;cursor:pointer;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
-.err{color:var(--loss);font-size:.82rem}
-.ro .seg button,.ro input,.ro select{pointer-events:none}
-@media (prefers-reduced-motion:no-preference){.day{transition:border-color .15s}}
-.wrap>*{min-width:0}
-img,svg{max-width:100%}
+.err{color:var(--loss);font-size:.85rem}
+.ro button[data-a]:not([data-a=close]):not([data-a=sess]),.ro input{pointer-events:none}
 </style>
 
 <div class="wrap">
   <div class="top">
-    <div>
-      <h1>Diário OB</h1>
-      <div class="sub">M1 · expiração 5 min · médias 9 / 21 / 50 · Soros nível 1</div>
-    </div>
+    <div><h1>Diário OB</h1><div class="sub">M1 · expiração 5 min · Respiro, Virada e Muralha · Soros nível 1 · máx. 2 entradas por sessão · parou no 1º loss</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
 
   <div class="kpis">
-    <div class="panel kpi">
-      <div class="lbl">Lucro / prejuízo</div>
-      <div class="big" id="kLucro">R$ 0,00</div>
-      <div class="row"><span>Hoje <b id="kHoje">0,00</b></span><span>Dias <b id="kDias">0</b></span></div>
-    </div>
-    <div class="panel kpi">
-      <div class="lbl">Assertividade</div>
-      <div class="big" id="kAss">–</div>
-      <div class="row"><span>Total <b id="kTot">0</b></span><span>Win <b id="kWin" class="pos">0</b></span><span>Loss <b id="kLoss" class="neg">0</b></span></div>
-      <div class="be" id="kBe"></div>
-    </div>
-    <div class="panel kpi">
-      <div class="lbl">Soros (2ª entrada)</div>
-      <div class="big" id="kSoros">–</div>
-      <div class="row"><span>Feitas <b id="kSorosN">0</b></span><span>Resultado <b id="kSorosV">0,00</b></span></div>
-    </div>
+    <div class="panel kpi"><div class="lbl">Resultado</div><div class="big" id="kRes">R$ 0,00</div>
+      <div class="row"><span>Hoje <b id="kHoje">0,00</b></span><span>Dias <b id="kDias">0</b></span></div></div>
+    <div class="panel kpi"><div class="lbl">Assertividade</div><div class="big" id="kAss">–</div>
+      <div class="row"><span>Ops <b id="kTot">0</b></span><span>Win <b id="kW" class="pos">0</b></span><span>Loss <b id="kL" class="neg">0</b></span></div>
+      <div class="hint" id="kBe" style="margin-top:4px"></div></div>
+    <div class="panel kpi"><div class="lbl">Soros (2ª entrada)</div><div class="big" id="kSor">–</div>
+      <div class="row"><span>Feitos <b id="kSorN">0</b></span><span>Meta cheia <b id="kCic">0</b></span></div></div>
+    <div class="panel kpi"><div class="lbl">Aproveitamento</div><div class="big" id="kApr">–</div>
+      <div class="row"><span>Meta <b id="kMeta" class="pos">0</b></span><span>Stop <b id="kStop" class="neg">0</b></span><span>Sessões <b id="kSes">0</b></span></div>
+      <div class="hint" style="margin-top:4px" id="kAprTxt">sessões que fecharam no positivo</div></div>
   </div>
 
   <div class="panel cfg">
-    <label for="cfgBase">Mão base (R$)<input id="cfgBase" type="number" min="0" step="0.5" inputmode="decimal"></label>
-    <label for="cfgPayout">Payout (%)<input id="cfgPayout" type="number" min="1" max="100" step="1" inputmode="numeric"></label>
-    <span class="hint" id="cfgHint"></span>
+    <label for="cBase">Mão base (R$)<input id="cBase" type="number" min="0" step="0.5" inputmode="decimal"></label>
+    <label for="cPay">Payout (%)<input id="cPay" type="number" min="1" max="100" step="1" inputmode="numeric"></label>
+    <span class="hint" id="cHint"></span>
   </div>
 
   <div class="panel" style="display:grid;gap:16px">
@@ -133,288 +124,231 @@ img,svg{max-width:100%}
   </div>
 
   <div class="two">
-    <div class="panel"><h2 style="margin-bottom:8px">Por estratégia</h2><div class="tbl-wrap"><table id="tEst"></table></div></div>
-    <div class="panel"><h2 style="margin-bottom:8px">Por sessão</h2><div class="tbl-wrap"><table id="tSess"></table></div></div>
+    <div class="panel"><h2 style="margin-bottom:8px">Por operacional</h2><div class="tbl-wrap"><table id="tOp"></table></div></div>
+    <div class="panel"><h2 style="margin-bottom:8px">Por sessão e entrada</h2><div class="tbl-wrap"><table id="tSe"></table></div></div>
   </div>
 </div>
 
-<div class="ov" id="ov" hidden>
-  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"></div>
-</div>
+<div class="ov" id="ov" hidden><div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"></div></div>
 
 <script>
-const START = "2026-10-09";
-const END = "2026-12-17";
-const EST = [
-  {id:"virada", nome:"Virada", desc:"cruzamento 9×21 a favor da 50"},
-  {id:"respiro", nome:"Respiro", desc:"pullback na zona 9–21"},
-  {id:"muralha", nome:"Muralha", desc:"toque e rejeição na 50"}
-];
-const SESS = [{id:"manha",nome:"Manhã"},{id:"tarde",nome:"Tarde"}];
-
-let days = {};          // date -> doc
-let cfg = {base:10, payout:85};
-let db = null, canWrite = true;
-const LS = "diarioOB.v1";
-
-const brl = v => (v<0?"-":"") + "R$ " + Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
-const n2 = v => (v<0?"-":v>0?"+":"") + Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
-const pct = (a,b) => b ? (a/b*100).toLocaleString("pt-BR",{maximumFractionDigits:1})+"%" : "–";
+const START="2026-10-13", END="2026-12-17", LS="diarioOB2.v1";
+const OPS=[{id:"respiro",nome:"Respiro"},{id:"virada",nome:"Virada"},{id:"muralha",nome:"Muralha"}];
+const SESS=[{id:"manha",nome:"Manhã"},{id:"tarde",nome:"Tarde"}];
+function janelas(ds){const d=ds>="2026-11-02";return {manha:d?"10:45–12:45":"09:45–11:45",tarde:d?"14:00–16:00":"13:30–15:30"}}
+let days={}, cfg={base:10,payout:85}, db=null;
+const $=id=>document.getElementById(id);
+const brl=v=>(v<0?"-":"")+"R$ "+Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const n2=v=>(v<0?"−":v>0?"+":"")+Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const pct=(a,b)=>b?(a/b*100).toLocaleString("pt-BR",{maximumFractionDigits:1})+"%":"–";
+const r2=v=>Math.round(v*100)/100;
+const opNome=id=>(OPS.find(o=>o.id===id)||{nome:"Sem operacional"}).nome;
 function todayStr(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
-const $ = id => document.getElementById(id);
+function setStatus(t){$("status").textContent=t}
+const ui_=window.ui||{toast(){},done(){}};
 
-function emptySess(){return {status:"pendente", ops:[]}}
-function emptyDay(date){return {date, manha:emptySess(), tarde:emptySess()}}
-function opValue(op){return op.resultado==="win" ? Math.abs(op.valor||0) : -Math.abs(op.valor||0)}
-function dayNet(d){let s=0;for(const k of ["manha","tarde"]) for(const op of (d[k]?.ops||[])) s+=opValue(op);return s}
+/* ---------- regras da sessão ---------- */
+const val=o=>o.res==="win"?Math.abs(+o.valor||0):o.res==="loss"?-Math.abs(+o.valor||0):0;
+function kinds(ops){ // marca cada entrada como mão base ou Soros
+  const k=[];ops.forEach((o,i)=>{k[i]=(i>0&&k[i-1]==="base"&&ops[i-1].res==="win")?"soros":"base"});return k;
+}
+function sessInfo(s){
+  const ops=(s&&s.ops)||[], k=kinds(ops);
+  const losses=ops.filter(o=>o.res==="loss").length, ciclos=ops.filter((o,i)=>k[i]==="soros"&&o.res==="win").length;
+  // para no 1º loss ou depois da 2ª entrada (o Soros)
+  let stop=null; for(let i=0;i<ops.length;i++){if(!ops[i].res)break;if(ops[i].res==="loss"){stop={at:i,why:"loss"};break}if(i===1){stop={at:i,why:"meta"};break}}
+  const net=ops.reduce((a,o)=>a+val(o),0), feita=ops.length&&ops.every(o=>o.res);
+  // resultado da sessão para o aproveitamento: meta (fechou no positivo) ou stop (fechou no negativo)
+  const fim=!feita?null:net>0?(ops.length===2&&ops.every(o=>o.res==="win")?"cheia":"parcial"):"stop";
+  return {ops,k,losses,ciclos,stop,ok:!stop||stop.at===ops.length-1,net,fim};
+}
+const dayNet=d=>SESS.reduce((a,s)=>a+sessInfo(d[s.id]).net,0);
+const dayOps=d=>SESS.flatMap(s=>((d[s.id]&&d[s.id].ops)||[]));
+function nextStake(s){ // mão base ou mão base + lucro da anterior (Soros)
+  const ops=s.ops,k=kinds(ops),b=+cfg.base||0;
+  if(!ops.length)return b;
+  const i=ops.length-1;
+  return (k[i]==="base"&&ops[i].res==="win")?r2((+ops[i].entrada||b)+Math.abs(+ops[i].valor||0)):b;
+}
+const calcValor=o=>o.res==="win"?r2((+o.entrada||0)*(+cfg.payout||0)/100):r2(+o.entrada||0);
 
-/* ---------- storage ---------- */
+/* ---------- salvar ---------- */
 function lsLoad(){try{const r=JSON.parse(localStorage.getItem(LS)||"null");if(r){days=r.days||{};cfg=Object.assign(cfg,r.cfg||{})}}catch(e){}}
 function lsSave(){try{localStorage.setItem(LS,JSON.stringify({days,cfg}))}catch(e){}}
-
 async function saveDay(d){
-  days[d.date]=d; render();
-  if(db){
-    try{await db.doc("dias/"+d.date).set(d); setStatus("Salvo")}
-    catch(e){ if(e&&e.code==="invalid_argument"){canWrite=false;setStatus("Somente leitura")} else setStatus("Não salvou. Tente de novo.") }
-  } else { lsSave(); setStatus("Salvo neste aparelho") }
+  days[d.date]=d;lsSave();render();
+  if(db){try{await db.doc("dias/"+d.date).set(JSON.parse(JSON.stringify(d)));setStatus("Salvo")}catch(e){setStatus("Não salvou na conta. Ficou neste aparelho.");ui_.toast("Não salvou na conta",1)}}
+  else setStatus("Salvo neste aparelho");
 }
-let cfgTimer=null;
-function saveCfg(){
-  clearTimeout(cfgTimer);
-  cfgTimer=setTimeout(async()=>{
-    if(db){try{await db.doc("config/geral").set({base:cfg.base,payout:cfg.payout})}catch(e){}}
-    else lsSave();
-  },600);
-}
-function setStatus(t){$("status").textContent=t}
+let cfgT=null;
+function saveCfg(){lsSave();clearTimeout(cfgT);cfgT=setTimeout(async()=>{if(db){try{await db.doc("config/geral").set(cfg)}catch(e){}}},500)}
 
-/* ---------- render ---------- */
-function render(){renderKpis();renderCal();renderTables();renderCfgHint()}
-
-function allOps(){
-  const out=[];
-  for(const d of Object.values(days)) for(const s of SESS) (d[s.id]?.ops||[]).forEach((op,i)=>out.push({...op,sess:s.id,idx:i,date:d.date}));
-  return out;
-}
+/* ---------- tela ---------- */
+function allOps(){const out=[];Object.values(days).forEach(d=>SESS.forEach(s=>{const I=sessInfo(d[s.id]);I.ops.forEach((o,i)=>out.push({...o,kind:I.k[i],sess:s.id}))}));return out.filter(o=>o.res)}
+function render(){renderKpis();renderCal();renderTables();renderHint()}
+function renderHint(){const b=+cfg.base||0,p=(+cfg.payout||0)/100;$("cHint").textContent="Win na mão base = +"+(b*p).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})+" · entrada do Soros = R$ "+(b+b*p).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}
 function renderKpis(){
-  const ops=allOps(), w=ops.filter(o=>o.resultado==="win").length, l=ops.length-w;
-  const total=ops.reduce((s,o)=>s+opValue(o),0);
+  const ops=allOps(), w=ops.filter(o=>o.res==="win").length, l=ops.length-w, tot=ops.reduce((a,o)=>a+val(o),0);
   const t=todayStr(), hoje=days[t]?dayNet(days[t]):0;
-  const diasOp=Object.values(days).filter(d=>(d.manha.ops.length+d.tarde.ops.length)>0).length;
-  $("kLucro").textContent=brl(total); $("kLucro").className="big "+(total>0?"pos":total<0?"neg":"");
-  $("kHoje").textContent=n2(hoje); $("kHoje").className=hoje>0?"pos":hoje<0?"neg":"";
-  $("kDias").textContent=diasOp;
-  const be=100/(1+cfg.payout/100), rate=ops.length?w/ops.length*100:null;
-  $("kAss").textContent=pct(w,ops.length); $("kAss").className="big "+(rate==null?"":rate>=be?"pos":"neg");
-  $("kTot").textContent=ops.length; $("kWin").textContent=w; $("kLoss").textContent=l;
-  $("kBe").innerHTML="Empate com payout "+cfg.payout+"%: <b class='num'>"+be.toLocaleString("pt-BR",{maximumFractionDigits:1})+"%</b>"+(rate==null?"":rate>=be?" · <span class='pos'>acima</span>":" · <span class='neg'>abaixo</span>");
-  const so=ops.filter(o=>o.idx===1), sw=so.filter(o=>o.resultado==="win").length, sv=so.reduce((s,o)=>s+opValue(o),0);
-  $("kSoros").textContent=pct(sw,so.length); $("kSorosN").textContent=so.length;
-  $("kSorosV").textContent=n2(sv); $("kSorosV").className=sv>0?"pos":sv<0?"neg":"";
-}
-function renderCfgHint(){
-  const b=+cfg.base||0, p=(+cfg.payout||0)/100;
-  $("cfgHint").textContent="Win na 1ª = +"+(b*p).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})+" · entrada do Soros = R$ "+(b+b*p).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  $("kRes").textContent=brl(tot);$("kRes").className="big "+(tot>0?"pos":tot<0?"neg":"");
+  $("kHoje").textContent=n2(hoje);$("kHoje").className=hoje>0?"pos":hoje<0?"neg":"";
+  $("kDias").textContent=Object.values(days).filter(d=>dayOps(d).length).length;
+  const be=100/(1+(+cfg.payout||0)/100), rate=ops.length?w/ops.length*100:null;
+  $("kAss").textContent=pct(w,ops.length);$("kAss").className="big "+(rate==null?"":rate>=be?"pos":"neg");
+  $("kTot").textContent=ops.length;$("kW").textContent=w;$("kL").textContent=l;
+  $("kBe").innerHTML="Empate com payout "+cfg.payout+"%: <b class='num'>"+be.toLocaleString("pt-BR",{maximumFractionDigits:1})+"%</b>";
+  const so=ops.filter(o=>o.kind==="soros"), sw=so.filter(o=>o.res==="win").length;
+  $("kSor").textContent=pct(sw,so.length);$("kSorN").textContent=so.length;$("kCic").textContent=sw;
+  let ses=0,meta=0,stp=0,cheia=0;Object.values(days).forEach(d=>SESS.forEach(s=>{const I=sessInfo(d[s.id]);if(!I.fim)return;ses++;if(I.fim==="stop")stp++;else{meta++;if(I.fim==="cheia")cheia++}}));
+  $("kApr").textContent=pct(meta,ses);$("kApr").className="big "+(ses?(meta/ses>=.5?"pos":"neg"):"");
+  $("kMeta").textContent=meta;$("kStop").textContent=stp;$("kSes").textContent=ses;
+  $("kAprTxt").textContent=ses?"sessões que fecharam no positivo · "+cheia+" com meta cheia (2 wins)":"sessões que fecharam no positivo";
 }
 function renderCal(){
-  const cal=$("cal"); cal.innerHTML="";
-  const t=todayStr();
-  const s=new Date(START+"T12:00:00"), e=new Date(END+"T12:00:00");
+  const cal=$("cal");cal.innerHTML="";const t=todayStr();
+  const s=new Date(START+"T12:00:00"),e=new Date(END+"T12:00:00");
   let cur=new Date(s.getFullYear(),s.getMonth(),1,12);
   while(cur<=e){
-    const y=cur.getFullYear(), m=cur.getMonth();
-    const box=document.createElement("div"); box.className="month";
-    const h=document.createElement("h3"); h.textContent=cur.toLocaleDateString("pt-BR",{month:"long",year:"numeric"}); box.appendChild(h);
-    const dow=document.createElement("div"); dow.className="dow";
-    ["dom","seg","ter","qua","qui","sex","sáb"].forEach(x=>{const sp=document.createElement("span");sp.textContent=x;dow.appendChild(sp)});
-    box.appendChild(dow);
-    const g=document.createElement("div"); g.className="grid";
-    const d0=(y===s.getFullYear()&&m===s.getMonth())?s.getDate():1, first=new Date(y,m,d0).getDay(), last=new Date(y,m+1,0).getDate();
-    for(let i=0;i<first;i++){const b=document.createElement("div");b.className="day blank";g.appendChild(b)}
+    const y=cur.getFullYear(),m=cur.getMonth();
+    const box=document.createElement("div");box.className="month";
+    box.innerHTML="<h3>"+cur.toLocaleDateString("pt-BR",{month:"long",year:"numeric"})+"</h3><div class='dow'><span>seg</span><span>ter</span><span>qua</span><span>qui</span><span>sex</span></div>";
+    const g=document.createElement("div");g.className="grid";
+    const d0=(y===s.getFullYear()&&m===s.getMonth())?s.getDate():1,last=new Date(y,m+1,0).getDate();let first=true;
     for(let d=d0;d<=last;d++){
-      const ds=y+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
-      const btn=document.createElement("button"); btn.type="button"; btn.className="day";
-      if(ds<START||ds>END){btn.className="day blank";g.appendChild(btn);continue}
-      const doc=days[ds], net=doc?dayNet(doc):0, ops=doc?[...doc.manha.ops,...doc.tarde.ops]:[];
-      if(ds===t) btn.classList.add("today");
-      if(ds<t) btn.classList.add("past");
-      if(ops.length){btn.classList.add(net>0?"pos":net<0?"neg":"x")}
-      const dn=document.createElement("span"); dn.className="d"; dn.textContent=d; btn.appendChild(dn);
-      const dots=document.createElement("span"); dots.className="dots";
-      ops.forEach(o=>{const x=document.createElement("i");x.className="dot "+(o.resultado==="win"?"w":"l");dots.appendChild(x)});
-      if(doc && !ops.length && (doc.manha.status==="nao_operei"||doc.tarde.status==="nao_operei")){const x=document.createElement("i");x.className="dot";dots.appendChild(x)}
-      btn.appendChild(dots);
-      if(ops.length){const v=document.createElement("span");v.className="v "+(net>0?"pos":net<0?"neg":"");v.textContent=n2(net);btn.appendChild(v)}
-      btn.setAttribute("aria-label",ds+(ops.length?", resultado "+n2(net):""));
-      btn.addEventListener("click",()=>openDay(ds));
-      g.appendChild(btn);
+      const dt=new Date(y,m,d,12),wd=dt.getDay();if(wd===0||wd===6)continue;
+      const ds=y+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");if(ds>END)break;
+      if(first){for(let i=1;i<wd;i++){const b=document.createElement("div");b.className="day blank";g.appendChild(b)}first=false}
+      const doc=days[ds], ops=doc?dayOps(doc).filter(o=>o.res):[], net=doc?dayNet(doc):0;
+      const b=document.createElement("button");b.type="button";b.className="day"+(ds===t?" today":"")+(ops.length?(net>0?" pos":net<0?" neg":""):"");
+      let h="<span class='d'>"+d+"</span><span class='dots'>"+ops.map(o=>"<i class='dot "+(o.res==="win"?"w":"l")+"'></i>").join("")+(doc&&!ops.length&&SESS.some(x=>doc[x.id]&&doc[x.id].status==="nao")?"<i class='dot'></i>":"")+"</span>";
+      if(ops.length)h+="<span class='v "+(net>0?"pos":net<0?"neg":"")+"'>"+n2(net)+"</span>";
+      b.innerHTML=h;b.setAttribute("aria-label",dt.toLocaleDateString("pt-BR")+(ops.length?", resultado "+n2(net):""));
+      b.addEventListener("click",()=>openDay(ds));g.appendChild(b);
     }
-    box.appendChild(g); cal.appendChild(box);
-    cur=new Date(y,m+1,1,12);
+    box.appendChild(g);cal.appendChild(box);cur=new Date(y,m+1,1,12);
   }
 }
-function tableHTML(rows,head){
-  return "<thead><tr>"+head.map(h=>"<th>"+h+"</th>").join("")+"</tr></thead><tbody>"+rows.map(r=>"<tr>"+r.map((c,i)=>"<td"+(c.cls?" class='"+c.cls+"'":"")+">"+(c.t??c)+"</td>").join("")+"</tr>").join("")+"</tbody>";
-}
-function statRow(nome,ops){
-  const w=ops.filter(o=>o.resultado==="win").length, v=ops.reduce((s,o)=>s+opValue(o),0);
-  return [nome,ops.length,{t:w,cls:"pos"},{t:ops.length-w,cls:"neg"},pct(w,ops.length),{t:n2(v),cls:v>0?"pos":v<0?"neg":""}];
-}
+function statRow(nome,ops){const w=ops.filter(o=>o.res==="win").length,v=ops.reduce((a,o)=>a+val(o),0);
+  return "<tr><td>"+nome+"</td><td>"+ops.length+"</td><td class='pos'>"+w+"</td><td class='neg'>"+(ops.length-w)+"</td><td>"+pct(w,ops.length)+"</td><td class='"+(v>0?"pos":v<0?"neg":"")+"'>"+n2(v)+"</td></tr>"}
 function renderTables(){
-  const ops=allOps(), head=["","Ops","Win","Loss","Acerto","R$"];
-  $("tEst").innerHTML=tableHTML(EST.map(e=>statRow(e.nome,ops.filter(o=>o.estrategia===e.id))),head);
-  $("tSess").innerHTML=tableHTML([
-    ...SESS.map(s=>statRow(s.nome,ops.filter(o=>o.sess===s.id))),
-    statRow("1ª entrada",ops.filter(o=>o.idx===0)),
-    statRow("2ª (Soros)",ops.filter(o=>o.idx===1))
-  ],head);
+  const ops=allOps(), head="<thead><tr><th></th><th>Ops</th><th>Win</th><th>Loss</th><th>Acerto</th><th>R$</th></tr></thead><tbody>";
+  $("tOp").innerHTML=head+OPS.map(x=>statRow(x.nome,ops.filter(o=>o.operacional===x.id))).join("")+"</tbody>";
+  $("tSe").innerHTML=head+SESS.map(x=>statRow(x.nome,ops.filter(o=>o.sess===x.id))).join("")+statRow("Mão base",ops.filter(o=>o.kind==="base"))+statRow("Soros",ops.filter(o=>o.kind==="soros"))+"</tbody>";
 }
 
-/* ---------- modal ---------- */
-let draft=null, readOnly=false, lastFocus=null;
+/* ---------- janela do dia ---------- */
+let draft=null, ro=false, cs="manha", lastFocus=null;
+const emptySess=()=>({status:"",ops:[]});
 function openDay(ds){
   lastFocus=document.activeElement;
-  draft=JSON.parse(JSON.stringify(days[ds]||emptyDay(ds)));
-  readOnly = ds<todayStr() || !canWrite;
-  drawModal(); $("ov").hidden=false;
-  setTimeout(()=>{const f=$("modal").querySelector("button,input,select");f&&f.focus()},0);
+  draft=JSON.parse(JSON.stringify(days[ds]||{date:ds}));draft.date=ds;SESS.forEach(s=>{draft[s.id]=draft[s.id]||emptySess();draft[s.id].ops=draft[s.id].ops||[]});
+  ro=ds<todayStr();
+  const tarde=new Date().getHours()>=13;cs=ds===todayStr()&&tarde?"tarde":"manha";
+  drawModal();$("ov").hidden=false;
 }
-function closeModal(){ $("ov").hidden=true; draft=null; lastFocus&&lastFocus.focus() }
-
-function defaultStake(sess,idx){
-  const b=+cfg.base||0, p=(+cfg.payout||0)/100;
-  if(idx===0) return b;
-  const op1=sess.ops[0]; if(!op1) return b;
-  return (+op1.entrada||b) + Math.abs(op1.valor||0);
+function closeModal(){$("ov").hidden=true;draft=null;lastFocus&&lastFocus.focus&&lastFocus.focus()}
+function nextHTML(){
+  const s=draft[cs], I=sessInfo(s);
+  if(s.status!=="op")return "";
+  const lastOp=I.ops[I.ops.length-1];
+  if(I.stop)return "<div class='lock "+(I.net>0?"meta":"stop")+"'>"+(I.stop.why==="loss"?(I.stop.at===0?"Loss na 1ª: stop. Sessão encerrada.":"Loss no Soros: sessão encerrada. Volta para a mão base na próxima."):"Meta cheia: 2 wins (mão base + Soros). Sessão encerrada, fecha a corretora.")+"</div>";
+  if(lastOp&&!lastOp.res)return "<div class='lock'>Marque Win ou Loss nesta entrada para liberar a próxima.</div>";
+  if(s.parei)return "<div class='lock'>Você encerrou esta sessão.</div><div class='seg'><button type='button' data-a='voltar'>Reabrir sessão</button></div>";
+  const isSoros=lastOp&&I.k[I.ops.length-1]==="base"&&lastOp.res==="win";
+  return "<div class='seg big2'><button type='button' data-a='add'>+ "+(I.ops.length?"2ª entrada · Soros":"1ª entrada · mão base")+"</button>"+(I.ops.length?"<button type='button' data-a='parei'>Parei no 1º win</button>":"")+"</div>";
 }
-function calcValor(op){ const p=(+cfg.payout||0)/100; return op.resultado==="win" ? +(op.entrada*p).toFixed(2) : +(+op.entrada).toFixed(2) }
-
+let lastNx="";
 function drawModal(){
-  const m=$("modal"); m.className="modal"+(readOnly?" ro":"");
-  const d=new Date(draft.date+"T12:00:00");
-  let h="<div class='mhead'><h2 id='mTitle'>"+d.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit"})+"</h2><span id='mNet' class='num "+(dayNet(draft)>0?"pos":dayNet(draft)<0?"neg":"")+"'>"+n2(dayNet(draft))+"</span></div>";
-  if(readOnly) h+="<div class='lock'>Dia encerrado. Só visualização.</div>";
-  SESS.forEach(s=>{
-    const ss=draft[s.id];
-    h+="<div class='sess'><h4>"+s.nome+"<span class='hint'>"+(ss.ops.length?ss.ops.length+" de 2":"")+"</span></h4>";
-    h+="<div class='seg'><button type='button' data-a='status' data-s='"+s.id+"' data-v='operei' class='"+(ss.status==="operei"?"on":"")+"'>Operei</button><button type='button' data-a='status' data-s='"+s.id+"' data-v='nao_operei' class='"+(ss.status==="nao_operei"?"on":"")+"'>Não operei</button></div>";
-    if(ss.status==="operei"){
-      for(let i=0;i<2;i++){
-        const op=ss.ops[i];
-        if(i===1){
-          const o1=ss.ops[0];
-          if(!o1||!o1.resultado) break;
-          if(o1.resultado==="loss"){h+="<div class='lock'>Loss na 1ª. Sessão encerrada, sem 2ª entrada.</div>";break}
-          if(!op){
-            h+="<div class='op'><div class='t'><span>2ª entrada · Soros</span></div><div class='seg'><button type='button' data-a='add2' data-s='"+s.id+"'>Fiz a 2ª entrada</button><button type='button' data-a='no2' data-s='"+s.id+"' class='"+(ss.sem2?"on":"")+"'>Não fiz 2ª entrada</button></div></div>";
-            break;
-          }
-        }
-        if(!op) break;
-        h+="<div class='op'><div class='t'><span>"+(i===0?"1ª entrada":"2ª entrada · Soros")+"</span>"+(op.resultado?"<span id='rv-"+s.id+i+"' class='num "+(op.resultado==="win"?"pos":"neg")+"'>"+n2(opValue(op))+"</span>":"")+"</div>";
-        h+="<div class='seg'>"+EST.map(e=>"<button type='button' data-a='est' data-s='"+s.id+"' data-i='"+i+"' data-v='"+e.id+"' class='"+(op.estrategia===e.id?"on":"")+"' title='"+e.desc+"'>"+e.nome+"</button>").join("")+"</div>";
-        h+="<div class='seg'><button type='button' data-a='dir' data-s='"+s.id+"' data-i='"+i+"' data-v='CALL' class='"+(op.direcao==="CALL"?"on":"")+"'>CALL ▲</button><button type='button' data-a='dir' data-s='"+s.id+"' data-i='"+i+"' data-v='PUT' class='"+(op.direcao==="PUT"?"on":"")+"'>PUT ▼</button>";
-        h+="<button type='button' data-a='res' data-s='"+s.id+"' data-i='"+i+"' data-v='win' class='w "+(op.resultado==="win"?"on":"")+"'>Win</button><button type='button' data-a='res' data-s='"+s.id+"' data-i='"+i+"' data-v='loss' class='l "+(op.resultado==="loss"?"on":"")+"'>Loss</button></div>";
-        h+="<div class='fields'><label for='en-"+s.id+i+"'>Entrada (R$)<input id='en-"+s.id+i+"' type='number' step='0.01' min='0' inputmode='decimal' data-a='entrada' data-s='"+s.id+"' data-i='"+i+"' value='"+(op.entrada??"")+"'></label>";
-        h+="<label for='va-"+s.id+i+"'>"+(op.resultado==="loss"?"Perda (R$)":"Lucro (R$)")+"<input id='va-"+s.id+i+"' type='number' step='0.01' min='0' inputmode='decimal' data-a='valor' data-s='"+s.id+"' data-i='"+i+"' value='"+(op.valor??"")+"'></label></div>";
-        h+="</div>";
-        if(i===0 && op.resultado==="win" && !ss.ops[1]){
-          // fallthrough to loop i=1 which shows add2 buttons
-        }
-      }
-    }
-    h+="</div>";
-  });
-  h+="<div class='err' id='mErr'></div>";
-  h+="<div class='actions'>"+(readOnly?"<button type='button' class='btn' data-a='close'>Fechar</button>":"<button type='button' class='btn' data-a='close'>Fechar sem salvar</button><button type='button' class='btn primary' data-a='save'>Salvar</button>")+"</div>";
+  const m=$("modal");m.className="modal"+(ro?" ro":"");
+  const net=dayNet(draft), dt=new Date(draft.date+"T12:00:00"), J=janelas(draft.date), s=draft[cs], I=sessInfo(s);
+  let h="<div class='mhead'><h2 id='mTitle'>"+dt.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit"})+"</h2><span id='mNet' class='num "+(net>0?"pos":net<0?"neg":"")+"'>"+n2(net)+"</span></div>";
+  if(ro)h+="<div class='lock'>Dia encerrado. Só visualização.</div>";
+  h+="<div class='stabs'>"+SESS.map(x=>{const n=sessInfo(draft[x.id]).net,c=(draft[x.id].ops||[]).length;return "<button type='button' data-a='sess' data-v='"+x.id+"' class='"+(cs===x.id?"on":"")+"'>"+x.nome+"<small>"+J[x.id]+(c?" · "+n2(n):"")+"</small></button>"}).join("")+"</div>";
+  h+="<div class='seg'><button type='button' data-a='status' data-v='op' class='"+(s.status==="op"?"on":"")+"'>Operei</button><button type='button' data-a='status' data-v='nao' class='"+(s.status==="nao"?"on":"")+"'>Não operei</button></div>";
+  if(s.status==="op"&&I.ops.length)h+="<div class='sinfo'><span>Entradas <b>"+I.ops.length+"/2</b></span><span>Sessão <b class='"+(I.net>0?"pos":I.net<0?"neg":"")+"' id='sNet'>"+n2(I.net)+"</b></span></div>";
+  if(s.status==="op"){
+    I.ops.forEach((o,i)=>{
+      const k=I.k[i];
+      h+="<div class='op"+(k==="soros"?" soros":"")+"'><div class='t'><span>"+(i+1)+"ª entrada · <span class='tp'>"+(k==="soros"?"Soros":"Mão base")+"</span></span><span id='rv"+i+"' class='num "+(val(o)>0?"pos":val(o)<0?"neg":"")+"'>"+(o.res?n2(val(o)):"")+"</span></div>";
+      h+="<div class='seg'>"+OPS.map(x=>"<button type='button' data-a='opr' data-i='"+i+"' data-v='"+x.id+"' class='"+(o.operacional===x.id?"on":"")+"'>"+x.nome+"</button>").join("")+"</div>";
+      h+="<div class='seg'><button type='button' data-a='dir' data-i='"+i+"' data-v='CALL' class='"+(o.direcao==="CALL"?"on":"")+"'>CALL ▲</button><button type='button' data-a='dir' data-i='"+i+"' data-v='PUT' class='"+(o.direcao==="PUT"?"on":"")+"'>PUT ▼</button></div>";
+      h+="<div class='seg big2'><button type='button' data-a='res' data-i='"+i+"' data-v='win' class='w"+(o.res==="win"?" on":"")+"'>Win ✓</button><button type='button' data-a='res' data-i='"+i+"' data-v='loss' class='l"+(o.res==="loss"?" on":"")+"'>Loss ✕</button></div>";
+      h+="<div class='fields'><label for='en"+i+"'>Entrada (R$)<input id='en"+i+"' type='number' min='0' step='0.01' inputmode='decimal' data-f='entrada' data-i='"+i+"' value='"+(o.entrada??"")+"'></label>"+
+        "<label for='vl"+i+"'>"+(o.res==="loss"?"Perda (R$)":"Lucro (R$)")+"<input id='vl"+i+"' type='number' min='0' step='0.01' inputmode='decimal' data-f='valor' data-i='"+i+"' value='"+(o.valor??"")+"'></label></div>";
+      h+="</div>";
+    });
+    lastNx=nextHTML();h+="<div id='nx' style='display:grid;gap:8px'>"+lastNx+"</div>";
+    if(I.ops.length&&!ro)h+="<div class='seg'><button type='button' data-a='rm'>Apagar a última entrada</button></div>";
+  }
+  h+="<div class='err' id='mErr'></div><div class='actions'>"+(ro?"<button type='button' class='btn' data-a='close'>Fechar</button>":"<button type='button' class='btn' data-a='close'>Fechar sem salvar</button><button type='button' class='btn primary' data-a='save'>Salvar</button>")+"</div>";
   m.innerHTML=h;
 }
-
-$("modal").addEventListener("click",ev=>{
-  const b=ev.target.closest("button[data-a]"); if(!b) return;
+function softUpdate(i){
+  const s=draft[cs],o=s.ops[i];if(!o)return;
+  const vl=$("vl"+i);if(vl&&document.activeElement!==vl)vl.value=o.valor??"";
+  const rv=$("rv"+i);if(rv){rv.textContent=o.res?n2(val(o)):"";rv.className="num "+(val(o)>0?"pos":val(o)<0?"neg":"")}
+  const net=dayNet(draft),mn=$("mNet");mn.textContent=n2(net);mn.className="num "+(net>0?"pos":net<0?"neg":"");
+  const sn=$("sNet");if(sn){const v=sessInfo(s).net;sn.textContent=n2(v);sn.className=v>0?"pos":v<0?"neg":""}
+  const nx=nextHTML();if(nx!==lastNx){lastNx=nx;$("nx").innerHTML=nx}
+}
+$("modal").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-a]");if(!b)return;
   const a=b.dataset.a;
-  if(a==="close") return closeModal();
-  if(readOnly) return;
-  if(a==="save") return doSave();
-  const ss=draft[b.dataset.s], i=+b.dataset.i;
-  if(a==="status"){
-    ss.status=b.dataset.v;
-    if(ss.status==="nao_operei"){ss.ops=[];ss.sem2=false}
-    else if(!ss.ops.length) ss.ops=[{entrada:defaultStake(ss,0)}];
-  }
-  if(a==="add2"){ss.sem2=false; ss.ops[1]={entrada:+defaultStake(ss,1).toFixed(2)}}
-  if(a==="no2"){ss.sem2=true}
-  if(a==="est") ss.ops[i].estrategia=b.dataset.v;
-  if(a==="dir") ss.ops[i].direcao=b.dataset.v;
-  if(a==="res"){
-    const op=ss.ops[i]; op.resultado=b.dataset.v;
-    if(op.entrada!=null && op.entrada!=="") op.valor=calcValor(op);
-    if(i===0 && op.resultado==="loss"){ss.ops.length=1; ss.sem2=false}
-    if(i===0 && ss.ops[1]) ss.ops[1].entrada=+defaultStake(ss,1).toFixed(2);
-  }
+  if(a==="close")return closeModal();
+  if(a==="sess"){cs=b.dataset.v;return drawModal()}
+  if(ro)return;
+  if(a==="save")return doSave();
+  const s=draft[cs], i=+b.dataset.i, o=s.ops[i];
+  if(a==="status"){s.status=b.dataset.v;if(s.status==="nao"){s.ops=[];s.parei=false}else if(!s.ops.length)s.ops.push({entrada:nextStake(s)})}
+  if(a==="add"){s.parei=false;s.ops.push({entrada:nextStake(s),operacional:(s.ops[s.ops.length-1]||{}).operacional})}
+  if(a==="parei")s.parei=true;
+  if(a==="voltar")s.parei=false;
+  if(a==="rm"){s.ops.pop();s.parei=false}
+  if(a==="opr")o.operacional=b.dataset.v;
+  if(a==="dir")o.direcao=b.dataset.v;
+  if(a==="res"){o.res=b.dataset.v;if(o.entrada!=null&&o.entrada!=="")o.valor=calcValor(o);
+    // corta entradas registradas depois do stop
+    const I=sessInfo(s);if(I.stop&&I.stop.at<s.ops.length-1)s.ops.length=I.stop.at+1;
+    // se a 1ª virou loss, a entrada seguinte deixa de ser Soros: ajusta o valor sugerido
+    if(s.ops[i+1]){s.ops[i+1].entrada=nextStake({ops:s.ops.slice(0,i+1)});if(s.ops[i+1].res)s.ops[i+1].valor=calcValor(s.ops[i+1])}}
   drawModal();
 });
-$("modal").addEventListener("change",ev=>{
-  const el=ev.target; if(!el.dataset||!el.dataset.a||readOnly) return;
-  const ss=draft[el.dataset.s], i=+el.dataset.i, op=ss.ops[i], v=parseFloat(el.value);
-  if(el.dataset.a==="entrada"){op.entrada=isNaN(v)?null:v; if(op.resultado&&!isNaN(v)) op.valor=calcValor(op); if(i===0&&ss.ops[1]) ss.ops[1].entrada=+defaultStake(ss,1).toFixed(2)}
-  if(el.dataset.a==="valor"){op.valor=isNaN(v)?null:Math.abs(v); if(i===0&&ss.ops[1]) ss.ops[1].entrada=+defaultStake(ss,1).toFixed(2)}
-  softUpdate();
-});
-$("ov").addEventListener("click",ev=>{ if(ev.target.id==="ov") closeModal() });
-document.addEventListener("keydown",ev=>{ if(ev.key==="Escape" && !$("ov").hidden) closeModal() });
-
-function softUpdate(){
-  // atualiza valores sem redesenhar a janela (redesenhar no meio do toque perdia o clique no Salvar)
-  SESS.forEach(s=>{(draft[s.id].ops||[]).forEach((op,i)=>{
-    const en=document.getElementById("en-"+s.id+i), va=document.getElementById("va-"+s.id+i), rv=document.getElementById("rv-"+s.id+i);
-    if(en&&document.activeElement!==en) en.value=op.entrada??"";
-    if(va&&document.activeElement!==va) va.value=op.valor??"";
-    if(rv){rv.textContent=n2(opValue(op))}
-  })});
-  const net=dayNet(draft), m=document.getElementById("mNet"); if(m){m.textContent=n2(net);m.className="num "+(net>0?"pos":net<0?"neg":"")}
+$("modal").addEventListener("input",onField);
+$("modal").addEventListener("change",onField);
+function onField(e){
+  const el=e.target;if(!el.dataset||!el.dataset.f||ro)return;
+  const s=draft[cs],i=+el.dataset.i,o=s.ops[i],v=parseFloat(el.value),n=isNaN(v)?null:Math.abs(v);
+  if(el.dataset.f==="entrada"){o.entrada=n;if(o.res&&n!=null)o.valor=calcValor(o);if(s.ops[i+1]){s.ops[i+1].entrada=nextStake({ops:s.ops.slice(0,i+1)});const ne=$("en"+(i+1));if(ne)ne.value=s.ops[i+1].entrada}}
+  if(el.dataset.f==="valor"){o.valor=n;if(s.ops[i+1]){s.ops[i+1].entrada=nextStake({ops:s.ops.slice(0,i+1)});const ne=$("en"+(i+1));if(ne)ne.value=s.ops[i+1].entrada}}
+  softUpdate(i);
 }
+$("ov").addEventListener("click",e=>{if(e.target.id==="ov")closeModal()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("ov").hidden)closeModal()});
 function doSave(){
   const err=$("mErr");
-  for(const s of SESS){
-    const ss=draft[s.id];
-    for(const [i,op] of ss.ops.entries()){
-      if(!op.estrategia||!op.resultado||op.valor==null||isNaN(op.valor)){
-        err.textContent=s.nome+", "+(i+1)+"ª entrada: escolha a estratégia, marque Win ou Loss e confira o valor."; return;
+  for(const x of SESS){const s=draft[x.id];
+    if(s.status==="op"){
+      if(!s.ops.length){err.textContent=x.nome+": registre a entrada ou marque Não operei.";cs=x.id;return}
+      for(const [i,o] of s.ops.entries()){
+        if(!o.operacional){err.textContent=x.nome+", "+(i+1)+"ª entrada: escolha Respiro, Virada ou Muralha.";return}
+        if(!o.res){err.textContent=x.nome+", "+(i+1)+"ª entrada: marque Win ou Loss.";return}
+        if(o.valor==null||isNaN(o.valor)){err.textContent=x.nome+", "+(i+1)+"ª entrada: confira o valor.";return}
       }
     }
-    if(ss.status==="operei"&&!ss.ops.length){err.textContent=s.nome+": nenhuma entrada marcada.";return}
   }
-  const d=draft; closeModal(); saveDay(d);
+  const d=draft;closeModal();saveDay(d);ui_.toast("✓ Dia salvo");
 }
 
-/* ---------- config inputs ---------- */
-function bindCfg(){
-  $("cfgBase").value=cfg.base; $("cfgPayout").value=cfg.payout;
-  $("cfgBase").addEventListener("change",e=>{const v=parseFloat(e.target.value);if(!isNaN(v)&&v!==cfg.base){cfg.base=v;saveCfg();renderKpis();renderCfgHint()}});
-  $("cfgPayout").addEventListener("change",e=>{const v=parseFloat(e.target.value);if(!isNaN(v)&&v!==cfg.payout){cfg.payout=v;saveCfg();renderKpis();renderCfgHint()}});
-}
+/* ---------- ajustes ---------- */
+$("cBase").addEventListener("change",e=>{const v=parseFloat(e.target.value);if(!isNaN(v)&&v!==cfg.base){cfg.base=v;saveCfg();renderKpis();renderHint();ui_.toast("✓ Mão base salva")}});
+$("cPay").addEventListener("change",e=>{const v=parseFloat(e.target.value);if(!isNaN(v)&&v!==cfg.payout){cfg.payout=v;saveCfg();renderKpis();renderHint();ui_.toast("✓ Payout salvo")}});
 
-/* ---------- boot ---------- */
-lsLoad(); bindCfg(); render(); setStatus("Conectando…");
+lsLoad();$("cBase").value=cfg.base;$("cPay").value=cfg.payout;render();setStatus("Conectando…");
 (async()=>{
-  try{ db = window.claude ? await window.claude.use("db") : null }catch(e){ db=null }
-  if(!db){ setStatus("Salvando neste aparelho"); return }
-  try{
-    const user=await window.claude.use("user");
-    if(user && user.can){ const c=await user.can("data.write"); if(c===false) canWrite=false }
-  }catch(e){}
-  db.doc("config/geral").onSnapshot(s=>{
-    if(s.exists){const v=s.data(); cfg.base=v.base??cfg.base; cfg.payout=v.payout??cfg.payout;
-      if(document.activeElement!==$("cfgBase")) $("cfgBase").value=cfg.base;
-      if(document.activeElement!==$("cfgPayout")) $("cfgPayout").value=cfg.payout;
-      render()}
-  },()=>{});
-  db.collection("dias").onSnapshot(q=>{
-    const nd={}; q.docs.forEach(d=>{nd[d.id]=d.data()}); days=nd; render();
-    setStatus(canWrite?"Sincronizado":"Somente leitura");
-  },()=>setStatus("Sem conexão com o salvamento"));
+  try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
+  if(!db){setStatus("Salvando neste aparelho");return}
+  db.doc("config/geral").onSnapshot(s=>{if(s.exists){cfg=Object.assign(cfg,s.data());if(document.activeElement!==$("cBase"))$("cBase").value=cfg.base;if(document.activeElement!==$("cPay"))$("cPay").value=cfg.payout;renderKpis();renderHint()}},()=>{});
+  db.collection("dias").onSnapshot(q=>{const m={};q.docs.forEach(d=>{m[d.id]=d.data()});days=m;lsSave();render();setStatus("Sincronizado")},()=>setStatus("Sem conexão com o salvamento"));
 })();
 </script>
 </body></html>

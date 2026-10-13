@@ -1,18 +1,18 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1F5C7A"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="checklist-ob"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Check-list Pré-Mercado</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="checklist-ob2"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Check-list OB</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: veredito do dia no topo, 4 perguntas por sessão, calendário seg–sex até 17/12. */
+/* Layout: abas manhã/tarde com a janela da sessão, 4 perguntas, veredito, calendário seg–sex 13/10–17/12. */
 :root{
-  --bg:#EEF1F0; --surface:#FFFFFF; --line:#D5DCDA; --fg:#16201D; --muted:#5D6B67;
-  --accent:#1F5C7A; --accent-soft:#DCE9EF; --win:#1E7A4C; --win-soft:#DDF0E5; --loss:#B23A35; --loss-soft:#F6E0DE; --part:#C08A1E; --part-soft:#F5EBD6;
+  --bg:#EEF3FC; --surface:#FFFFFF; --line:#DDE4F2; --fg:#13203B; --muted:#58668A;
+  --accent:#2563EB; --accent-soft:#DCE7FF; --win:#15803D; --win-soft:#DCFCE7; --loss:#E11D48; --loss-soft:#FFE4EA; --part:#D97706; --part-soft:#FEF3C7;
   --f-display:"Archivo",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E; --accent:#6FB2D3; --accent-soft:#1B3240;
-  --win:#5BC98E; --win-soft:#173327; --loss:#EC7A73; --loss-soft:#3A1E1C; --part:#E2B457; --part-soft:#3A2F17; color-scheme:dark}}
+  --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7; --accent:#60A5FA; --accent-soft:#1E3A8A;
+  --win:#4ADE80; --win-soft:#123D26; --loss:#FB7185; --loss-soft:#4A1A28; --part:#FBBF24; --part-soft:#3F2A06; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E; --accent:#6FB2D3; --accent-soft:#1B3240;
-  --win:#5BC98E; --win-soft:#173327; --loss:#EC7A73; --loss-soft:#3A1E1C; --part:#E2B457; --part-soft:#3A2F17; color-scheme:dark}
+  --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7; --accent:#60A5FA; --accent-soft:#1E3A8A;
+  --win:#4ADE80; --win-soft:#123D26; --loss:#FB7185; --loss-soft:#4A1A28; --part:#FBBF24; --part-soft:#3F2A06; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
 .wrap{max-width:680px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:16px}
@@ -60,17 +60,22 @@ button[disabled]{cursor:default}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.78rem;color:var(--muted)}
 .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px;border:1px solid var(--line)}
 .lock{font-size:.82rem;color:var(--muted);font-style:italic}
+.jan{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.88rem;border-radius:8px;padding:8px 12px;background:var(--accent-soft)}
+.jan b{font-family:var(--f-num)}
+.jan .ag{font-weight:600;border-radius:999px;padding:2px 10px;font-size:.78rem}
+.jan .ag.in{background:var(--win);color:var(--surface)} .jan .ag.out{background:var(--loss-soft);color:var(--loss)}
 .wrap>*{min-width:0}
 img,svg{max-width:100%}
 </style>
 <div class="wrap">
   <div class="top">
-    <div><h1>Check-list Pré-Mercado</h1><div class="sub">Responda antes de cada sessão. Quatro "sim" liberam a operação.</div></div>
+    <div><h1>Check-list OB</h1><div class="sub">Responda antes de cada sessão. Quatro "sim" liberam a sessão.</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
   <div class="panel">
     <h2 id="dTitle">Hoje</h2>
     <div class="tabs" id="tabs"></div>
+    <div class="jan" id="jan"></div>
     <div id="qs"></div>
     <div class="verdict" id="verdict"></div>
     <div class="lock" id="lock" hidden></div>
@@ -82,12 +87,15 @@ img,svg{max-width:100%}
   </div>
 </div>
 <script>
-const START="2026-10-09", END="2026-12-17", LS="checklistOB.v1";
-const SESS=[{id:"manha",nome:"Manhã",h:"09:00–11:30"},{id:"tarde",nome:"Tarde",h:"14:00–16:30"}];
+const START="2026-10-13", END="2026-12-17", LS="checklistOB2.v1";
+// horários de Brasília do manual: mudam em 02/11 (Europa e EUA trocam o relógio)
+function janelas(ds){const depois=ds>="2026-11-02";return {manha:depois?["10:45","12:45"]:["09:45","11:45"],tarde:depois?["14:00","16:00"]:["13:30","15:30"]}}
+const SESS=[{id:"manha",nome:"Manhã"},{id:"tarde",nome:"Tarde"}];
+const hj=(ds,id)=>janelas(ds)[id].join("–");
 const QS=[
-  {id:"hor",k:"Horário",t:"Estou dentro da janela da sessão e sem notícia forte nos próximos minutos?"},
-  {id:"op",k:"Operacional",t:"Vou entrar só em Virada, Respiro ou Muralha, com as médias 9, 21 e 50 alinhadas e a vela do sinal fechada?"},
-  {id:"ger",k:"Gerenciamento",t:"Mão base definida, Soros nível 1, no máximo 2 entradas, e encerro a sessão se a 1ª der loss?"},
+  {id:"hor",k:"Janela de horário",t:ds=>{const [a,b]=janelas(ds)[sess];return "Estou dentro da janela da "+(sess==="manha"?"manhã":"tarde")+", das "+a+" às "+b+", e fora dos 15 minutos depois de notícia forte dos EUA?"}},
+  {id:"op",k:"Operacional",t:"Vou entrar só em Respiro, Virada ou Muralha, com médias 9, 21 e 50 espaçadas, mercado aberto (sem OTC) e todos os filtros do manual conferidos?"},
+  {id:"ger",k:"Gerenciamento",t:"Mão base definida, Soros nível 1, no máximo 2 entradas na sessão, e paro se a 1ª der loss?"},
   {id:"men",k:"Mentalidade",t:"Estou calmo, sem vontade de recuperar nada, e aceito o stop se ele vier?"}
 ];
 let data={}, db=null, sel=null, sess="manha", draft=null;
@@ -102,12 +110,12 @@ function pick(ds){sel=ds;draft=JSON.parse(JSON.stringify(data[ds]||{}));render()
 function render(){
   $("dTitle").textContent=fmt(sel);
   const t=$("tabs");t.innerHTML="";
-  SESS.forEach(s=>{const b=document.createElement("button");b.type="button";b.className=s.id===sess?"on":"";b.innerHTML=s.nome+"<span class='h'>"+s.h+"</span>";b.onclick=()=>{sess=s.id;render()};t.appendChild(b)});
+  SESS.forEach(s=>{const b=document.createElement("button");b.type="button";b.className=s.id===sess?"on":"";b.innerHTML=s.nome+"<span class='h'>"+hj(sel,s.id)+"</span>";b.onclick=()=>{sess=s.id;render()};t.appendChild(b)});
   const can=editable(sel), cur=(draft[sess]||{});
   const box=$("qs");box.innerHTML="";
   QS.forEach(q=>{
     const d=document.createElement("div");d.className="q";
-    d.innerHTML="<span class='k'>"+q.k+"</span><p>"+q.t+"</p>";
+    d.innerHTML="<span class='k'>"+q.k+"</span><p>"+(typeof q.t==="function"?q.t(sel):q.t)+"</p>";
     const yn=document.createElement("div");yn.className="yn";
     [["s","Sim",true],["n","Não",false]].forEach(([c,l,v])=>{
       const b=document.createElement("button");b.type="button";b.textContent=l;b.className=c+(cur[q.id]===v?" on":"");b.disabled=!can;
@@ -117,13 +125,20 @@ function render(){
     d.appendChild(yn);box.appendChild(d);
   });
   const v=$("verdict"), answered=QS.every(q=>typeof cur[q.id]==="boolean");
-  if(ok(cur)){v.className="verdict ok";v.innerHTML="<b>Liberado para operar</b><span>Sessão da "+(sess==="manha"?"manhã":"tarde")+". Siga o manual: 2 entradas no máximo.</span>"}
+  if(ok(cur)){v.className="verdict ok";v.innerHTML="<b>Liberado para operar</b><span>Sessão da "+(sess==="manha"?"manhã":"tarde")+" até "+janelas(sel)[sess][1]+". No máximo 2 entradas; loss na 1ª, encerra.</span>"}
   else if(answered){v.className="verdict no";v.innerHTML="<b>Não operar nesta sessão</b><span>Algum item ficou em não. Fecha a corretora e volta na próxima sessão.</span>"}
   else{v.className="verdict";v.innerHTML="<b>Responda as 4 perguntas</b><span>Quatro sim liberam a sessão.</span>"}
   $("acts").hidden=!can; $("lock").hidden=can;
   $("lock").textContent= sel<today()?"Dia encerrado. Só visualização.":"Esse dia ainda não chegou. O check-in abre no próprio dia.";
-  drawCal();
+  drawJan();drawCal();
 }
+function drawJan(){
+  const J=janelas(sel), mm=t=>{const [h,m]=t.split(":").map(Number);return h*60+m};
+  const d=new Date(), m=d.getHours()*60+d.getMinutes(), [a,b]=J[sess], dentro=m>=mm(a)&&m<mm(b)&&!isWE(today());
+  $("jan").innerHTML="<span>Estou no horário de operar da "+(sess==="manha"?"manhã":"tarde")+": <b>"+a+" às "+b+"</b></span>"+(sel===today()?"<span class='ag "+(dentro?"in":"out")+"'>"+(dentro?"agora: dentro do horário":"agora: fora do horário")+"</span>":"")+
+    "<span class='hint' style='flex-basis:100%;color:var(--muted);font-size:.78rem'>Manhã "+J.manha.join("–")+" · Tarde "+J.tarde.join("–")+(sel<"2026-11-02"?" · a partir de 02/11: manhã 10:45–12:45, tarde 14:00–16:00":"")+"</span>";
+}
+setInterval(()=>{if($("jan"))drawJan()},60000);
 function drawCal(){
   const cal=$("cal");cal.innerHTML="";const t=today();
   let cur=new Date(+START.slice(0,4),+START.slice(5,7)-1,1,12);const end=new Date(END+"T12:00:00");
@@ -156,11 +171,11 @@ $("bCancel").onclick=()=>pick(sel);
 $("bSave").onclick=async()=>{
   if(!editable(sel))return;
   data[sel]=JSON.parse(JSON.stringify(draft));render();
-  if(db){try{await db.doc("dias/"+sel).set(data[sel]);$("status").textContent="Salvo"}catch(e){$("status").textContent="Não salvou. Tente de novo."}}
-  else{try{localStorage.setItem(LS,JSON.stringify(data))}catch(e){}$("status").textContent="Salvo neste aparelho"}
+  if(db){try{await db.doc("dias/"+sel).set(data[sel]);$("status").textContent="Salvo";window.ui&&ui.done($("bSave"),"Salvo")}catch(e){$("status").textContent="Não salvou. Tente de novo.";window.ui&&ui.toast("Não salvou. Tente de novo.",1)}}
+  else{try{localStorage.setItem(LS,JSON.stringify(data))}catch(e){}$("status").textContent="Salvo neste aparelho";window.ui&&ui.done($("bSave"),"Salvo")}
 };
 load();
-{const t=today();sel=t<START?START:t>END?END:t;if(new Date().getHours()>=13)sess="tarde"}
+{const t=today();sel=t<START?START:t>END?END:t;const J=janelas(sel),h=new Date().getHours()*60+new Date().getMinutes(),[th,tm]=J.manha[1].split(":").map(Number);if(h>=th*60+tm)sess="tarde"}
 draft=JSON.parse(JSON.stringify(data[sel]||{}));render();$("status").textContent="Conectando…";
 (async()=>{
   try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
