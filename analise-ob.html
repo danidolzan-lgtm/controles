@@ -97,7 +97,7 @@ textarea#ctx,textarea#q{min-height:52px}
 
   <details class="panel" id="cfgKey">
     <summary><b>Chave da IA (Gemini)</b> <span class="hint" id="keyState">não configurada</span></summary>
-    <p class="hint" style="margin:0">A chave fica salva só neste aparelho (não vai para o GitHub nem para a sua conta). Em cada aparelho que usar, cole a chave uma vez.</p>
+    <p class="hint" style="margin:0">Cole uma vez: a chave fica guardada na sua conta (área que só você acessa) e passa a valer no celular e no PC logados. Ela nunca vai para o GitHub.</p>
     <label for="gKey" class="hint">Chave da API do Google AI Studio<input id="gKey" type="password" autocomplete="off" placeholder="AIza…" style="font:inherit;width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)"></label>
     <div class="row"><button type="button" class="btn" id="keySave">Salvar e testar</button><button type="button" class="btn ghost" id="keyDel">Apagar chave</button></div>
     <div class="hint" id="keyMsg"></div>
@@ -339,7 +339,7 @@ $("lista").addEventListener("click",async e=>{
    A chave fica só no navegador deste aparelho (localStorage). Nunca vai para o Firebase nem para o GitHub. */
 const GKEY="analiseOB.geminiKey", GMODEL="analiseOB.geminiModel", API="https://generativelanguage.googleapis.com/v1beta/";
 const getKey=()=>{try{return localStorage.getItem(GKEY)||""}catch(e){return ""}};
-function keyState(){const k=getKey();$("keyState").textContent=k?"✓ configurada neste aparelho":"não configurada — toque para colar";$("keyState").style.color=k?"var(--win)":"var(--loss)";if(!k)$("cfgKey").open=true}
+function keyState(){const k=getKey();$("keyState").textContent=k?(db?"✓ configurada na sua conta":"✓ configurada neste aparelho"):"não configurada — toque para colar";$("keyState").style.color=k?"var(--win)":"var(--loss)";if(!k)$("cfgKey").open=true}
 async function gfetch(path,body){
   const r=await fetch(API+path,{method:body?"POST":"GET",headers:Object.assign({"x-goog-api-key":getKey()},body?{"Content-Type":"application/json"}:{}),body:body?JSON.stringify(body):undefined});
   const j=await r.json().catch(()=>({}));
@@ -430,11 +430,18 @@ $("keySave").onclick=async()=>{
   const k=$("gKey").value.trim();if(!k){ui_.toast("Cole a chave",1);return}
   try{localStorage.setItem(GKEY,k);localStorage.removeItem(GMODEL)}catch(e){}
   const fim=window.ui?ui.busy($("keySave"),"Testando…"):()=>{};
-  try{const m=await modelo(true);$("keyMsg").textContent="✓ Chave funcionando. Modelo: "+m;$("keyMsg").style.color="var(--win)";$("gKey").value="";fim();ui_.done($("keySave"),"Chave salva");setTimeout(()=>{$("cfgKey").open=false},1200)}
+  try{const m=await modelo(true);
+    // guarda na sua conta para valer em todos os aparelhos logados
+    let naConta=false;if(db){try{await db.doc("config/ia").set({key:k});naConta=true}catch(e){}}
+    $("keyMsg").textContent="✓ Chave funcionando"+(naConta?" e salva na sua conta (vale no celular e no PC)":" (salva só neste aparelho: entre na conta para levar aos outros)")+". Modelo: "+m;$("keyMsg").style.color="var(--win)";$("gKey").value="";fim();ui_.done($("keySave"),"Chave salva");setTimeout(()=>{$("cfgKey").open=false},1200)}
   catch(e){fim();$("keyMsg").textContent=erroIA(e);$("keyMsg").style.color="var(--loss)"}
   keyState();
 };
-$("keyDel").onclick=()=>{try{localStorage.removeItem(GKEY);localStorage.removeItem(GMODEL)}catch(e){}$("keyMsg").textContent="Chave apagada deste aparelho.";keyState();ui_.toast("Chave apagada")};
+$("keyDel").onclick=async()=>{
+  try{localStorage.removeItem(GKEY);localStorage.removeItem(GMODEL)}catch(e){}
+  if(db){try{await db.doc("config/ia").delete()}catch(e){}}
+  $("keyMsg").textContent="Chave apagada deste aparelho e da sua conta.";keyState();ui_.toast("Chave apagada");
+};
 
 /* dúvidas */
 let turns=[];
@@ -465,6 +472,15 @@ draw();drawForm();$("status").textContent="Conectando…";
 (async()=>{
   try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
   if(!db){$("status").textContent="Salvando neste aparelho";return}
+  // chave da IA guardada na conta: chega sozinha em qualquer aparelho logado
+  db.doc("config/ia").onSnapshot(d=>{
+    const k=d.exists&&d.data().key;
+    if(k&&k!==getKey()){try{localStorage.setItem(GKEY,k);localStorage.removeItem(GMODEL)}catch(e){}keyState();$("cfgKey").open=false}
+    else if(!k&&getKey()){
+      // chave só neste aparelho (colada antes): sobe para a conta
+      db.doc("config/ia").set({key:getKey()}).catch(()=>{});
+    }
+  },()=>{});
   let first=true;
   db.collection("analises").onSnapshot(q=>{
     const remote=q.docs.map(d=>d.data()), ids=new Set(remote.map(x=>x.id));
