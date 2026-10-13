@@ -1,16 +1,16 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1F5C7A"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="limpeza"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Limpeza de Peças</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="limpeza"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Limpeza de Peças</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 /* Layout: totais no topo, botão de novo lote, um cartão por lote com as peças (qtd × valor = total) e o total do lote. */
 :root{
-  --bg:#EEF1F0; --surface:#FFFFFF; --line:#D5DCDA; --fg:#16201D; --muted:#5D6B67;
-  --accent:#1F5C7A; --accent-soft:#DCE9EF; --win:#1E7A4C; --loss:#B23A35;
+  --bg:#EEF3FC; --surface:#FFFFFF; --line:#DDE4F2; --fg:#13203B; --muted:#58668A;
+  --accent:#2563EB; --accent-soft:#DCE7FF; --win:#15803D; --loss:#E11D48;
   --f-display:"Archivo",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E; --accent:#6FB2D3; --accent-soft:#1B3240; --win:#5BC98E; --loss:#EC7A73; color-scheme:dark}}
+  --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7; --accent:#60A5FA; --accent-soft:#1E3A8A; --win:#4ADE80; --loss:#FB7185; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E; --accent:#6FB2D3; --accent-soft:#1B3240; --win:#5BC98E; --loss:#EC7A73; color-scheme:dark}
+  --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7; --accent:#60A5FA; --accent-soft:#1E3A8A; --win:#4ADE80; --loss:#FB7185; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
 .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:16px}
@@ -88,14 +88,18 @@ const ui_=window.ui||{toast(){},done(){}};
 
 /* ---------- salvar ---------- */
 function lsSave(){try{localStorage.setItem(LS,JSON.stringify(lotes))}catch(e){}}
-const tmr={};
-function save(l,msg){
-  lsSave();
+const tmr={}, pend=new Set();
+async function push(id){
+  const l=lotes.find(x=>x.id===id); if(!l){pend.delete(id);return}
+  if(!db){pend.delete(id);$("status").textContent="Salvo neste aparelho";return}
+  try{await db.doc("lotes/"+id).set(JSON.parse(JSON.stringify(l)));$("status").textContent="Salvo"}catch(e){$("status").textContent="Não salvou. Tente de novo.";ui_.toast("Não salvou. Tente de novo.",1)}
+  if(!tmr[id])pend.delete(id);
+}
+function save(l,msg,now){
+  lsSave(); pend.add(l.id);
   clearTimeout(tmr[l.id]);
-  tmr[l.id]=setTimeout(async()=>{
-    if(!db){$("status").textContent="Salvo neste aparelho";return}
-    try{await db.doc("lotes/"+l.id).set(JSON.parse(JSON.stringify(l)));$("status").textContent="Salvo"}catch(e){$("status").textContent="Não salvou. Tente de novo.";ui_.toast("Não salvou. Tente de novo.",1)}
-  },400);
+  if(now){tmr[l.id]=null;push(l.id)}
+  else tmr[l.id]=setTimeout(()=>{tmr[l.id]=null;push(l.id)},400);
   if(msg)ui_.toast(msg);
 }
 
@@ -141,7 +145,7 @@ const loteDe=el=>{const c=el.closest(".lote");return c?[c,lotes.find(x=>x.id===c
 $("novo").onclick=()=>{
   const n=lotes.reduce((m,l)=>Math.max(m,l.num||0),0)+1;
   const l={id:uid(),num:n,nome:"Lote "+n,data:hoje(),itens:[]};
-  lotes.push(l);render();save(l);ui_.done($("novo"),"Lote "+n+" criado");
+  lotes.push(l);render();save(l,null,true);ui_.done($("novo"),"Lote "+n+" criado");
   const c=document.querySelector(".lote[data-l='"+l.id+"'] form.add input[name=peca]");c&&c.focus();
 };
 $("lotes").addEventListener("input",e=>{
@@ -183,9 +187,17 @@ render();$("status").textContent="Conectando…";
   let first=true;
   db.collection("lotes").onSnapshot(q=>{
     const remote=q.docs.map(d=>d.data()), ids=new Set(remote.map(x=>x.id));
-    if(first){first=false;lotes.filter(l=>!ids.has(l.id)).forEach(l=>{remote.push(l);db.doc("lotes/"+l.id).set(JSON.parse(JSON.stringify(l))).catch(()=>{})})}
-    lotes=remote;lsSave();
-    const a=document.activeElement;if(!(a&&a.closest&&a.closest("#lotes")))render();else kpis();
+    if(first){first=false;lotes.filter(l=>!ids.has(l.id)).forEach(l=>{pend.add(l.id);push(l.id)})}
+    // junta: o que ainda está sendo gravado aqui vale a versão deste aparelho
+    const merged=remote.map(r=>pend.has(r.id)?(lotes.find(x=>x.id===r.id)||r):r);
+    lotes.forEach(l=>{if(!ids.has(l.id)&&pend.has(l.id))merged.push(l)});
+    lotes=merged;lsSave();
+    const naTela=[...document.querySelectorAll(".lote[data-l]")].map(c=>c.dataset.l).sort().join(), agora=lotes.map(l=>l.id).sort().join();
+    const a=document.activeElement, editando=a&&a.closest&&a.closest("#lotes");
+    if(naTela!==agora||!editando){const fid=editando&&a.closest(".lote")?a.closest(".lote").dataset.l:null, fname=editando?(a.name||a.dataset.f||a.dataset.lf):null;
+      render();
+      if(fid){const c=document.querySelector(".lote[data-l='"+fid+"'] form.add [name='"+fname+"']")||document.querySelector(".lote[data-l='"+fid+"'] [data-lf='"+fname+"']");c&&c.focus()}
+    }else kpis();
     $("status").textContent="Sincronizado";
   },()=>{$("status").textContent="Sem conexão com o salvamento"});
 })();

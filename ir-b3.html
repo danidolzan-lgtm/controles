@@ -1,16 +1,16 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1F5C7A"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="ir-b3"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>IR B3</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="ir-b3"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>IR B3</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 /* Layout: seletor de ano, resumo (IR do ano, prejuízos a compensar), um cartão por mês com os lançamentos e o DARF calculado, regras no fim. */
 :root{
-  --bg:#EEF1F0; --surface:#FFFFFF; --line:#D5DCDA; --fg:#16201D; --muted:#5D6B67;
-  --accent:#1F5C7A; --accent-soft:#DCE9EF; --win:#1E7A4C; --loss:#B23A35; --warn:#A06A12; --warn-soft:#F5EBD6;
+  --bg:#EEF3FC; --surface:#FFFFFF; --line:#DDE4F2; --fg:#13203B; --muted:#58668A;
+  --accent:#2563EB; --accent-soft:#DCE7FF; --win:#15803D; --loss:#E11D48; --warn:#B45309; --warn-soft:#FEF3C7;
   --f-display:"Archivo",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E; --accent:#6FB2D3; --accent-soft:#1B3240; --win:#5BC98E; --loss:#EC7A73; --warn:#E2B457; --warn-soft:#3A2F17; color-scheme:dark}}
+  --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7; --accent:#60A5FA; --accent-soft:#1E3A8A; --win:#4ADE80; --loss:#FB7185; --warn:#FBBF24; --warn-soft:#3F2A06; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E; --accent:#6FB2D3; --accent-soft:#1B3240; --win:#5BC98E; --loss:#EC7A73; --warn:#E2B457; --warn-soft:#3A2F17; color-scheme:dark}
+  --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7; --accent:#60A5FA; --accent-soft:#1E3A8A; --win:#4ADE80; --loss:#FB7185; --warn:#FBBF24; --warn-soft:#3F2A06; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
 .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:16px}
@@ -59,13 +59,13 @@ td.tx{color:var(--warn)}
 .st b{font-family:var(--f-num);font-size:1.5rem;font-weight:600}
 .st span{font-size:.82rem;color:var(--muted)}
 .st .chk{margin-top:6px}
-.st.deve{background:#FBE3E1;border-color:var(--loss)} .st.deve .tag,.st.deve b{color:var(--loss)}
+.st.deve{background:#FFE4EA;border-color:var(--loss)} .st.deve .tag,.st.deve b{color:var(--loss)}
 .st.pago{background:var(--accent-soft);border-color:var(--accent)} .st.pago .tag,.st.pago b{color:var(--accent)}
 .st.acum{background:var(--warn-soft);border-color:var(--warn)} .st.acum .tag,.st.acum b{color:var(--warn)}
-.st.ok{background:#DDF0E5;border-color:var(--win)} .st.ok .tag,.st.ok b{color:var(--win)}
-.st.prej{background:#DDF0E5;border-color:var(--win)} .st.prej .tag{color:var(--win)} .st.prej b{color:var(--muted);font-size:1.15rem}
+.st.ok{background:#DCFCE7;border-color:var(--win)} .st.ok .tag,.st.ok b{color:var(--win)}
+.st.prej{background:#DCFCE7;border-color:var(--win)} .st.prej .tag{color:var(--win)} .st.prej b{color:var(--muted);font-size:1.15rem}
 .st.vazio .tag{display:none} .st.vazio b{font-size:1rem;font-family:var(--f-body)}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .st.deve{background:#3A1E1C} :root:not([data-theme="light"]) .st.ok,:root:not([data-theme="light"]) .st.prej{background:#173327}}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .st.deve{background:#4A1A28} :root:not([data-theme="light"]) .st.ok,:root:not([data-theme="light"]) .st.prej{background:#123D26}}
 .ib{display:grid;gap:10px}
 .ib input[type=file],.ib select{font:inherit;font-size:.9rem;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px;width:100%;min-width:0;text-transform:none;letter-spacing:0}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface);font-size:.9rem;padding:9px 14px}
@@ -447,7 +447,7 @@ function resumo(){
 }
 async function ler(){
   const fs=[...$("ibFile").files]; if(!fs.length){$("ibMsg").className="hint neg";$("ibMsg").textContent="Escolha o arquivo primeiro.";return}
-  $("ibMsg").className="hint";$("ibMsg").textContent="Lendo "+fs.length+(fs.length===1?" arquivo…":" arquivos…");$("ibGo").disabled=true;$("ibOut").hidden=true;
+  $("ibMsg").className="hint";$("ibMsg").textContent="Lendo "+fs.length+(fs.length===1?" arquivo…":" arquivos…");const fim=window.ui?ui.busy($("ibGo"),"Lendo…"):()=>{};$("ibOut").hidden=true;
   notas=[];linhas=[];cols=[];modo="";
   try{
     const linhasTxt=[];
@@ -459,21 +459,22 @@ async function ler(){
     }
     if(notas.length)modo="notas";
     else if(linhas.length||(linhasTxt.length&&fromLines(linhasTxt)))modo="linhas";
-  }catch(e){$("ibMsg").className="hint neg";$("ibMsg").textContent="Não consegui abrir: "+e.message;$("ibGo").disabled=false;return}
-  $("ibGo").disabled=false;
-  if(!modo){$("ibMsg").className="hint neg";$("ibMsg").textContent="Não reconheci notas nem valores nesse arquivo. Me mande ele aqui no chat que eu ajusto a leitura.";return}
+  }catch(e){fim();$("ibMsg").className="hint neg";$("ibMsg").textContent="Não consegui abrir: "+e.message;window.ui&&ui.toast("Não consegui abrir o arquivo",1);return}
+  fim();
+  if(!modo){window.ui&&ui.toast("Não reconheci o arquivo",1);$("ibMsg").className="hint neg";$("ibMsg").textContent="Não reconheci notas nem valores nesse arquivo. Me mande ele aqui no chat que eu ajusto a leitura.";return}
   $("ibColL").hidden=modo==="notas";
   if(modo==="linhas"){$("ibCol").innerHTML=cols.map((c,i)=>"<option value='"+i+"'>"+esc(c)+"</option>").join("");const g=cols.findIndex(c=>/result|lucro|l[ií]quido|p\s*\/\s*l|ganho/i.test(c));$("ibCol").value=g>=0?g:cols.length-1}
   const semRes=notas.filter(n=>n.res==null).length;
   $("ibMsg").textContent=modo==="notas"?notas.length+(notas[0]&&notas[0].como==="extrato"?" pregões lidos do extrato (só ajustes de day trade, custos e IRRF; Pix, TED e saques ficam de fora)":" notas lidas")+(semRes?", "+semRes+" sem valor (confira na tabela)":"")+". Confira os totais com a corretora antes de lançar.":linhas.length+" linhas com data lidas. Escolha a coluna do resultado.";
   $("ibOut").hidden=false;resumo();
+  window.ui&&ui.done($("ibGo"),modo==="notas"?notas.length+" pregões lidos":linhas.length+" linhas lidas");
 }
 $("ibGo").onclick=ler;
 $("ibCol").addEventListener("change",resumo);
 $("ibOut").addEventListener("click",e=>{
   const b=e.target.closest("[data-lanca]");
-  if(b){const t=window.__ibTot[b.dataset.lanca];window.IRB3.lancar(b.dataset.lanca,r2(t.op),r2(t.tx),r2(t.irrf),t.dias);window.ui?ui.done(b,"Lançado em "+mesNome(b.dataset.lanca).split(" ")[0].toLowerCase(),true):(b.textContent="Lançado ✓");b.dataset.ok="1";return}
-  if(e.target.id==="ibTodos"){const bs=[...document.querySelectorAll("#ibMeses [data-lanca]")].filter(x=>!x.dataset.ok);bs.forEach(x=>x.click());window.ui&&ui.done(e.target,(bs.length||"Todos os")+(bs.length===1?" mês lançado":" meses lançados"),true)}
+  if(b){const t=window.__ibTot[b.dataset.lanca];window.IRB3.lancar(b.dataset.lanca,r2(t.op),r2(t.tx),r2(t.irrf),t.dias);window.ui?ui.done(b,"Lançado em "+mesNome(b.dataset.lanca).split(" ")[0].toLowerCase()):(b.textContent="Lançado ✓");b.dataset.ok="1";return}
+  if(e.target.id==="ibTodos"){const bs=[...document.querySelectorAll("#ibMeses [data-lanca]")];bs.forEach(x=>x.click());window.ui&&ui.done(e.target,(bs.length||"Todos os")+(bs.length===1?" mês lançado":" meses lançados"))}
 });
 window.__irb3={parseNotas,parseExtrato,parseExtratoToks,findLabel,vals};
 })();

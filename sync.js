@@ -11,9 +11,20 @@
      ui.toast("texto")        → só o aviso */
   (function () {
     var st = document.createElement("style");
-    st.textContent = ".ui-ok{background:#1E7A4C!important;border-color:#1E7A4C!important;color:#fff!important;opacity:1!important;transition:background .2s}" +
-      ".ui-toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;z-index:99;background:#16201D;color:#fff;font:600 14px system-ui,sans-serif;padding:10px 16px;border-radius:9px;box-shadow:0 6px 20px rgba(0,0,0,.25);transition:opacity .2s,transform .2s;max-width:calc(100% - 32px);text-align:center;pointer-events:none}" +
-      ".ui-toast.on{opacity:1;transform:translate(-50%,0)}.ui-toast.err{background:#B23A35}";
+    st.textContent = ".ui-ok{background:#15803D!important;border-color:#15803D!important;color:#fff!important;opacity:1!important;transition:background .2s}" +
+      ".ui-toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;z-index:99;background:#13203B;color:#fff;font:600 14px system-ui,sans-serif;padding:10px 16px;border-radius:9px;box-shadow:0 6px 20px rgba(0,0,0,.25);transition:opacity .2s,transform .2s;max-width:calc(100% - 32px);text-align:center;pointer-events:none}" +
+      ".ui-toast.on{opacity:1;transform:translate(-50%,0)}.ui-toast.err{background:#E11D48}" +
+      /* efeito de clique em todos os botões: afunda e volta */
+      "button,.btn,a.calc{transition:transform .08s ease,filter .08s ease,box-shadow .08s ease;-webkit-tap-highlight-color:transparent}" +
+      "button:not([disabled]):active,.btn:active,a.calc:active,.ui-press{transform:scale(.95);filter:brightness(.88)}" +
+      ".ui-busy{position:relative;pointer-events:none;opacity:.85}" +
+      ".ui-spin{display:inline-block;width:13px;height:13px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;vertical-align:-2px;margin-right:6px;animation:uispin .7s linear infinite}" +
+      "@keyframes uispin{to{transform:rotate(360deg)}}" +
+      /* visual mais vivo em todas as páginas */
+      "body{background-image:radial-gradient(900px 420px at 0% -8%,rgba(37,99,235,.16),transparent 62%),radial-gradient(800px 380px at 100% 0%,rgba(124,58,237,.12),transparent 60%),radial-gradient(700px 500px at 50% 110%,rgba(34,197,94,.08),transparent 60%);background-attachment:fixed}" +
+      ".panel,.wrap>.grid>a,.step,.it,.ib{box-shadow:0 1px 2px rgba(19,32,59,.05),0 6px 18px -6px rgba(37,99,235,.18)}" +
+      "h1{background:linear-gradient(90deg,#2563EB,#7C3AED);-webkit-background-clip:text;background-clip:text;color:transparent!important}" +
+      "@media (prefers-color-scheme: dark){h1{background:linear-gradient(90deg,#60A5FA,#C4B5FD);-webkit-background-clip:text;background-clip:text}.panel,.wrap>.grid>a,.step,.it{box-shadow:0 6px 18px -8px rgba(0,0,0,.6)}}";
     (document.head || document.documentElement).appendChild(st);
     var box, tmr;
     function toast(msg, err) {
@@ -31,7 +42,18 @@
       }
       toast("✓ " + (label || "Salvo"));
     }
-    window.ui = { toast: toast, done: done };
+    /* "apertado" visível também no celular (o :active do iPhone precisa de touchstart) */
+    document.addEventListener("touchstart", function () {}, { passive: true });
+    document.addEventListener("pointerdown", function (e) {
+      var b = e.target.closest && e.target.closest("button,.btn"); if (!b || b.disabled) return;
+      b.classList.add("ui-press"); setTimeout(function () { b.classList.remove("ui-press"); }, 140);
+    }, true);
+    function busy(btn, label) {
+      if (!btn) return function () {};
+      var old = btn.innerHTML; btn.classList.add("ui-busy"); btn.innerHTML = "<span class='ui-spin'></span>" + (label || "Aguarde…");
+      return function () { btn.classList.remove("ui-busy"); btn.innerHTML = old; };
+    }
+    window.ui = { toast: toast, done: done, busy: busy };
   })();
 
   var resolveDb, dbPromise = new Promise(function (r) { resolveDb = r; });
@@ -70,7 +92,7 @@
     document.body.insertBefore(bar, ref);
     return bar;
   }
-  function errBox(b) { var p = document.createElement("div"); p.style.cssText = "color:#C0392B;font-size:13px"; p.setAttribute("role", "alert"); b.appendChild(p); return p; }
+  function errBox(b) { var p = document.createElement("div"); p.style.cssText = "color:#E11D48;font-size:13px"; p.setAttribute("role", "alert"); b.appendChild(p); return p; }
 
   if (!(cfg && cfg.apiKey && cfg.apiKey.indexOf("COLE") !== 0)) {
     var go0 = function () { var b = ensureBar(); b.textContent = "Firebase ainda não configurado: preencha o firebase-config.js. Por enquanto os dados ficam só neste aparelho."; };
@@ -101,14 +123,14 @@
     var b = ensureBar(); b.innerHTML = ""; b.hidden = false;
     var t = document.createElement("div"); t.textContent = "Entre para sincronizar seus dados entre celular e PC."; b.appendChild(t);
     var g = document.createElement("button"); g.type = "button"; g.textContent = "Entrar com Google";
-    g.style.cssText = css + "border:0;background:#1F5C7A;color:#fff;justify-self:start";
+    g.style.cssText = css + "border:0;background:#2563EB;color:#fff;justify-self:start";
     b.appendChild(g);
     var det = document.createElement("details");
     det.innerHTML = "<summary style='cursor:pointer'>Entrar com e-mail e senha</summary>";
     var f = document.createElement("form"); f.style.cssText = "display:grid;gap:8px;margin-top:8px";
     f.innerHTML = "<input type='email' autocomplete='email' placeholder='E-mail' required style='font:inherit;padding:9px 10px;border-radius:7px;border:1px solid rgba(127,140,136,.6);background:transparent;color:inherit;min-width:0'>" +
       "<input type='password' autocomplete='current-password' placeholder='Senha (mín. 6)' required minlength='6' style='font:inherit;padding:9px 10px;border-radius:7px;border:1px solid rgba(127,140,136,.6);background:transparent;color:inherit;min-width:0'>" +
-      "<div style='display:flex;gap:8px;flex-wrap:wrap'><button type='submit' style='" + css + "border:0;background:#1F5C7A;color:#fff'>Entrar</button><button type='button' data-new style='" + css + "border:1px solid rgba(127,140,136,.6);background:transparent;color:inherit'>Criar conta</button></div>";
+      "<div style='display:flex;gap:8px;flex-wrap:wrap'><button type='submit' style='" + css + "border:0;background:#2563EB;color:#fff'>Entrar</button><button type='button' data-new style='" + css + "border:1px solid rgba(127,140,136,.6);background:transparent;color:inherit'>Criar conta</button></div>";
     det.appendChild(f); b.appendChild(det);
     var err = errBox(b); b._err = err; err.textContent = lastErr;
     g.onclick = function () {
@@ -133,7 +155,7 @@
     if (!SHOW_USER) { if (bar) bar.hidden = true; return; }
     var b = ensureBar(); b.innerHTML = ""; b.hidden = false;
     b.style.gridTemplateColumns = "1fr auto"; b.style.alignItems = "center";
-    var s = document.createElement("span"); s.style.cssText = "min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.8"; var dot = document.createElement("span"); dot.textContent = "● "; dot.style.color = "#2E9E62"; s.appendChild(dot); s.appendChild(document.createTextNode("Online · " + (u.email || "sua conta"))); b.appendChild(s);
+    var s = document.createElement("span"); s.style.cssText = "min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.8"; var dot = document.createElement("span"); dot.textContent = "● "; dot.style.color = "#22C55E"; s.appendChild(dot); s.appendChild(document.createTextNode("Online · " + (u.email || "sua conta"))); b.appendChild(s);
     var out = document.createElement("button"); out.type = "button"; out.textContent = "Sair";
     out.style.cssText = "font:600 12px system-ui,sans-serif;padding:4px 10px;border-radius:6px;cursor:pointer;border:1px solid rgba(127,140,136,.6);background:transparent;color:inherit";
     out.onclick = function () { auth.signOut().then(function () { location.reload(); }); };

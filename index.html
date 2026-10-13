@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Meus Controles</title>
-<meta name="theme-color" content="#1F5C7A"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="geral" data-show-user="1"></script>
+<meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="geral" data-show-user="1"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-:root{--bg:#EEF1F0;--surface:#FFFFFF;--line:#D5DCDA;--fg:#16201D;--muted:#5D6B67;--accent:#1F5C7A;
+:root{--bg:#EEF3FC;--surface:#FFFFFF;--line:#DDE4F2;--fg:#13203B;--muted:#58668A;--accent:#2563EB;
   --f-display:"Archivo",system-ui,sans-serif;--f-body:"IBM Plex Sans",system-ui,sans-serif}
-@media (prefers-color-scheme: dark){:root{--bg:#101614;--surface:#18201E;--line:#2A3532;--fg:#E4ECE9;--muted:#93A29E;--accent:#6FB2D3;color-scheme:dark}}
+@media (prefers-color-scheme: dark){:root{--bg:#0B1220;--surface:#16213A;--line:#2A3A5C;--fg:#E6EDFA;--muted:#9AA9C7;--accent:#60A5FA;color-scheme:dark}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
 .wrap{max-width:640px;margin:0 auto;padding-inline:16px;padding-block:24px 48px;display:grid;gap:18px}
@@ -20,11 +20,17 @@ a{display:grid;gap:3px;text-decoration:none;color:var(--fg);background:var(--sur
 a:hover,a:focus-visible{border-color:var(--accent);outline:none}
 a b{font-family:var(--f-display);font-size:1rem}
 a span{font-size:.8rem;color:var(--muted)}
+a{position:relative;overflow:hidden;transition:transform .12s ease,border-color .12s}
+a::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c,var(--accent))}
+a:hover{transform:translateY(-2px)}
+.grid.b3 a{--c:#2563EB}.grid.pes a{--c:#7C3AED}
+.grid.b3 a:nth-child(2){--c:#0EA5E9}.grid.b3 a:nth-child(3){--c:#16A34A}.grid.b3 a:nth-child(4){--c:#F59E0B}.grid.b3 a:nth-child(5){--c:#E11D48}
+.grid.pes a:nth-child(2){--c:#B7791F}.grid.pes a:nth-child(3){--c:#EA580C}.grid.pes a:nth-child(4){--c:#0D9488}
 </style></head><body>
 <div class="wrap">
   <div><h1>Meus Controles</h1><p class="sub">Seus dados ficam salvos na sua conta e aparecem iguais no celular e no PC.</p></div>
   <h2>B3</h2>
-  <div class="grid">
+  <div class="grid b3">
     <a href="checklist-b3.html"><b>Check-list</b><span>Antes de operar, 09:45–14:00</span></a>
     <a href="diario-b3.html"><b>Diário B3</b><span>Operações do dia</span></a>
     <a href="progresso-b3.html"><b>Progresso</b><span>Contratos por banca</span></a>
@@ -32,7 +38,7 @@ a span{font-size:.8rem;color:var(--muted)}
     <a href="ir-b3.html"><b>IR B3</b><span>DARF do mês</span></a>
   </div>
   <h2>Pessoal</h2>
-  <div class="grid">
+  <div class="grid pes">
     <a href="salario.html"><b>Salário</b><span>Danrlei e Cristiane</span></a>
     <a href="oracao.html"><b>Oração</b><span>Noite e consagração</span></a>
     <a href="receitas.html"><b>Receitas</b><span>Caderno de receitas</span></a>
