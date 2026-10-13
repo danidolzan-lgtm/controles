@@ -120,8 +120,10 @@ textarea#ctx,textarea#q,textarea#resp{min-height:52px}
     <div class="seg" id="opSeg"><button type="button" data-op="respiro">Respiro</button><button type="button" data-op="virada">Virada</button><button type="button" data-op="muralha">Muralha</button><button type="button" data-op="giro">Giro</button></div>
     <div class="seg" id="dirSeg"><button type="button" class="call" data-dir="call">Compra (CALL) ▲</button><button type="button" class="put" data-dir="put">Venda (PUT) ▼</button></div>
     <textarea id="ctx" placeholder="Algo a mais para o Claude saber (opcional): cores das médias no seu gráfico, ativo, horário…"></textarea>
-    <div class="step"><i>4</i>Análise do Claude</div>
-    <div class="row"><button type="button" class="btn" id="aiGo">Analisar no Claude ↗</button></div>
+    <div class="step"><i>4</i>Mandar para o Claude</div>
+    <div class="hint">O print vai com uma faixa em cima dizendo o operacional, a direção e a sua observação. É só colar na sua conversa de análise.</div>
+    <img id="prev" alt="Print que vai para o Claude" hidden style="width:100%;border-radius:8px;border:1px solid var(--line)">
+    <div class="row"><button type="button" class="btn" id="aiGo">Copiar print e abrir conversa ↗</button><button type="button" class="btn ghost" id="aiSave">Salvar print</button></div>
     <div class="guia" id="guia" hidden></div>
     <div id="aiRes"></div>
     <div id="vBox" style="display:grid;gap:8px">
@@ -139,16 +141,28 @@ textarea#ctx,textarea#q,textarea#resp{min-height:52px}
     <div class="seg" id="resSeg"><button type="button" data-res="win">Win</button><button type="button" data-res="loss">Loss</button><button type="button" data-res="">Ainda não sei</button></div>
     <textarea id="obs" placeholder="Observação (opcional): o que viu, o que sentiu, o que faria diferente"></textarea>
     <div class="row"><button type="button" class="btn" id="salvar">Salvar análise</button><button type="button" class="btn ghost" id="limpar">Limpar</button></div>
-    <div class="note">O botão abre o Claude já com as regras do seu manual e o que você marcou. Ele pode errar em print pequeno ou com médias de cores parecidas: use o parecer como segunda opinião.</div>
+    <div class="note">O Claude confere o print com as regras do seu manual. Ele pode errar em print pequeno ou com médias de cores parecidas: use o parecer como segunda opinião.</div>
   </div>
 
   <div class="panel" id="chatBox">
     <h2>Tire suas dúvidas</h2>
-    <div class="hint">Pergunte sobre Respiro, Virada, Muralha, Giro, horários, Soros ou gerenciamento. Abre o Claude com o seu manual junto, e ele responde por lá.</div>
+    <div class="hint">Escreva a dúvida: ela é copiada e a sua conversa de análise abre. Cole e envie.</div>
     <div class="chips" id="chips"><button type="button">Qual a diferença entre Respiro e Muralha?</button><button type="button">Quando entro no Giro?</button><button type="button">Posso entrar na Virada se a vela de sinal for grande?</button></div>
-    <form id="chatForm" style="display:grid;gap:8px"><textarea id="q" rows="2" placeholder="Escreva sua dúvida…"></textarea><div class="row"><button type="submit" class="btn" id="send">Perguntar no Claude ↗</button></div></form>
+    <form id="chatForm" style="display:grid;gap:8px"><textarea id="q" rows="2" placeholder="Escreva sua dúvida…"></textarea><div class="row"><button type="submit" class="btn" id="send">Copiar e abrir conversa ↗</button></div></form>
     <div class="guia" id="guiaQ" hidden></div>
   </div>
+
+  <details class="panel" id="cfgBox">
+    <summary><b>Minha conversa de análise no Claude</b> <span class="hint" id="cfgState">não configurada</span></summary>
+    <ol class="hint" style="margin:0;padding-left:18px;display:grid;gap:4px">
+      <li>No Claude, abra uma conversa nova (ou um projeto) só para isso.</li>
+      <li>Toque em <b>Copiar mensagem de configuração</b> e cole como primeira mensagem. Ela leva o seu manual e explica como analisar os prints.</li>
+      <li>Copie o link dessa conversa (no app: compartilhar ▸ copiar link, ou a barra de endereço no PC) e cole aqui embaixo.</li>
+    </ol>
+    <div class="row"><button type="button" class="btn ghost" id="cfgCopy">Copiar mensagem de configuração</button></div>
+    <label class="hint" for="cfgUrl">Link da conversa<input id="cfgUrl" type="url" inputmode="url" placeholder="https://claude.ai/chat/…" style="font:inherit;width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)"></label>
+    <div class="row"><button type="button" class="btn" id="cfgSave">Salvar link</button><button type="button" class="btn ghost" id="cfgDel">Tirar link</button></div>
+  </details>
 
   <div class="panel">
     <h2>Análises salvas</h2>
@@ -243,6 +257,7 @@ function setaSVG(seta,dir){
     "<polygon points='"+(x-2.4)+","+(up?y1+3.5:y1-3.5)+" "+(x+2.4)+","+(up?y1+3.5:y1-3.5)+" "+x+","+y1+"' fill='"+col+"'/>";
 }
 function drawShot(){
+  prepararPrint();
   $("shotBox").hidden=!cur.img; if(!cur.img)return;
   if($("img").src!==cur.img)$("img").src=cur.img;
   $("ov").innerHTML=setaSVG(cur.seta,cur.dir);
@@ -256,6 +271,7 @@ $("resSeg").addEventListener("click",e=>{const b=e.target.closest("[data-res]");
 $("obs").addEventListener("input",e=>{cur.obs=e.target.value});
 
 function drawForm(){
+  prepararPrint();
   [...$("opSeg").children].forEach(b=>b.classList.toggle("on",b.dataset.op===cur.op));
   [...$("dirSeg").children].forEach(b=>b.classList.toggle("on",b.dataset.dir===cur.dir));
   [...$("resSeg").children].forEach(b=>b.classList.toggle("on",(b.dataset.res||null)===cur.res));
@@ -352,8 +368,8 @@ $("lista").addEventListener("click",async e=>{
 });
 
 
-/* ---------- Claude: abre o chat com o texto pronto ----------
-   Sem chave e sem custo extra: usa o seu Claude (app no celular ou claude.ai no PC). */
+/* ---------- Claude: o print vai com a legenda desenhada; você cola na SUA conversa ----------
+   Sem chave e sem custo extra. A conversa escolhida fica salva na sua conta. */
 const MANUAL=`MANUAL OB (opções binárias, mercado aberto)
 Base: gráfico M1, expiração 5 minutos, médias exponenciais 9, 21 e 50. Entrada na abertura da vela seguinte à vela de sinal.
 Não opera em nenhum setup quando: as três médias estão emboladas sem espaço entre elas (lateral); faltam 5 min ou menos para notícia de impacto ou ela saiu há menos de 15 min; a vela de sinal é maior que 2x o tamanho médio das últimas 10 velas; o ativo está em OTC.
@@ -362,73 +378,110 @@ VIRADA (cruzamento 9 x 21 a favor da 50). CALL: preço acima da 50; a 9 cruza a 
 MURALHA (rejeição na 50). CALL: 21 acima da 50 e 50 subindo; o preço cai até tocar a 50; gatilho: vela com pavio inferior maior ou igual ao corpo que fecha acima da 50; entrada na vela seguinte. PUT: 21 abaixo da 50 e 50 caindo; o preço sobe até tocar a 50; gatilho: vela com pavio superior maior ou igual ao corpo que fecha abaixo da 50; entrada na vela seguinte. Não entra se: 3º toque seguido na 50; a vela de sinal fecha do outro lado da 50; a 50 está deitada.
 GIRO (reversão: o preço rompe a 50 e as médias viram). CALL: antes o mercado vinha caindo (9 abaixo da 21, 21 abaixo da 50); uma vela de corpo cheio fecha acima da 50; a 9 cruza a 21 para cima; o preço recua até a 9 ou a 50 sem fechar abaixo da 50; gatilho: vela verde fecha acima da 50; entrada na vela seguinte (nunca no rompimento). PUT: antes o mercado vinha subindo (9 acima da 21, 21 acima da 50); uma vela de corpo cheio fecha abaixo da 50; a 9 cruza a 21 para baixo; o preço sobe até a 9 ou a 50 sem fechar acima da 50; gatilho: vela vermelha fecha abaixo da 50; entrada na vela seguinte. Não entra se: a 50 ainda está bem inclinada contra a entrada (precisa estar perdendo inclinação); a vela do rompimento é maior que 2x a média das últimas 10 velas; no recuo uma vela fechou de volta do outro lado da 50 (rompimento falhou); passaram mais de 10 velas desde o rompimento sem o recuo; o preço já rompeu e voltou pela 50 nas últimas 20 velas (lateral). Reversão costuma acertar menos que os setups a favor da tendência.
 Gerenciamento: Soros nível 1, no máximo 2 entradas por sessão (manhã e tarde), para no 1º loss.`;
-const LINHAS=MANUAL.split("\n");
-const regrasDe=op=>{const k=NOME[op].toUpperCase();return LINHAS.filter((l,i)=>i<3||l.startsWith(k+" ")||l.startsWith("Gerenciamento")).join("\n")};
-const CLAUDE="https://claude.ai/new";
-const celular=()=>matchMedia("(pointer:coarse)").matches||/Android|iPhone|iPad/i.test(navigator.userAgent);
-async function copiarTexto(t){try{await navigator.clipboard.writeText(t);return true}catch(e){
-  try{const a=document.createElement("textarea");a.value=t;a.style.position="fixed";a.style.opacity="0";document.body.appendChild(a);a.select();const ok=document.execCommand("copy");a.remove();return ok}catch(_){return false}}}
-function urlClaude(t){const u=CLAUDE+"?q="+encodeURIComponent(t);return u.length<7500?u:CLAUDE}
-function pngComSeta(){return new Promise(ok=>{const im=new Image();im.onload=()=>{
-  const k=Math.min(1,1600/im.width),c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
-  const g=c.getContext("2d");g.drawImage(im,0,0,c.width,c.height);
-  if(cur.seta){const x=cur.seta.x*c.width,y=cur.seta.y*c.height,s=Math.max(c.width,c.height)/55,up=cur.dir!=="put",col=up?"#00E676":"#FF1744";
-    g.strokeStyle=col;g.fillStyle=col;g.lineWidth=s*.45;g.lineCap="round";g.beginPath();g.arc(x,y,s*.9,0,7);g.stroke();
-    const y1=up?y+s*1.3:y-s*1.3,y0=up?y+s*5:y-s*5;g.beginPath();g.moveTo(x,y0);g.lineTo(x,up?y1+s:y1-s);g.stroke();
-    g.beginPath();g.moveTo(x,y1);g.lineTo(x-s,up?y1+s*1.4:y1-s*1.4);g.lineTo(x+s,up?y1+s*1.4:y1-s*1.4);g.closePath();g.fill()}
-  c.toBlob(b=>ok(b),"image/png");
-};im.src=cur.img})}
-function textoAnalise(){
-  const lado=cur.dir==="put"?"VENDA (PUT)":"COMPRA (CALL)", ctx=$("ctx").value.trim();
-  return regrasDe(cur.op)+`
+const CONFIG_MSG=MANUAL+`
 
-Analise minha entrada no print anexado (gráfico M1 de opções binárias). Marquei com uma seta ${cur.dir==="put"?"vermelha apontando para baixo":"verde apontando para cima"} e um círculo a vela em que ENTREI (a vela de sinal é a anterior).
-Operei ${NOME[cur.op].toUpperCase()} em ${lado}.${ctx?"\nObservação: "+ctx:""}
-Compare só pelo que dá para ver no print com as regras do ${NOME[cur.op]} para ${lado} e os filtros da Base. Se um item não dá para confirmar no print, diga em vez de chutar.
-Responda em português, curto, neste formato:
+Esta conversa é só para analisar minhas entradas em opções binárias. Vou mandar prints do gráfico M1. Cada print tem uma faixa escura no topo dizendo o operacional, a direção (compra/CALL ou venda/PUT) e às vezes uma observação. No gráfico há um círculo e uma seta (verde para cima = compra, vermelha para baixo = venda) marcando a vela em que ENTREI; a vela de sinal é a anterior.
+Para cada print, compare só pelo que dá para ver com as regras do operacional informado e com os filtros da Base. Se algo não dá para confirmar no print, diga em vez de chutar. Responda em português, curto, neste formato:
 VEREDITO: CERTA, ERRADA ou INCERTA (confiança alta/média/baixa)
 Critérios: um por linha com ✓, ✕ ou ?
 Outro setup que combina mais (se houver)
-Para a próxima: 1 frase`;
+Para a próxima: 1 frase
+Quando eu mandar só texto, é uma dúvida: responda com base no manual, direto e prático, dizendo o que é opinião quando sair do manual.
+Se entendeu, responda só: Pronto.`;
+const CFG="analiseOB.claudeUrl";
+const celular=()=>matchMedia("(pointer:coarse)").matches||/Android|iPhone|iPad/i.test(navigator.userAgent);
+const getUrl=()=>{try{return localStorage.getItem(CFG)||""}catch(e){return ""}};
+function cfgState(){const u=getUrl();$("cfgState").textContent=u?"✓ configurada":"não configurada — toque aqui";$("cfgState").style.color=u?"var(--win)":"var(--warn)";if(document.activeElement!==$("cfgUrl"))$("cfgUrl").value=u}
+async function copiarTexto(t){try{await navigator.clipboard.writeText(t);return true}catch(e){
+  try{const a=document.createElement("textarea");a.value=t;a.style.position="fixed";a.style.opacity="0";document.body.appendChild(a);a.select();const ok=document.execCommand("copy");a.remove();return ok}catch(_){return false}}}
+function abrirConversa(fallbackTexto){
+  const u=getUrl();
+  if(u){window.open(u,"_blank");return true}
+  const q=fallbackTexto?"https://claude.ai/new?q="+encodeURIComponent(fallbackTexto):"https://claude.ai/new";
+  window.open(q.length<7500?q:"https://claude.ai/new","_blank");return false;
 }
-function guiaHTML(passos,id){return "<b>No Claude:</b><ol>"+passos.map(p=>"<li>"+p+"</li>").join("")+"</ol><div class='row'><button type='button' class='btn ghost' data-copy='"+id+"'>Copiar o texto de novo</button>"+(id==="a"?"<button type='button' class='btn ghost' data-img>Copiar a imagem de novo</button>":"")+"<a class='btn ghost' href='"+CLAUDE+"' target='_blank' rel='noopener' style='text-decoration:none'>Abrir o Claude</a></div>"}
-let ultimoTexto={a:"",q:""};
-async function copiarImagem(){
-  if(!window.ClipboardItem||!navigator.clipboard||!navigator.clipboard.write)return false;
-  try{await navigator.clipboard.write([new ClipboardItem({"image/png":pngComSeta()})]);return true}catch(e){return false}
+/* print final: faixa com a legenda + gráfico + seta */
+let PNG=null, PNGkey="";
+function chavePrint(){return [cur.img&&cur.img.length,cur.seta&&cur.seta.x,cur.seta&&cur.seta.y,cur.op,cur.dir,$("ctx").value].join("|")}
+function linhas(g,txt,max){const out=[];txt.split("\n").forEach(par=>{let l="";par.split(" ").forEach(w=>{const t=l?l+" "+w:w;if(g.measureText(t).width>max&&l){out.push(l);l=w}else l=t});out.push(l)});return out}
+function gerarPrint(){return new Promise(ok=>{
+  if(!cur.img)return ok(null);
+  const im=new Image();im.onload=()=>{
+    const k=Math.min(1,1400/im.width),W=Math.round(im.width*k),H=Math.round(im.height*k);
+    const fs=Math.max(15,Math.round(W/38)),pad=Math.round(fs*.8);
+    const tmp=document.createElement("canvas").getContext("2d");
+    const lado=cur.dir==="put"?"VENDA (PUT) ▼":"COMPRA (CALL) ▲", ctx=$("ctx").value.trim();
+    tmp.font="700 "+fs+"px system-ui,sans-serif";
+    const l1="ENTRADA: "+(NOME[cur.op]||"?").toUpperCase()+" · "+lado;
+    tmp.font=Math.round(fs*.78)+"px system-ui,sans-serif";
+    const ls=linhas(tmp,"Seta = vela em que entrei (o sinal é a vela anterior)"+(ctx?"\nObs.: "+ctx:""),W-pad*2);
+    const band=pad*2+fs+ls.length*Math.round(fs*1.05);
+    const c=document.createElement("canvas");c.width=W;c.height=H+band;const g=c.getContext("2d");
+    g.fillStyle="#0B1220";g.fillRect(0,0,W,band);
+    g.fillStyle=cur.dir==="put"?"#FB7185":"#4ADE80";g.font="700 "+fs+"px system-ui,sans-serif";g.textBaseline="top";g.fillText(l1,pad,pad);
+    g.fillStyle="#E6EDFA";g.font=Math.round(fs*.78)+"px system-ui,sans-serif";ls.forEach((t,i)=>g.fillText(t,pad,pad+fs+Math.round(fs*.35)+i*Math.round(fs*1.05)));
+    g.drawImage(im,0,band,W,H);
+    if(cur.seta){const x=cur.seta.x*W,y=band+cur.seta.y*H,s=Math.max(W,H)/55,up=cur.dir!=="put",col=up?"#00E676":"#FF1744";
+      g.strokeStyle=col;g.fillStyle=col;g.lineWidth=s*.45;g.lineCap="round";g.beginPath();g.arc(x,y,s*.9,0,7);g.stroke();
+      const y1=up?y+s*1.3:y-s*1.3,y0=up?y+s*5:y-s*5;g.beginPath();g.moveTo(x,y0);g.lineTo(x,up?y1+s:y1-s);g.stroke();
+      g.beginPath();g.moveTo(x,y1);g.lineTo(x-s,up?y1+s*1.4:y1-s*1.4);g.lineTo(x+s,up?y1+s*1.4:y1-s*1.4);g.closePath();g.fill()}
+    c.toBlob(b=>ok(b),"image/png");
+  };im.src=cur.img})}
+/* deixa o print pronto antes do toque (copiar imagem precisa ser imediato no clique) */
+let prepT=null;
+function prepararPrint(){clearTimeout(prepT);prepT=setTimeout(async()=>{
+  const ready=cur.img&&cur.seta&&cur.op&&cur.dir;$("prev").hidden=!ready;if(!ready){PNG=null;return}
+  const key=chavePrint();if(key===PNGkey&&PNG)return;
+  const b=await gerarPrint();PNG=b;PNGkey=key;
+  if($("prev").dataset.url)URL.revokeObjectURL($("prev").dataset.url);
+  const u=URL.createObjectURL(b);$("prev").src=u;$("prev").dataset.url=u;
+},150)}
+function faltando(){
+  if(!cur.img){ui_.toast("Coloque o print primeiro",1);return true}
+  if(!cur.seta){ui_.toast("Toque na vela em que entrou",1);return true}
+  if(!cur.op||!cur.dir){ui_.toast("Escolha o operacional e a direção",1);return true}
+  if(!PNG||PNGkey!==chavePrint()){prepararPrint();ui_.toast("Preparando o print, toque de novo",1);return true}
+  return false;
 }
+function baixarPrint(){const a=document.createElement("a");a.href=URL.createObjectURL(PNG);a.download="entrada-"+cur.op+"-"+cur.dir+".png";document.body.appendChild(a);a.click();a.remove()}
+function guia(id,passos){$(id).innerHTML="<b>Na conversa:</b><ol>"+passos.map(p=>"<li>"+p+"</li>").join("")+"</ol>";$(id).hidden=false}
+const semConv="<b>Dica:</b> configure a sua conversa de análise (quadro <i>Minha conversa de análise</i>, lá embaixo) para cair sempre nela.";
 $("aiGo").onclick=async()=>{
-  if(!cur.img){ui_.toast("Coloque o print primeiro",1);return}
-  if(!cur.seta){ui_.toast("Toque na vela em que entrou",1);return}
-  if(!cur.op||!cur.dir){ui_.toast("Escolha o operacional e a direção",1);return}
-  const t=textoAnalise();ultimoTexto.a=t;
-  if(celular()){
-    const blob=await pngComSeta(), file=new File([blob],"entrada-"+cur.op+".png",{type:"image/png"});
-    await copiarTexto(t);
-    if(navigator.canShare&&navigator.canShare({files:[file]})){
-      try{await navigator.share({files:[file],text:t,title:"Análise de entrada"});}catch(e){if(e.name==="AbortError"){ui_.toast("Compartilhamento cancelado");}}
-      $("guia").innerHTML=guiaHTML(["Na lista que abriu, escolha o <b>Claude</b> (o print vai junto).","Se o texto não aparecer na conversa, toque e segure no campo e escolha <b>Colar</b>: ele já está copiado.","Envie, leia o parecer e volte aqui para marcar Certa/Errada."],"a");
-    }else{
-      const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=file.name;document.body.appendChild(a);a.click();a.remove();
-      window.open(urlClaude(t),"_blank");
-      $("guia").innerHTML=guiaHTML(["O print com a seta foi baixado para o celular: anexe ele na conversa (📎).","O texto já está copiado: cole na conversa se não aparecer sozinho.","Envie, leia o parecer e volte aqui para marcar Certa/Errada."],"a");
-    }
-  }else{
-    const okImg=await copiarImagem();
-    window.open(urlClaude(t),"_blank");
-    if(!okImg){const blob=await pngComSeta(),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="entrada-"+cur.op+".png";document.body.appendChild(a);a.click();a.remove()}
-    $("guia").innerHTML=guiaHTML([urlClaude(t)===CLAUDE?"O texto está grande para ir sozinho: cole com <b>Ctrl+V</b> na conversa (toque em \"Copiar o texto de novo\" antes).":"O texto já está escrito na conversa nova.",okImg?"Clique na caixa de mensagem e aperte <b>Ctrl+V</b> para colar o print com a seta.":"O print com a seta foi baixado: arraste ele para a conversa.","Envie, leia o parecer e volte aqui para marcar Certa/Errada."],"a");
-    if(urlClaude(t)===CLAUDE)await copiarTexto(t);
-  }
-  $("guia").hidden=false;ui_.done($("aiGo"),"Claude aberto");
+  if(faltando())return;
+  let copiou=false;
+  try{if(window.ClipboardItem&&navigator.clipboard&&navigator.clipboard.write){await navigator.clipboard.write([new ClipboardItem({"image/png":PNG})]);copiou=true}}catch(e){copiou=false}
+  const tem=abrirConversa();
+  const p=copiou
+    ?[celular()?"Toque e segure na caixa de mensagem e escolha <b>Colar</b> (o print vai com a legenda).":"Clique na caixa de mensagem e aperte <b>Ctrl+V</b> (o print vai com a legenda).","Envie, leia o parecer e volte aqui para marcar Certa/Errada."]
+    :["Este navegador não deixou copiar a imagem. "+(celular()?"Toque em <b>Salvar print</b> e anexe pelo 📎 na conversa, ou segure o dedo na imagem acima ▸ <b>Copiar imagem</b>.":"Clique com o botão direito na imagem acima ▸ <b>Copiar imagem</b>, e cole na conversa com Ctrl+V."),"Envie, leia o parecer e volte aqui para marcar Certa/Errada."];
+  if(!tem)p.push(semConv);
+  guia("guia",p);
+  $("guia").insertAdjacentHTML("beforeend","<a class='btn ghost' href='"+(getUrl()||"https://claude.ai/new")+"' target='_blank' rel='noopener' style='text-decoration:none;justify-self:start'>Abrir a conversa ↗</a>");
+  ui_.done($("aiGo"),copiou?"Print copiado":"Conversa aberta");
+};
+$("aiSave").onclick=async()=>{
+  if(faltando())return;
+  const file=new File([PNG],"entrada-"+cur.op+"-"+cur.dir+".png",{type:"image/png"});
+  if(celular()&&navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file]})}catch(e){if(e.name!=="AbortError")baixarPrint()}
+  }else baixarPrint();
+  guia("guia",["Abra a sua conversa de análise e anexe o print pelo 📎 (ou arraste para a conversa no PC).","Envie, leia o parecer e volte aqui para marcar Certa/Errada."]);
+  ui_.done($("aiSave"),"Print salvo");
 };
 $("vSeg").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(!b)return;
   cur.ia=cur.ia&&cur.ia.veredito===b.dataset.v?null:{veredito:b.dataset.v,fonte:"claude",texto:$("resp").value.trim()};drawForm()});
 $("resp").addEventListener("input",e=>{if(cur.ia)cur.ia.texto=e.target.value.trim()});
-document.addEventListener("click",async e=>{
-  const c=e.target.closest("[data-copy]");if(c){const ok=await copiarTexto(ultimoTexto[c.dataset.copy]);ui_.toast(ok?"✓ Texto copiado":"Não consegui copiar",!ok);return}
-  if(e.target.closest("[data-img]")){const ok=await copiarImagem();ui_.toast(ok?"✓ Imagem copiada":"Não consegui copiar a imagem",!ok)}
-});
+$("ctx").addEventListener("input",prepararPrint);
+/* configuração da conversa */
+$("cfgCopy").onclick=async()=>{const ok=await copiarTexto(CONFIG_MSG);ui_.toast(ok?"✓ Mensagem copiada: cole na conversa nova":"Não consegui copiar",!ok)};
+$("cfgSave").onclick=async()=>{
+  const u=$("cfgUrl").value.trim();
+  if(!/^https:\/\/claude\.ai\//.test(u)){ui_.toast("Cole um link que comece com https://claude.ai/",1);return}
+  try{localStorage.setItem(CFG,u)}catch(e){}
+  if(db){try{await db.doc("config/claude").set({url:u})}catch(e){}}
+  cfgState();ui_.done($("cfgSave"),"Link salvo");setTimeout(()=>{$("cfgBox").open=false},900);
+};
+$("cfgDel").onclick=async()=>{try{localStorage.removeItem(CFG)}catch(e){}if(db){try{await db.doc("config/claude").delete()}catch(e){}}cfgState();ui_.toast("Link removido")};
 
 function parecerHTML(r,op,dir){
   r=r||{};const v=r.veredito==="certo"?"ok":r.veredito==="errado"?"no":"mid";
@@ -444,26 +497,31 @@ function respostaHTML(r,op,dir){
   return "<div class='ver "+v+"'><b>"+t+"</b>"+(r.texto?"<div style='white-space:pre-wrap'>"+esc(r.texto)+"</div>":"")+"</div>";
 }
 
-/* dúvidas: abre o Claude com o manual e a pergunta */
-function textoDuvida(p){return MANUAL+"\n\nEsse é o meu manual de opções binárias. Responda com base nele, em português, direto e prático, citando a regra quando usar. Se sair do manual, diga o que é opinião.\n\nMinha dúvida: "+p}
+/* dúvidas: copia a pergunta e abre a sua conversa (que já tem o manual) */
 async function perguntar(txt){
   txt=txt.trim();if(!txt){ui_.toast("Escreva a dúvida",1);return}
-  const t=textoDuvida(txt);ultimoTexto.q=t;
-  const u=urlClaude(t);await copiarTexto(t);
-  window.open(u,"_blank");
-  $("guiaQ").innerHTML=guiaHTML([u===CLAUDE?"Cole a pergunta na conversa (ela já está copiada).":"A pergunta já vai escrita, com o seu manual junto.","Se aparecer vazio, toque e segure no campo e escolha <b>Colar</b>.","Envie e o Claude responde por lá."],"q");
-  $("guiaQ").hidden=false;ui_.done($("send"),"Claude aberto");
+  const u=getUrl();
+  const t=u?txt:MANUAL+"\n\nEsse é o meu manual de opções binárias. Responda com base nele, em português, direto e prático.\n\nMinha dúvida: "+txt;
+  await copiarTexto(t);
+  abrirConversa(t);
+  guia("guiaQ",u?[celular()?"Toque e segure na caixa de mensagem e escolha <b>Colar</b>.":"Clique na caixa de mensagem e aperte <b>Ctrl+V</b>.","Envie e o Claude responde com base no seu manual."]:["Abriu uma conversa nova já com a pergunta e o seu manual (se vier vazia, cole: está copiado).",semConv]);
+  ui_.done($("send"),"Copiado");
 }
 $("chatForm").addEventListener("submit",e=>{e.preventDefault();perguntar($("q").value)});
 $("chips").addEventListener("click",e=>{const b=e.target.closest("button");if(b){$("q").value=b.textContent;perguntar(b.textContent)}});
 // a chave do Gemini não é mais usada: apaga deste aparelho
 try{localStorage.removeItem("analiseOB.geminiKey");localStorage.removeItem("analiseOB.geminiModel")}catch(e){}
 try{items=JSON.parse(localStorage.getItem(LS)||"[]")}catch(e){items=[]}
+cfgState();if(!getUrl())$("cfgBox").open=true;
 draw();drawForm();$("status").textContent="Conectando…";
 (async()=>{
   try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
   if(!db){$("status").textContent="Salvando neste aparelho";return}
   db.doc("config/ia").delete().catch(()=>{}); // chave antiga do Gemini: remove da conta
+  db.doc("config/claude").onSnapshot(d=>{const u=d.exists&&d.data().url;
+    if(u&&u!==getUrl()){try{localStorage.setItem(CFG,u)}catch(e){}cfgState()}
+    else if(!u&&getUrl())db.doc("config/claude").set({url:getUrl()}).catch(()=>{});
+  },()=>{});
   let first=true;
   db.collection("analises").onSnapshot(q=>{
     const remote=q.docs.map(d=>d.data()), ids=new Set(remote.map(x=>x.id));
