@@ -86,11 +86,14 @@ details.panel summary{cursor:pointer;list-style-position:inside}
 .msg.a{justify-self:start;background:var(--bg);border:1px solid var(--line);border-bottom-left-radius:4px}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chips button{appearance:none;font:inherit;font-size:.82rem;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:6px 12px;cursor:pointer}
-textarea#ctx,textarea#q{min-height:52px}
+textarea#ctx,textarea#q,textarea#resp{min-height:52px}
+.guia{background:var(--accent-soft);border-radius:9px;padding:10px 12px;display:grid;gap:8px;font-size:.9rem}
+.guia ol{margin:0;padding-left:18px;display:grid;gap:3px}
+#vSeg button[data-v=certo].on{background:var(--win);border-color:var(--win)}#vSeg button[data-v=errado].on{background:var(--loss);border-color:var(--loss)}
 </style>
 <div class="wrap">
   <div class="top">
-    <div><h1>Análise de Entrada</h1><div class="sub">Print da entrada · seta na vela · a IA confere com o seu manual</div></div>
+    <div><h1>Análise de Entrada</h1><div class="sub">Print da entrada · seta na vela · o Claude confere com o seu manual</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
 
@@ -100,13 +103,6 @@ textarea#ctx,textarea#q{min-height:52px}
     <div class="panel"><div class="lbl">Total</div><div class="big" id="kTot">0</div></div>
   </div>
 
-  <details class="panel" id="cfgKey">
-    <summary><b>Chave da IA (Gemini)</b> <span class="hint" id="keyState">não configurada</span></summary>
-    <p class="hint" style="margin:0">Cole uma vez: a chave fica guardada na sua conta (área que só você acessa) e passa a valer no celular e no PC logados. Ela nunca vai para o GitHub.</p>
-    <label for="gKey" class="hint">Chave da API do Google AI Studio<input id="gKey" type="password" autocomplete="off" placeholder="AIza…" style="font:inherit;width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)"></label>
-    <div class="row"><button type="button" class="btn" id="keySave">Salvar e testar</button><button type="button" class="btn ghost" id="keyDel">Apagar chave</button></div>
-    <div class="hint" id="keyMsg"></div>
-  </details>
 
   <div class="panel" id="nova">
     <h2>Nova análise</h2>
@@ -123,11 +119,16 @@ textarea#ctx,textarea#q{min-height:52px}
     <div class="step"><i>3</i>O que você operou</div>
     <div class="seg" id="opSeg"><button type="button" data-op="respiro">Respiro</button><button type="button" data-op="virada">Virada</button><button type="button" data-op="muralha">Muralha</button><button type="button" data-op="giro">Giro</button></div>
     <div class="seg" id="dirSeg"><button type="button" class="call" data-dir="call">Compra (CALL) ▲</button><button type="button" class="put" data-dir="put">Venda (PUT) ▼</button></div>
-    <textarea id="ctx" placeholder="Algo a mais para a IA saber (opcional): cores das médias no seu gráfico, ativo, horário…"></textarea>
-    <div class="step"><i>4</i>Análise da IA</div>
-    <div class="row"><button type="button" class="btn" id="aiGo">Analisar com IA</button></div>
-    <p class="hint iaAviso" hidden style="color:var(--warn);margin:0"></p>
+    <textarea id="ctx" placeholder="Algo a mais para o Claude saber (opcional): cores das médias no seu gráfico, ativo, horário…"></textarea>
+    <div class="step"><i>4</i>Análise do Claude</div>
+    <div class="row"><button type="button" class="btn" id="aiGo">Analisar no Claude ↗</button></div>
+    <div class="guia" id="guia" hidden></div>
     <div id="aiRes"></div>
+    <div id="vBox" style="display:grid;gap:8px">
+      <span class="hint">O que o Claude disse da entrada?</span>
+      <div class="seg" id="vSeg"><button type="button" data-v="certo">✓ Certa</button><button type="button" data-v="errado">✕ Errada</button><button type="button" data-v="incerto">? Incerta</button></div>
+      <textarea id="resp" placeholder="Cole aqui a resposta do Claude (opcional), para guardar junto com a análise"></textarea>
+    </div>
     <details id="critDet"><summary class="hint" style="cursor:pointer">Conferir eu mesmo, item por item (opcional)</summary>
     <div id="critBox" hidden style="display:grid;gap:4px;margin-top:8px">
       <div id="crit"></div>
@@ -138,16 +139,15 @@ textarea#ctx,textarea#q{min-height:52px}
     <div class="seg" id="resSeg"><button type="button" data-res="win">Win</button><button type="button" data-res="loss">Loss</button><button type="button" data-res="">Ainda não sei</button></div>
     <textarea id="obs" placeholder="Observação (opcional): o que viu, o que sentiu, o que faria diferente"></textarea>
     <div class="row"><button type="button" class="btn" id="salvar">Salvar análise</button><button type="button" class="btn ghost" id="limpar">Limpar</button></div>
-    <div class="note">A IA (Gemini, do Google) olha o print e confere com as regras do seu manual. Ela pode errar em print pequeno ou com médias de cores parecidas: use o parecer como segunda opinião.</div>
+    <div class="note">O botão abre o Claude já com as regras do seu manual e o que você marcou. Ele pode errar em print pequeno ou com médias de cores parecidas: use o parecer como segunda opinião.</div>
   </div>
 
   <div class="panel" id="chatBox">
     <h2>Tire suas dúvidas</h2>
-    <div class="hint">Pergunte sobre Respiro, Virada, Muralha, Giro, horários, Soros ou gerenciamento. A IA responde com base no seu manual.</div>
-    <div class="msgs" id="msgs"></div>
-    <p class="hint iaAviso" hidden style="color:var(--warn);margin:0"></p>
+    <div class="hint">Pergunte sobre Respiro, Virada, Muralha, Giro, horários, Soros ou gerenciamento. Abre o Claude com o seu manual junto, e ele responde por lá.</div>
     <div class="chips" id="chips"><button type="button">Qual a diferença entre Respiro e Muralha?</button><button type="button">Quando entro no Giro?</button><button type="button">Posso entrar na Virada se a vela de sinal for grande?</button></div>
-    <form id="chatForm" style="display:grid;gap:8px"><textarea id="q" rows="2" placeholder="Escreva sua dúvida…"></textarea><div class="row"><button type="submit" class="btn" id="send">Perguntar</button><button type="button" class="btn ghost" id="novaConv">Nova conversa</button></div></form>
+    <form id="chatForm" style="display:grid;gap:8px"><textarea id="q" rows="2" placeholder="Escreva sua dúvida…"></textarea><div class="row"><button type="submit" class="btn" id="send">Perguntar no Claude ↗</button></div></form>
+    <div class="guia" id="guiaQ" hidden></div>
   </div>
 
   <div class="panel">
@@ -250,7 +250,7 @@ function drawShot(){
 }
 $("shot").addEventListener("click",e=>{const r=$("shot").getBoundingClientRect();cur.seta={x:(e.clientX-r.left)/r.width,y:(e.clientY-r.top)/r.height};drawShot()});
 
-$("opSeg").addEventListener("click",e=>{const b=e.target.closest("[data-op]");if(!b)return;if(cur.op!==b.dataset.op){cur.op=b.dataset.op;cur.resp={};cur.ia=null;$("aiRes").innerHTML=""}drawForm()});
+$("opSeg").addEventListener("click",e=>{const b=e.target.closest("[data-op]");if(!b)return;if(cur.op!==b.dataset.op){cur.op=b.dataset.op;cur.resp={};cur.ia=null;$("aiRes").innerHTML="";$("guia").hidden=true;$("resp").value=""}drawForm()});
 $("dirSeg").addEventListener("click",e=>{const b=e.target.closest("[data-dir]");if(!b)return;cur.dir=b.dataset.dir;drawForm();drawShot()});
 $("resSeg").addEventListener("click",e=>{const b=e.target.closest("[data-res]");if(!b)return;cur.res=b.dataset.res||null;drawForm()});
 $("obs").addEventListener("input",e=>{cur.obs=e.target.value});
@@ -259,6 +259,7 @@ function drawForm(){
   [...$("opSeg").children].forEach(b=>b.classList.toggle("on",b.dataset.op===cur.op));
   [...$("dirSeg").children].forEach(b=>b.classList.toggle("on",b.dataset.dir===cur.dir));
   [...$("resSeg").children].forEach(b=>b.classList.toggle("on",(b.dataset.res||null)===cur.res));
+  [...$("vSeg").children].forEach(b=>b.classList.toggle("on",!!cur.ia&&cur.ia.veredito===b.dataset.v));
   const qs=perguntas(cur.op,cur.dir);
   $("critBox").hidden=!qs.length;
   if(qs.length){
@@ -307,7 +308,8 @@ $("salvar").onclick=async()=>{
   if(!cur.op||!cur.dir){ui_.toast("Escolha o operacional e a direção",1);return}
   const V=veredito(cur.op,cur.dir,cur.resp);
   const manual=!V.faltam;
-  if(!cur.ia&&!manual){ui_.toast("Toque em Analisar com IA ou responda os itens",1);$("aiGo").scrollIntoView({behavior:"smooth",block:"center"});return}
+  if(cur.ia)cur.ia.texto=$("resp").value.trim();
+  if(!cur.ia&&!manual){ui_.toast("Marque o que o Claude disse (Certa/Errada/Incerta) ou responda os itens",1);$("vBox").scrollIntoView({behavior:"smooth",block:"center"});return}
   const fim=window.ui?ui.busy($("salvar"),"Salvando…"):()=>{};
   const img=await imagemComSeta();
   const iaV=cur.ia&&cur.ia.veredito;
@@ -316,10 +318,10 @@ $("salvar").onclick=async()=>{
   if(db){try{await db.doc("analises/"+a.id).set(a);$("status").textContent="Salvo"}catch(e){$("status").textContent="Não salvou na conta (imagem grande?). Ficou neste aparelho.";ui_.toast("Não salvou na conta",1)}}
   else $("status").textContent="Salvo neste aparelho";
   fim();ui_.done($("salvar"),"Análise salva");
-  novo();$("file").value="";$("obs").value="";$("ctx").value="";$("aiRes").innerHTML="";drawShot();drawForm();
+  novo();$("file").value="";$("obs").value="";$("ctx").value="";$("resp").value="";$("guia").hidden=true;$("aiRes").innerHTML="";drawShot();drawForm();
   window.scrollTo({top:$("lista").getBoundingClientRect().top+scrollY-80,behavior:"smooth"});
 };
-$("limpar").onclick=()=>{novo();$("file").value="";$("obs").value="";$("ctx").value="";$("aiRes").innerHTML="";drawShot();drawForm();ui_.toast("Limpo")};
+$("limpar").onclick=()=>{novo();$("file").value="";$("obs").value="";$("ctx").value="";$("resp").value="";$("guia").hidden=true;$("aiRes").innerHTML="";drawShot();drawForm();ui_.toast("Limpo")};
 
 /* ---------- lista ---------- */
 function draw(){
@@ -332,9 +334,9 @@ function draw(){
   if(!L.length){$("lista").innerHTML="<p class='empty'>Nenhuma análise ainda.</p>";return}
   $("lista").innerHTML=L.map(a=>{
     const d=new Date(a.data), on=openId===a.id;
-    let h="<button type='button' class='it' data-open='"+a.id+"'>"+(a.img?"<img src='"+a.img+"' alt=''>":"<span></span>")+"<span><b>"+NOME[a.op]+" · "+(a.dir==="put"?"Venda ▼":"Compra ▲")+"</b><br><span class='tag "+(a.incerto?"mid":a.ok?"ok":"no")+"'>"+(a.incerto?"incerta":a.ok?"dentro da regra":"fora da regra")+"</span>"+(a.ia?"<span class='tag mid' style='background:var(--accent-soft);color:var(--accent)'>IA</span>":"")+(a.res?"<span class='tag "+(a.res==="win"?"w":"l")+"'>"+(a.res==="win"?"Win":"Loss")+"</span>":"")+"<br><span class='hint'>"+d.toLocaleDateString("pt-BR")+" "+d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})+"</span></span></button>";
+    let h="<button type='button' class='it' data-open='"+a.id+"'>"+(a.img?"<img src='"+a.img+"' alt=''>":"<span></span>")+"<span><b>"+NOME[a.op]+" · "+(a.dir==="put"?"Venda ▼":"Compra ▲")+"</b><br><span class='tag "+(a.incerto?"mid":a.ok?"ok":"no")+"'>"+(a.incerto?"incerta":a.ok?"dentro da regra":"fora da regra")+"</span>"+(a.ia?"<span class='tag mid' style='background:var(--accent-soft);color:var(--accent)'>"+(a.ia.fonte==="claude"?"Claude":"IA")+"</span>":"")+(a.res?"<span class='tag "+(a.res==="win"?"w":"l")+"'>"+(a.res==="win"?"Win":"Loss")+"</span>":"")+"<br><span class='hint'>"+d.toLocaleDateString("pt-BR")+" "+d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})+"</span></span></button>";
     if(on){h+="<div class='panel' style='gap:8px'>"+(a.img?"<img src='"+a.img+"' alt='Print com a seta' style='width:100%;border-radius:8px'>":"")+
-      (a.ia?parecerHTML(a.ia,a.op,a.dir):"<div class='ver "+(a.ok?"ok":"no")+"'><b>"+(a.ok?"✓ Dentro do "+NOME[a.op]:"✕ Fora do "+NOME[a.op])+"</b>"+(a.erros&&a.erros.length?"<ul>"+a.erros.map(t=>"<li>"+esc(t)+"</li>").join("")+"</ul>":"")+"</div>")+
+      (a.ia?respostaHTML(a.ia,a.op,a.dir):"<div class='ver "+(a.ok?"ok":"no")+"'><b>"+(a.ok?"✓ Dentro do "+NOME[a.op]:"✕ Fora do "+NOME[a.op])+"</b>"+(a.erros&&a.erros.length?"<ul>"+a.erros.map(t=>"<li>"+esc(t)+"</li>").join("")+"</ul>":"")+"</div>")+
       (a.obs?"<p style='margin:0'>"+esc(a.obs)+"</p>":"")+
       "<div class='row'><button type='button' class='btn ghost' data-close>Fechar</button><button type='button' class='btn "+(delArm===a.id?"danger":"ghost")+"' data-del='"+a.id+"'>"+(delArm===a.id?"Confirmar exclusão":"Excluir")+"</button></div></div>"}
     return h;
@@ -350,67 +352,8 @@ $("lista").addEventListener("click",async e=>{
 });
 
 
-/* ---------- IA (Gemini, Google AI Studio) ----------
-   A chave fica só no navegador deste aparelho (localStorage). Nunca vai para o Firebase nem para o GitHub. */
-const GKEY="analiseOB.geminiKey", GMODEL="analiseOB.geminiModel", API="https://generativelanguage.googleapis.com/v1beta/";
-const getKey=()=>{try{return localStorage.getItem(GKEY)||""}catch(e){return ""}};
-function keyState(){const k=getKey();$("keyState").textContent=k?(db?"✓ configurada na sua conta":"✓ configurada neste aparelho"):"não configurada — toque para colar";$("keyState").style.color=k?"var(--win)":"var(--loss)";if(!k)$("cfgKey").open=true}
-async function gfetch(path,body){
-  const r=await fetch(API+path,{method:body?"POST":"GET",headers:Object.assign({"x-goog-api-key":getKey()},body?{"Content-Type":"application/json"}:{}),body:body?JSON.stringify(body):undefined});
-  const j=await r.json().catch(()=>({}));
-  if(!r.ok){const m=(j.error&&j.error.message)||"";const e=new Error(m);e.status=r.status;e.reason=(j.error&&j.error.status)||"";throw e}
-  return j;
-}
-function erroIA(e){
-  if(!navigator.onLine)return "Sem internet.";
-  if(e.status===400&&/API key|API_KEY/i.test(e.message))return "Chave inválida. Confira a chave no Google AI Studio e cole de novo.";
-  if(e.status===403)return "A chave não tem permissão para usar a API (ou a região não está liberada). Gere uma nova chave no AI Studio.";
-  if(e.status===429)return "Limite gratuito atingido por agora. Espere um minuto (ou até amanhã, se for o limite do dia) e tente de novo.";
-  if(e.status>=500)return "O Google está sobrecarregado agora (tentei 3 vezes e em outros modelos). Espere 1 ou 2 minutos e toque de novo; sua marcação não se perdeu.";
-  return "Não deu certo"+(e.message?": "+e.message:".");
-}
-/* lista de modelos "flash" que aceitam imagem e texto, do melhor para o mais leve */
-let LISTA=null;
-async function modelos(){
-  if(LISTA)return LISTA;
-  const j=await gfetch("models?pageSize=1000");
-  const ok=(j.models||[]).filter(x=>(x.supportedGenerationMethods||[]).includes("generateContent")&&/flash/i.test(x.name)&&!/(image|tts|audio|live|embedding|thinking-exp|8b)/i.test(x.name));
-  const score=n=>{const v=(n.match(/(\d+(?:\.\d+)?)/)||[0,0])[1];return parseFloat(v)*100-(/lite/.test(n)?30:0)-(/preview|exp/.test(n)?5:0)};
-  ok.sort((a,b)=>score(b.name)-score(a.name));
-  if(!ok.length)throw Object.assign(new Error("Nenhum modelo disponível para esta chave."),{status:0});
-  LISTA=ok.map(x=>x.name.replace(/^models\//,""));return LISTA;
-}
-async function modelo(force){
-  let m="";try{m=localStorage.getItem(GMODEL)||""}catch(e){}
-  if(m&&!force)return m;
-  if(force)LISTA=null;
-  m=(await modelos())[0];try{localStorage.setItem(GMODEL,m)}catch(e){}
-  return m;
-}
-const espera=ms=>new Promise(r=>setTimeout(r,ms));
-const ocupado=e=>e.status===503||e.status===500||e.status===502||e.status===504||(e.status===429&&!/per ?day|PerDay|daily/i.test(e.message||""));
-function aviso(t){document.querySelectorAll(".iaAviso").forEach(el=>{el.textContent=t;el.hidden=!t})}
-/* tenta o modelo principal 3 vezes; se o Google seguir ocupado, passa para outro modelo flash */
-async function gerar(body){
-  let m=await modelo(),ultimo;
-  const tentar=async(mod,vezes)=>{
-    for(let i=0;i<vezes;i++){
-      try{const j=await gfetch("models/"+mod+":generateContent",body);aviso("");return j}
-      catch(e){
-        if(e.status===404&&mod===m){m=await modelo(true);mod=m;i--;continue}
-        if(!ocupado(e))throw e;
-        ultimo=e;if(i<vezes-1){aviso("Google ocupado, tentando de novo ("+(i+2)+"/"+vezes+")…");await espera(1500*(i+1)+Math.random()*500)}
-      }
-    }
-    return null;
-  };
-  let j=await tentar(m,3);if(j)return j;
-  let outros=[];try{outros=(await modelos()).filter(x=>x!==m).slice(0,3)}catch(e){}
-  for(const o of outros){aviso("Google ocupado no "+m+", tentando o "+o+"…");j=await tentar(o,2);if(j)return j}
-  aviso("");throw ultimo;
-}
-const textoDe=j=>((j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts)||[]).map(p=>p.text||"").join("");
-
+/* ---------- Claude: abre o chat com o texto pronto ----------
+   Sem chave e sem custo extra: usa o seu Claude (app no celular ou claude.ai no PC). */
 const MANUAL=`MANUAL OB (opções binárias, mercado aberto)
 Base: gráfico M1, expiração 5 minutos, médias exponenciais 9, 21 e 50. Entrada na abertura da vela seguinte à vela de sinal.
 Não opera em nenhum setup quando: as três médias estão emboladas sem espaço entre elas (lateral); faltam 5 min ou menos para notícia de impacto ou ela saiu há menos de 15 min; a vela de sinal é maior que 2x o tamanho médio das últimas 10 velas; o ativo está em OTC.
@@ -419,6 +362,73 @@ VIRADA (cruzamento 9 x 21 a favor da 50). CALL: preço acima da 50; a 9 cruza a 
 MURALHA (rejeição na 50). CALL: 21 acima da 50 e 50 subindo; o preço cai até tocar a 50; gatilho: vela com pavio inferior maior ou igual ao corpo que fecha acima da 50; entrada na vela seguinte. PUT: 21 abaixo da 50 e 50 caindo; o preço sobe até tocar a 50; gatilho: vela com pavio superior maior ou igual ao corpo que fecha abaixo da 50; entrada na vela seguinte. Não entra se: 3º toque seguido na 50; a vela de sinal fecha do outro lado da 50; a 50 está deitada.
 GIRO (reversão: o preço rompe a 50 e as médias viram). CALL: antes o mercado vinha caindo (9 abaixo da 21, 21 abaixo da 50); uma vela de corpo cheio fecha acima da 50; a 9 cruza a 21 para cima; o preço recua até a 9 ou a 50 sem fechar abaixo da 50; gatilho: vela verde fecha acima da 50; entrada na vela seguinte (nunca no rompimento). PUT: antes o mercado vinha subindo (9 acima da 21, 21 acima da 50); uma vela de corpo cheio fecha abaixo da 50; a 9 cruza a 21 para baixo; o preço sobe até a 9 ou a 50 sem fechar acima da 50; gatilho: vela vermelha fecha abaixo da 50; entrada na vela seguinte. Não entra se: a 50 ainda está bem inclinada contra a entrada (precisa estar perdendo inclinação); a vela do rompimento é maior que 2x a média das últimas 10 velas; no recuo uma vela fechou de volta do outro lado da 50 (rompimento falhou); passaram mais de 10 velas desde o rompimento sem o recuo; o preço já rompeu e voltou pela 50 nas últimas 20 velas (lateral). Reversão costuma acertar menos que os setups a favor da tendência.
 Gerenciamento: Soros nível 1, no máximo 2 entradas por sessão (manhã e tarde), para no 1º loss.`;
+const LINHAS=MANUAL.split("\n");
+const regrasDe=op=>{const k=NOME[op].toUpperCase();return LINHAS.filter((l,i)=>i<3||l.startsWith(k+" ")||l.startsWith("Gerenciamento")).join("\n")};
+const CLAUDE="https://claude.ai/new";
+const celular=()=>matchMedia("(pointer:coarse)").matches||/Android|iPhone|iPad/i.test(navigator.userAgent);
+async function copiarTexto(t){try{await navigator.clipboard.writeText(t);return true}catch(e){
+  try{const a=document.createElement("textarea");a.value=t;a.style.position="fixed";a.style.opacity="0";document.body.appendChild(a);a.select();const ok=document.execCommand("copy");a.remove();return ok}catch(_){return false}}}
+function urlClaude(t){const u=CLAUDE+"?q="+encodeURIComponent(t);return u.length<7500?u:CLAUDE}
+function pngComSeta(){return new Promise(ok=>{const im=new Image();im.onload=()=>{
+  const k=Math.min(1,1600/im.width),c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
+  const g=c.getContext("2d");g.drawImage(im,0,0,c.width,c.height);
+  if(cur.seta){const x=cur.seta.x*c.width,y=cur.seta.y*c.height,s=Math.max(c.width,c.height)/55,up=cur.dir!=="put",col=up?"#00E676":"#FF1744";
+    g.strokeStyle=col;g.fillStyle=col;g.lineWidth=s*.45;g.lineCap="round";g.beginPath();g.arc(x,y,s*.9,0,7);g.stroke();
+    const y1=up?y+s*1.3:y-s*1.3,y0=up?y+s*5:y-s*5;g.beginPath();g.moveTo(x,y0);g.lineTo(x,up?y1+s:y1-s);g.stroke();
+    g.beginPath();g.moveTo(x,y1);g.lineTo(x-s,up?y1+s*1.4:y1-s*1.4);g.lineTo(x+s,up?y1+s*1.4:y1-s*1.4);g.closePath();g.fill()}
+  c.toBlob(b=>ok(b),"image/png");
+};im.src=cur.img})}
+function textoAnalise(){
+  const lado=cur.dir==="put"?"VENDA (PUT)":"COMPRA (CALL)", ctx=$("ctx").value.trim();
+  return regrasDe(cur.op)+`
+
+Analise minha entrada no print anexado (gráfico M1 de opções binárias). Marquei com uma seta ${cur.dir==="put"?"vermelha apontando para baixo":"verde apontando para cima"} e um círculo a vela em que ENTREI (a vela de sinal é a anterior).
+Operei ${NOME[cur.op].toUpperCase()} em ${lado}.${ctx?"\nObservação: "+ctx:""}
+Compare só pelo que dá para ver no print com as regras do ${NOME[cur.op]} para ${lado} e os filtros da Base. Se um item não dá para confirmar no print, diga em vez de chutar.
+Responda em português, curto, neste formato:
+VEREDITO: CERTA, ERRADA ou INCERTA (confiança alta/média/baixa)
+Critérios: um por linha com ✓, ✕ ou ?
+Outro setup que combina mais (se houver)
+Para a próxima: 1 frase`;
+}
+function guiaHTML(passos,id){return "<b>No Claude:</b><ol>"+passos.map(p=>"<li>"+p+"</li>").join("")+"</ol><div class='row'><button type='button' class='btn ghost' data-copy='"+id+"'>Copiar o texto de novo</button>"+(id==="a"?"<button type='button' class='btn ghost' data-img>Copiar a imagem de novo</button>":"")+"<a class='btn ghost' href='"+CLAUDE+"' target='_blank' rel='noopener' style='text-decoration:none'>Abrir o Claude</a></div>"}
+let ultimoTexto={a:"",q:""};
+async function copiarImagem(){
+  if(!window.ClipboardItem||!navigator.clipboard||!navigator.clipboard.write)return false;
+  try{await navigator.clipboard.write([new ClipboardItem({"image/png":pngComSeta()})]);return true}catch(e){return false}
+}
+$("aiGo").onclick=async()=>{
+  if(!cur.img){ui_.toast("Coloque o print primeiro",1);return}
+  if(!cur.seta){ui_.toast("Toque na vela em que entrou",1);return}
+  if(!cur.op||!cur.dir){ui_.toast("Escolha o operacional e a direção",1);return}
+  const t=textoAnalise();ultimoTexto.a=t;
+  if(celular()){
+    const blob=await pngComSeta(), file=new File([blob],"entrada-"+cur.op+".png",{type:"image/png"});
+    await copiarTexto(t);
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      try{await navigator.share({files:[file],text:t,title:"Análise de entrada"});}catch(e){if(e.name==="AbortError"){ui_.toast("Compartilhamento cancelado");}}
+      $("guia").innerHTML=guiaHTML(["Na lista que abriu, escolha o <b>Claude</b> (o print vai junto).","Se o texto não aparecer na conversa, toque e segure no campo e escolha <b>Colar</b>: ele já está copiado.","Envie, leia o parecer e volte aqui para marcar Certa/Errada."],"a");
+    }else{
+      const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=file.name;document.body.appendChild(a);a.click();a.remove();
+      window.open(urlClaude(t),"_blank");
+      $("guia").innerHTML=guiaHTML(["O print com a seta foi baixado para o celular: anexe ele na conversa (📎).","O texto já está copiado: cole na conversa se não aparecer sozinho.","Envie, leia o parecer e volte aqui para marcar Certa/Errada."],"a");
+    }
+  }else{
+    const okImg=await copiarImagem();
+    window.open(urlClaude(t),"_blank");
+    if(!okImg){const blob=await pngComSeta(),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="entrada-"+cur.op+".png";document.body.appendChild(a);a.click();a.remove()}
+    $("guia").innerHTML=guiaHTML([urlClaude(t)===CLAUDE?"O texto está grande para ir sozinho: cole com <b>Ctrl+V</b> na conversa (toque em \"Copiar o texto de novo\" antes).":"O texto já está escrito na conversa nova.",okImg?"Clique na caixa de mensagem e aperte <b>Ctrl+V</b> para colar o print com a seta.":"O print com a seta foi baixado: arraste ele para a conversa.","Envie, leia o parecer e volte aqui para marcar Certa/Errada."],"a");
+    if(urlClaude(t)===CLAUDE)await copiarTexto(t);
+  }
+  $("guia").hidden=false;ui_.done($("aiGo"),"Claude aberto");
+};
+$("vSeg").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(!b)return;
+  cur.ia=cur.ia&&cur.ia.veredito===b.dataset.v?null:{veredito:b.dataset.v,fonte:"claude",texto:$("resp").value.trim()};drawForm()});
+$("resp").addEventListener("input",e=>{if(cur.ia)cur.ia.texto=e.target.value.trim()});
+document.addEventListener("click",async e=>{
+  const c=e.target.closest("[data-copy]");if(c){const ok=await copiarTexto(ultimoTexto[c.dataset.copy]);ui_.toast(ok?"✓ Texto copiado":"Não consegui copiar",!ok);return}
+  if(e.target.closest("[data-img]")){const ok=await copiarImagem();ui_.toast(ok?"✓ Imagem copiada":"Não consegui copiar a imagem",!ok)}
+});
 
 function parecerHTML(r,op,dir){
   r=r||{};const v=r.veredito==="certo"?"ok":r.veredito==="errado"?"no":"mid";
@@ -427,99 +437,33 @@ function parecerHTML(r,op,dir){
     "<div class='crit2'>"+(r.criterios||[]).map(c=>"<div class='ci'><b class='"+(c.ok===true?"y":c.ok===false?"n":"qq")+"'>"+(c.ok===true?"✓":c.ok===false?"✕":"?")+"</b><span>"+esc(c.item)+"<small>"+esc(c.obs)+"</small></span></div>").join("")+"</div>"+
     (r.melhor_setup?"<div><b>Outro setup:</b> "+esc(r.melhor_setup)+"</div>":"")+(r.conselho?"<div><b>Para a próxima:</b> "+esc(r.conselho)+"</div>":"")+"</div>";
 }
-function imagemB64(){return new Promise(ok=>{const im=new Image();im.onload=()=>{
-  const k=Math.min(1,1400/im.width),c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
-  const g=c.getContext("2d");g.drawImage(im,0,0,c.width,c.height);
-  if(cur.seta){const x=cur.seta.x*c.width,y=cur.seta.y*c.height,s=Math.max(c.width,c.height)/55,up=cur.dir!=="put",col=up?"#00E676":"#FF1744";
-    g.strokeStyle=col;g.fillStyle=col;g.lineWidth=s*.45;g.lineCap="round";g.beginPath();g.arc(x,y,s*.9,0,7);g.stroke();
-    const y1=up?y+s*1.3:y-s*1.3,y0=up?y+s*5:y-s*5;g.beginPath();g.moveTo(x,y0);g.lineTo(x,up?y1+s:y1-s);g.stroke();
-    g.beginPath();g.moveTo(x,y1);g.lineTo(x-s,up?y1+s*1.4:y1-s*1.4);g.lineTo(x+s,up?y1+s*1.4:y1-s*1.4);g.closePath();g.fill()}
-  ok(c.toDataURL("image/jpeg",.85).split(",")[1]);
-};im.src=cur.img})}
-
-$("aiGo").onclick=async()=>{
-  if(!getKey()){$("cfgKey").open=true;$("cfgKey").scrollIntoView({behavior:"smooth",block:"start"});ui_.toast("Cole a chave da IA primeiro",1);return}
-  if(!cur.img){ui_.toast("Coloque o print primeiro",1);return}
-  if(!cur.seta){ui_.toast("Toque na vela em que entrou",1);return}
-  if(!cur.op||!cur.dir){ui_.toast("Escolha o operacional e a direção",1);return}
-  const fim=window.ui?ui.busy($("aiGo"),"Analisando…"):()=>{};
-  $("aiRes").innerHTML="<p class='hint'><span class='spin'></span>A IA está olhando o gráfico…</p>";
-  const lado=cur.dir==="put"?"VENDA (PUT)":"COMPRA (CALL)", ctx=$("ctx").value.trim();
-  const prompt=MANUAL+`
-
-TAREFA: A imagem é um print de gráfico de opções binárias (M1). O trader marcou com uma seta ${cur.dir==="put"?"vermelha apontando para baixo":"verde apontando para cima"} e um círculo a vela em que ENTROU (a vela de sinal é a anterior).
-Ele diz que operou ${NOME[cur.op].toUpperCase()} em ${lado}.${ctx?"\nObservação do trader: "+ctx:""}
-Analise só pelo que dá para ver no print, comparando com as regras do ${NOME[cur.op]} para ${lado} e os filtros da Base. Identifique as médias pelas cores e posição; se não der para saber qual é qual, diga. Se um item não dá para confirmar no print, marque ok como null em vez de chutar. Escreva em português do Brasil.
-Responda APENAS com JSON: {"veredito":"certo"|"errado"|"incerto","confianca":"alta"|"media"|"baixa","resumo":"1-2 frases","criterios":[{"item":"critério","ok":true|false|null,"obs":"o que viu"}],"melhor_setup":"outro operacional que combina mais, ou vazio","conselho":"1 frase prática"}`;
-  try{
-    const b64=await imagemB64();
-    const j=await gerar({contents:[{role:"user",parts:[{text:prompt},{inline_data:{mime_type:"image/jpeg",data:b64}}]}],generationConfig:{temperature:0.2,responseMimeType:"application/json"}});
-    let t=textoDe(j).trim().replace(/^```(?:json)?|```$/g,"").trim();
-    const r=JSON.parse(t.slice(t.indexOf("{"),t.lastIndexOf("}")+1));
-    cur.ia=r;$("aiRes").innerHTML=parecerHTML(r,cur.op,cur.dir);
-    fim();ui_.done($("aiGo"),"Análise pronta");
-  }catch(e){
-    fim();cur.ia=null;
-    $("aiRes").innerHTML="<p class='hint neg' style='color:var(--loss)'>"+esc(e instanceof SyntaxError?"A resposta veio incompleta. Toque em Analisar de novo.":erroIA(e))+"</p>";
-  }
-};
-
-/* chave */
-$("keySave").onclick=async()=>{
-  const k=$("gKey").value.trim();if(!k){ui_.toast("Cole a chave",1);return}
-  try{localStorage.setItem(GKEY,k);localStorage.removeItem(GMODEL)}catch(e){}
-  const fim=window.ui?ui.busy($("keySave"),"Testando…"):()=>{};
-  try{const m=await modelo(true);
-    // guarda na sua conta para valer em todos os aparelhos logados
-    let naConta=false;if(db){try{await db.doc("config/ia").set({key:k});naConta=true}catch(e){}}
-    $("keyMsg").textContent="✓ Chave funcionando"+(naConta?" e salva na sua conta (vale no celular e no PC)":" (salva só neste aparelho: entre na conta para levar aos outros)")+". Modelo: "+m;$("keyMsg").style.color="var(--win)";$("gKey").value="";fim();ui_.done($("keySave"),"Chave salva");setTimeout(()=>{$("cfgKey").open=false},1200)}
-  catch(e){fim();$("keyMsg").textContent=erroIA(e);$("keyMsg").style.color="var(--loss)"}
-  keyState();
-};
-$("keyDel").onclick=async()=>{
-  try{localStorage.removeItem(GKEY);localStorage.removeItem(GMODEL)}catch(e){}
-  if(db){try{await db.doc("config/ia").delete()}catch(e){}}
-  $("keyMsg").textContent="Chave apagada deste aparelho e da sua conta.";keyState();ui_.toast("Chave apagada");
-};
-
-/* dúvidas */
-let turns=[];
-const REGRAS=MANUAL+`
-
-Você é um mentor de opções binárias que conhece este manual. Responda em português do Brasil, direto e prático, sempre com base nas regras acima (cite a regra quando usar). Se a pergunta sair do manual, responda com bom senso de gestão de risco e deixe claro o que é do manual e o que é opinião. Não prometa lucro. No máximo 8 linhas, sem markdown.`;
-function drawMsgs(live){
-  $("msgs").innerHTML=turns.map(t=>"<div class='msg "+(t.role==="user"?"u":"a")+"'>"+esc(t.text)+"</div>").join("")+(live?"<div class='msg a'><span class='spin'></span>Pensando…</div>":"");
-  $("chips").hidden=turns.length>0;
+function respostaHTML(r,op,dir){
+  if(!r)return "";if(r.criterios||r.resumo)return parecerHTML(r,op,dir);
+  const v=r.veredito==="certo"?"ok":r.veredito==="errado"?"no":"mid";
+  const t=v==="ok"?"✓ Claude: entrada certa no "+NOME[op]:v==="no"?"✕ Claude: entrada fora do "+NOME[op]:"? Claude: não deu para confirmar";
+  return "<div class='ver "+v+"'><b>"+t+"</b>"+(r.texto?"<div style='white-space:pre-wrap'>"+esc(r.texto)+"</div>":"")+"</div>";
 }
+
+/* dúvidas: abre o Claude com o manual e a pergunta */
+function textoDuvida(p){return MANUAL+"\n\nEsse é o meu manual de opções binárias. Responda com base nele, em português, direto e prático, citando a regra quando usar. Se sair do manual, diga o que é opinião.\n\nMinha dúvida: "+p}
 async function perguntar(txt){
-  txt=txt.trim();if(!txt)return;
-  if(!getKey()){$("cfgKey").open=true;ui_.toast("Cole a chave da IA primeiro",1);return}
-  turns.push({role:"user",text:txt});$("q").value="";drawMsgs(true);$("send").disabled=true;
-  try{
-    const j=await gerar({systemInstruction:{parts:[{text:REGRAS}]},contents:turns.slice(-12).map(t=>({role:t.role==="user"?"user":"model",parts:[{text:t.text}]})),generationConfig:{temperature:0.4}});
-    turns.push({role:"model",text:textoDe(j).trim()||"Sem resposta. Tente perguntar de outro jeito."});
-  }catch(e){turns.push({role:"model",text:erroIA(e)})}
-  $("send").disabled=false;drawMsgs();
+  txt=txt.trim();if(!txt){ui_.toast("Escreva a dúvida",1);return}
+  const t=textoDuvida(txt);ultimoTexto.q=t;
+  const u=urlClaude(t);await copiarTexto(t);
+  window.open(u,"_blank");
+  $("guiaQ").innerHTML=guiaHTML([u===CLAUDE?"Cole a pergunta na conversa (ela já está copiada).":"A pergunta já vai escrita, com o seu manual junto.","Se aparecer vazio, toque e segure no campo e escolha <b>Colar</b>.","Envie e o Claude responde por lá."],"q");
+  $("guiaQ").hidden=false;ui_.done($("send"),"Claude aberto");
 }
 $("chatForm").addEventListener("submit",e=>{e.preventDefault();perguntar($("q").value)});
-$("q").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();perguntar($("q").value)}});
-$("chips").addEventListener("click",e=>{const b=e.target.closest("button");if(b)perguntar(b.textContent)});
-$("novaConv").onclick=()=>{turns=[];drawMsgs()};
-keyState();drawMsgs();
+$("chips").addEventListener("click",e=>{const b=e.target.closest("button");if(b){$("q").value=b.textContent;perguntar(b.textContent)}});
+// a chave do Gemini não é mais usada: apaga deste aparelho
+try{localStorage.removeItem("analiseOB.geminiKey");localStorage.removeItem("analiseOB.geminiModel")}catch(e){}
 try{items=JSON.parse(localStorage.getItem(LS)||"[]")}catch(e){items=[]}
 draw();drawForm();$("status").textContent="Conectando…";
 (async()=>{
   try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
   if(!db){$("status").textContent="Salvando neste aparelho";return}
-  // chave da IA guardada na conta: chega sozinha em qualquer aparelho logado
-  db.doc("config/ia").onSnapshot(d=>{
-    const k=d.exists&&d.data().key;
-    if(k&&k!==getKey()){try{localStorage.setItem(GKEY,k);localStorage.removeItem(GMODEL)}catch(e){}keyState();$("cfgKey").open=false}
-    else if(!k&&getKey()){
-      // chave só neste aparelho (colada antes): sobe para a conta
-      db.doc("config/ia").set({key:getKey()}).catch(()=>{});
-    }
-  },()=>{});
+  db.doc("config/ia").delete().catch(()=>{}); // chave antiga do Gemini: remove da conta
   let first=true;
   db.collection("analises").onSnapshot(q=>{
     const remote=q.docs.map(d=>d.data()), ids=new Set(remote.map(x=>x.id));
