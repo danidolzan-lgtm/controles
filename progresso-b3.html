@@ -98,14 +98,14 @@ function render(){
       b.innerHTML="<span class='n'>"+String(i+1).padStart(2,"0")+"</span><span class='b'>"+brl(v)+"</span><span class='e'><small>contratos</small>"+CT[i]+"</span>";
       b.addEventListener("click",()=>{
         const s=new Set(st.conquistados); s.has(i)?s.delete(i):s.add(i);
-        st.conquistados=[...s].sort((a,c)=>a-c); render(); save();
+        st.conquistados=[...s].sort((a,c)=>a-c); render(); save();window.ui&&ui.toast(s.has(i)?"✓ Degrau conquistado":"Degrau desmarcado");
       });
       L.appendChild(b);
     });
   }
   [...L.children].forEach((b,i)=>{b.className="step"+(done.has(i)?" done":"")+(i===nextI?" next":"");b.setAttribute("aria-pressed",done.has(i))});
 }
-$("banca").addEventListener("change",e=>{const v=parseFloat(e.target.value),n=isNaN(v)?null:v;if(n===st.banca)return;st.banca=n;render();save()});
+$("banca").addEventListener("change",e=>{const v=parseFloat(e.target.value),n=isNaN(v)?null:v;if(n===st.banca)return;st.banca=n;render();save();window.ui&&ui.toast("✓ Banca salva")});
 load(); if(st.banca!=null) $("banca").value=st.banca; render(); $("status").textContent="Conectando…";
 (async()=>{
   try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}

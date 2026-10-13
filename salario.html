@@ -156,8 +156,8 @@ $("cols").addEventListener("change",e=>{
   const el=e.target;
   if(el.dataset.f){const v=parseFloat(el.value),n=isNaN(v)?null:v;
     if(el.dataset.f==="comBase"&&el.dataset.w!=="cris"){cur().orig.comBase=n;cur().dan.comBase=n}else cur()[el.dataset.w][el.dataset.f]=n;
-    save();refresh();return}
-  if(el.dataset.rep){const g=cur()[el.dataset.w].gastos.find(x=>x.id===el.dataset.rep);if(g){g.rep=el.checked;save();refresh()}}
+    save();refresh();window.ui&&ui.toast("✓ Salvo");return}
+  if(el.dataset.rep){const g=cur()[el.dataset.w].gastos.find(x=>x.id===el.dataset.rep);if(g){g.rep=el.checked;save();refresh();window.ui&&ui.toast(el.checked?"✓ Gasto repetido na outra aba":"Gasto tirado da outra aba")}}
 });
 $("cols").addEventListener("click",e=>{
   const b=e.target.closest("[data-del]");if(!b)return;
@@ -166,7 +166,7 @@ $("cols").addEventListener("click",e=>{
 $("cols").addEventListener("submit",e=>{
   e.preventDefault();const f=e.target, d=f.d.value.trim(), v=parseFloat(f.v.value);
   if(!d||isNaN(v)){f.d.focus();return}
-  cur()[f.dataset.w].gastos.push({id:uid(),desc:d,valor:Math.abs(v),rep:false});save();render();
+  cur()[f.dataset.w].gastos.push({id:uid(),desc:d,valor:Math.abs(v),rep:false});save();render();window.ui&&ui.toast("✓ Gasto adicionado");
   const again=document.querySelector("form[data-w='"+f.dataset.w+"'] input[name=d]");again&&again.focus();
 });
 $("prev").onclick=()=>{ym=shift(-1);render()};
@@ -174,7 +174,7 @@ $("next").onclick=()=>{ym=shift(1);render()};
 $("copy").onclick=()=>{
   const p=months[shift(-1)];if(!p){$("status").textContent="O mês anterior está vazio.";return}
   const c=JSON.parse(JSON.stringify(p));["orig","dan","cris"].forEach(k=>c[k].gastos.forEach(g=>g.id=uid()));
-  months[ym]=c;save();render();$("status").textContent="Copiado do mês anterior";
+  months[ym]=c;save();render();$("status").textContent="Copiado do mês anterior";window.ui&&ui.done($("copy"),"Copiado do mês anterior");
 };
 load();render();$("status").textContent="Conectando…";
 (async()=>{

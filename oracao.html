@@ -131,7 +131,7 @@ $("salvar").onclick=async()=>{
   const item={oque:last.oque,pedido:last.pedido,data:new Date().toISOString()};
   if(db){try{await db.collection("consagracoes").add(item);$("status").textContent="Consagração guardada"}catch(e){$("status").textContent="Não guardou. Tente de novo.";return}}
   else{const l=lsItems();l.unshift(item);try{localStorage.setItem(LSC,JSON.stringify(l))}catch(e){}items=l;draw();$("status").textContent="Consagração guardada neste aparelho"}
-  $("salvar").textContent="Guardada ✓";$("salvar").disabled=true;
+  window.ui&&ui.done($("salvar"),"Consagração guardada",true);$("salvar").disabled=true;
 };
 let openIx=-1, delIx=-1;
 function draw(){

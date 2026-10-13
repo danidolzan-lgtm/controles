@@ -85,7 +85,7 @@ td:first-child{font-family:var(--f-body);white-space:normal}
 
 <div class="wrap">
   <div class="top">
-    <div><h1>Diário B3</h1><div class="sub">13/10 a 17/12 · 11:30–14:00 · máx. 2 operações · parou no 1º stop</div></div>
+    <div><h1>Diário B3</h1><div class="sub">13/10 a 17/12 · 09:45–14:00 · máx. 2 operações · parou no 1º stop</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
 
@@ -286,11 +286,11 @@ function doSave(){
       if(!o.contratos){err.textContent=(i+1)+"ª operação: informe os contratos.";return}
     }
   }
-  const d=draft;closeModal();saveDay(d);
+  const d=draft;closeModal();saveDay(d);window.ui&&ui.toast("✓ Dia salvo");
 }
 
 /* ---------- ajustes ---------- */
-$("cCt").addEventListener("change",e=>{const v=parseInt(e.target.value);if(v>0&&v!==cfg.ct){cfg.ct=v;saveCfg()}});
+$("cCt").addEventListener("change",e=>{const v=parseInt(e.target.value);if(v>0&&v!==cfg.ct){cfg.ct=v;saveCfg();window.ui&&ui.toast("✓ Contratos padrão salvos")}});
 
 
 lsLoad();$("cCt").value=cfg.ct;render();setStatus("Conectando…");

@@ -207,7 +207,7 @@ $("fClose").onclick=()=>{$("found").hidden=true;found=null};
 $("fSave").onclick=async()=>{
   if(!found)return;
   const ok=await saveRecipe({nome:found.nome,ing:found.ing.join("\n"),prep:found.prep.map((p,i)=>(i+1)+". "+p).join("\n"),fonte:found.fonte});
-  if(ok){$("fSave").textContent="Salva ✓";$("fSave").disabled=true}
+  if(ok){window.ui&&ui.done($("fSave"),"Receita salva",true);$("fSave").disabled=true}
 };
 $("fEdit").onclick=()=>{
   if(!found)return;
@@ -248,8 +248,8 @@ $("list").addEventListener("click",async e=>{
   if(pendingDel!==id){pendingDel=id;draw();return}
   pendingDel=null;openId=null;
   items=items.filter(x=>x.id!==id);lsSave();draw();
-  if(db){try{await db.doc("receitas/"+id).delete();setStatus("Receita excluída")}catch(err){setStatus("Não excluiu. Tente de novo.")}}
-  else setStatus("Receita excluída");
+  if(db){try{await db.doc("receitas/"+id).delete();setStatus("Receita excluída");window.ui&&ui.toast("Receita excluída")}catch(err){setStatus("Não excluiu. Tente de novo.")}}
+  else{setStatus("Receita excluída");window.ui&&ui.toast("Receita excluída")}
 });
 function resetForm(){editId=null;editFonte="";$("form").reset();$("formTitle").textContent="Escrever receita à mão"}
 $("bClear").onclick=resetForm;
@@ -258,7 +258,7 @@ $("form").addEventListener("submit",async e=>{
   const nome=$("nome").value.trim();if(!nome){$("nome").focus();return}
   const id=editId; openId=null;
   await saveRecipe({nome,ing:$("ing").value,prep:$("prep").value,fonte:editFonte},id||undefined);
-  resetForm();$("manual").open=false;
+  resetForm();$("manual").open=false;window.ui&&ui.toast("✓ Receita salva");
 });
 lsLoad();draw();
 (async()=>{

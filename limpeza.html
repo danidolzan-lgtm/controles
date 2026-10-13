@@ -1,0 +1,193 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1F5C7A"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="limpeza"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Limpeza de Peças</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: totais no topo, botão de novo lote, um cartão por lote com as peças (qtd × valor = total) e o total do lote. */
+:root{
+  --bg:#EEF1F0; --surface:#FFFFFF; --line:#D5DCDA; --fg:#16201D; --muted:#5D6B67;
+  --accent:#1F5C7A; --accent-soft:#DCE9EF; --win:#1E7A4C; --loss:#B23A35;
+  --f-display:"Archivo",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E; --accent:#6FB2D3; --accent-soft:#1B3240; --win:#5BC98E; --loss:#EC7A73; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101614; --surface:#18201E; --line:#2A3532; --fg:#E4ECE9; --muted:#93A29E; --accent:#6FB2D3; --accent-soft:#1B3240; --win:#5BC98E; --loss:#EC7A73; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
+.wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:16px}
+.wrap>*{min-width:0}
+h1{font-family:var(--f-display);font-weight:800;font-size:1.6rem;margin:0}
+.sub,.status,.hint{color:var(--muted);font-size:.84rem}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.big{font-family:var(--f-num);font-weight:600;font-size:1.25rem;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.kpis .tot .big{color:var(--win);font-size:1.4rem}
+.btn{appearance:none;font:inherit;font-weight:600;border-radius:7px;padding:10px 16px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--surface)}
+.btn.ghost{background:var(--surface);color:var(--fg);border-color:var(--line)}
+.btn.sm{padding:6px 10px;font-size:.82rem}
+.btn.danger{color:var(--loss);border-color:var(--loss);background:var(--surface)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.lote{display:grid;gap:10px}
+.lh{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.lh input.nome{font-family:var(--f-display);font-weight:800;font-size:1.15rem;border:1px solid transparent;background:transparent;color:var(--fg);padding:4px 6px;border-radius:6px;min-width:0;width:12rem}
+.lh input.nome:hover,.lh input.nome:focus{border-color:var(--line);background:var(--bg)}
+.lh input.data{font:inherit;font-size:.85rem;color:var(--muted);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 8px}
+.ltot{font-family:var(--f-num);font-weight:600;font-size:1.2rem;color:var(--win);white-space:nowrap}
+.rows{display:grid;gap:6px}
+.hd,.row{display:grid;grid-template-columns:minmax(0,1fr) 4.2rem 6.2rem 6.6rem 2rem;gap:6px;align-items:center}
+.hd span{font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.hd span:nth-child(n+2){text-align:right}
+.row input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 8px;width:100%;min-width:0}
+.row input[type=number]{font-family:var(--f-num);text-align:right}
+.row .t{font-family:var(--f-num);font-weight:600;text-align:right;white-space:nowrap;font-size:.92rem}
+.x{appearance:none;border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:1rem;padding:4px;border-radius:5px}
+.x:hover{color:var(--loss)}
+.add{border-top:1px dashed var(--line);padding-top:10px}
+.add .row input{background:var(--surface)}
+.lf{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:10px}
+.lf .sum{font-size:.85rem;color:var(--muted)}
+.lf .sum b{font-family:var(--f-num);color:var(--fg)}
+.empty{color:var(--muted);font-size:.9rem;margin:0}
+@media (max-width:480px){
+  .hd{display:none}
+  .row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 2rem;grid-template-areas:"p p x" "q v v" "t t t"}
+  .row>:nth-child(1){grid-area:p}.row>:nth-child(2){grid-area:q}.row>:nth-child(3){grid-area:v}.row>:nth-child(4){grid-area:t}.row>:nth-child(5){grid-area:x}
+  .row{border:1px solid var(--line);border-radius:8px;padding:8px}
+  .add .row{border-style:dashed}
+  .row .t::before{content:"Total: ";font-weight:400;color:var(--muted);font-family:var(--f-body);font-size:.8rem}
+  .kpis{grid-template-columns:1fr 1fr}.kpis .tot{grid-column:1/-1}
+}
+</style>
+<div class="wrap">
+  <div class="top">
+    <div><h1>Limpeza de Peças</h1><div class="sub">Quantidade × valor de cada peça, por lote</div></div>
+    <div class="status" id="status">Carregando…</div>
+  </div>
+  <div class="kpis">
+    <div class="panel tot"><div class="lbl">Total geral</div><div class="big" id="kTot">R$ 0,00</div></div>
+    <div class="panel"><div class="lbl">Lotes</div><div class="big" id="kLotes">0</div></div>
+    <div class="panel"><div class="lbl">Peças</div><div class="big" id="kPecas">0</div></div>
+  </div>
+  <div><button type="button" class="btn" id="novo">+ Novo lote</button></div>
+  <div id="lotes" style="display:grid;gap:12px"></div>
+</div>
+<script>
+const LS="limpeza.v1";
+let lotes=[], db=null;
+const $=id=>document.getElementById(id);
+const brl=v=>"R$ "+(+v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const r2=v=>Math.round(v*100)/100;
+const uid=()=>Math.random().toString(36).slice(2,10);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const hoje=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const itTot=i=>r2((+i.qtd||0)*(+i.valor||0));
+const loteTot=l=>r2((l.itens||[]).reduce((s,i)=>s+itTot(i),0));
+const loteQtd=l=>(l.itens||[]).reduce((s,i)=>s+(+i.qtd||0),0);
+const ui_=window.ui||{toast(){},done(){}};
+
+/* ---------- salvar ---------- */
+function lsSave(){try{localStorage.setItem(LS,JSON.stringify(lotes))}catch(e){}}
+const tmr={};
+function save(l,msg){
+  lsSave();
+  clearTimeout(tmr[l.id]);
+  tmr[l.id]=setTimeout(async()=>{
+    if(!db){$("status").textContent="Salvo neste aparelho";return}
+    try{await db.doc("lotes/"+l.id).set(JSON.parse(JSON.stringify(l)));$("status").textContent="Salvo"}catch(e){$("status").textContent="Não salvou. Tente de novo.";ui_.toast("Não salvou. Tente de novo.",1)}
+  },400);
+  if(msg)ui_.toast(msg);
+}
+
+/* ---------- tela ---------- */
+function rowHTML(i){
+  return "<div class='row' data-i='"+i.id+"'><input type='text' data-f='peca' value='"+esc(i.peca)+"' placeholder='Peça' aria-label='Peça'>"+
+    "<input type='number' min='0' step='1' inputmode='numeric' data-f='qtd' value='"+(i.qtd??"")+"' aria-label='Quantidade'>"+
+    "<input type='number' min='0' step='0.01' inputmode='decimal' data-f='valor' value='"+(i.valor??"")+"' aria-label='Valor por peça'>"+
+    "<span class='t'>"+brl(itTot(i))+"</span><button type='button' class='x' data-rm='"+i.id+"' aria-label='Tirar "+esc(i.peca)+"'>✕</button></div>";
+}
+function loteHTML(l){
+  return "<div class='panel lote' data-l='"+l.id+"'>"+
+    "<div class='lh'><div style='display:flex;gap:6px;align-items:center;flex-wrap:wrap;min-width:0'><input class='nome' data-lf='nome' value='"+esc(l.nome)+"' aria-label='Nome do lote'><input class='data' type='date' data-lf='data' value='"+esc(l.data||"")+"' aria-label='Data'></div><span class='ltot' data-out='tot'>"+brl(loteTot(l))+"</span></div>"+
+    "<div class='rows'><div class='hd'><span>Peça</span><span>Qtd</span><span>Valor un.</span><span>Total</span><span></span></div>"+
+    "<div data-out='itens' class='rows'>"+((l.itens||[]).length?(l.itens||[]).map(rowHTML).join(""):"<p class='empty'>Nenhuma peça ainda.</p>")+"</div>"+
+    "<form class='add'><div class='row'><input type='text' name='peca' placeholder='Nova peça' autocomplete='off' aria-label='Nova peça'>"+
+      "<input type='number' name='qtd' min='0' step='1' inputmode='numeric' placeholder='Qtd' aria-label='Quantidade'>"+
+      "<input type='number' name='valor' min='0' step='0.01' inputmode='decimal' placeholder='R$ un.' aria-label='Valor por peça'>"+
+      "<span class='t' data-out='prev'>"+brl(0)+"</span><span></span></div>"+
+      "<div style='margin-top:8px'><button type='submit' class='btn sm'>Adicionar peça</button></div></form></div>"+
+    "<div class='lf'><span class='sum' data-out='sum'>"+sumTxt(l)+"</span><button type='button' class='btn sm ghost' data-del>Excluir lote</button></div></div>";
+}
+function sumTxt(l){const n=(l.itens||[]).length;return n+(n===1?" tipo de peça":" tipos de peça")+" · <b>"+loteQtd(l)+"</b> peças · total <b>"+brl(loteTot(l))+"</b>"}
+function render(){
+  lotes.sort((a,b)=>(b.num||0)-(a.num||0));
+  $("lotes").innerHTML=lotes.length?lotes.map(loteHTML).join(""):"<div class='panel'><p class='empty'>Toque em <b>+ Novo lote</b> para começar.</p></div>";
+  kpis();
+}
+function kpis(){
+  $("kTot").textContent=brl(lotes.reduce((s,l)=>s+loteTot(l),0));
+  $("kLotes").textContent=lotes.length;
+  $("kPecas").textContent=lotes.reduce((s,l)=>s+loteQtd(l),0).toLocaleString("pt-BR");
+}
+function refreshLote(card,l){ // atualiza números sem redesenhar os campos
+  card.querySelector("[data-out=tot]").textContent=brl(loteTot(l));
+  card.querySelector("[data-out=sum]").innerHTML=sumTxt(l);
+  card.querySelectorAll(".row[data-i]").forEach(r=>{const i=l.itens.find(x=>x.id===r.dataset.i);if(i)r.querySelector(".t").textContent=brl(itTot(i))});
+  kpis();
+}
+const loteDe=el=>{const c=el.closest(".lote");return c?[c,lotes.find(x=>x.id===c.dataset.l)]:[null,null]};
+
+/* ---------- ações ---------- */
+$("novo").onclick=()=>{
+  const n=lotes.reduce((m,l)=>Math.max(m,l.num||0),0)+1;
+  const l={id:uid(),num:n,nome:"Lote "+n,data:hoje(),itens:[]};
+  lotes.push(l);render();save(l);ui_.done($("novo"),"Lote "+n+" criado");
+  const c=document.querySelector(".lote[data-l='"+l.id+"'] form.add input[name=peca]");c&&c.focus();
+};
+$("lotes").addEventListener("input",e=>{
+  const el=e.target,[card,l]=loteDe(el);if(!l)return;
+  if(el.closest("form.add")){const f=el.closest("form.add");card.querySelector("[data-out=prev]").textContent=brl(r2((+f.qtd.value||0)*(+f.valor.value||0)));return}
+  const r=el.closest(".row[data-i]");
+  if(r&&el.dataset.f){const i=l.itens.find(x=>x.id===r.dataset.i);if(!i)return;
+    if(el.dataset.f==="peca")i.peca=el.value;else{const v=parseFloat(el.value);i[el.dataset.f]=isNaN(v)?null:Math.abs(v)}
+    refreshLote(card,l);save(l)}
+  if(el.dataset.lf){l[el.dataset.lf]=el.value;save(l)}
+});
+$("lotes").addEventListener("change",e=>{const el=e.target;if((el.dataset.f||el.dataset.lf)&&!el.closest("form.add"))ui_.toast("✓ Salvo")});
+$("lotes").addEventListener("submit",e=>{
+  e.preventDefault();const f=e.target,[card,l]=loteDe(f);if(!l)return;
+  const peca=f.peca.value.trim(), qtd=parseFloat(f.qtd.value), valor=parseFloat(f.valor.value);
+  if(!peca){f.peca.focus();return} if(isNaN(qtd)){f.qtd.focus();return} if(isNaN(valor)){f.valor.focus();return}
+  const it={id:uid(),peca,qtd:Math.abs(qtd),valor:Math.abs(valor)};
+  l.itens=l.itens||[];l.itens.push(it);
+  const box=card.querySelector("[data-out=itens]");if(!l.itens[1])box.innerHTML="";box.insertAdjacentHTML("beforeend",rowHTML(it));
+  f.reset();card.querySelector("[data-out=prev]").textContent=brl(0);refreshLote(card,l);save(l);
+  ui_.done(f.querySelector("button[type=submit]"),"Peça adicionada");f.peca.focus();
+});
+$("lotes").addEventListener("click",async e=>{
+  const rm=e.target.closest("[data-rm]");
+  if(rm){const [card,l]=loteDe(rm);l.itens=l.itens.filter(x=>x.id!==rm.dataset.rm);rm.closest(".row").remove();if(!l.itens.length)card.querySelector("[data-out=itens]").innerHTML="<p class='empty'>Nenhuma peça ainda.</p>";refreshLote(card,l);save(l,"Peça removida");return}
+  const del=e.target.closest("[data-del]");
+  if(del){const [card,l]=loteDe(del);
+    if(del.dataset.armed!=="1"){del.dataset.armed="1";del.textContent="Confirmar exclusão";del.classList.add("danger");setTimeout(()=>{if(del.isConnected){del.dataset.armed="";del.textContent="Excluir lote";del.classList.remove("danger")}},4000);return}
+    lotes=lotes.filter(x=>x.id!==l.id);lsSave();card.remove();if(!lotes.length)render();kpis();ui_.toast(l.nome+" excluído");
+    if(db){try{await db.doc("lotes/"+l.id).delete()}catch(err){$("status").textContent="Não excluiu. Tente de novo."}}
+  }
+});
+
+try{lotes=JSON.parse(localStorage.getItem(LS)||"[]")}catch(e){lotes=[]}
+render();$("status").textContent="Conectando…";
+(async()=>{
+  try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
+  if(!db){$("status").textContent="Salvando neste aparelho";return}
+  let first=true;
+  db.collection("lotes").onSnapshot(q=>{
+    const remote=q.docs.map(d=>d.data()), ids=new Set(remote.map(x=>x.id));
+    if(first){first=false;lotes.filter(l=>!ids.has(l.id)).forEach(l=>{remote.push(l);db.doc("lotes/"+l.id).set(JSON.parse(JSON.stringify(l))).catch(()=>{})})}
+    lotes=remote;lsSave();
+    const a=document.activeElement;if(!(a&&a.closest&&a.closest("#lotes")))render();else kpis();
+    $("status").textContent="Sincronizado";
+  },()=>{$("status").textContent="Sem conexão com o salvamento"});
+})();
+</script>
+</body></html>

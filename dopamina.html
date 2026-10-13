@@ -144,8 +144,8 @@ $("bCancel").onclick=()=>{draft=marks[sel]||null;drawCheck()};
 $("bSave").onclick=async()=>{
   if(!sel||!draft||!editable(sel))return;
   marks[sel]=draft;render();
-  if(db){try{await db.doc("dias/"+sel).set({r:draft});$("status").textContent="Salvo"}catch(e){$("status").textContent="Não salvou. Tente de novo."}}
-  else{try{localStorage.setItem(LS,JSON.stringify(marks))}catch(e){}$("status").textContent="Salvo neste aparelho"}
+  if(db){try{await db.doc("dias/"+sel).set({r:draft});$("status").textContent="Salvo";window.ui&&ui.done($("bSave"),"Salvo")}catch(e){$("status").textContent="Não salvou. Tente de novo.";window.ui&&ui.toast("Não salvou. Tente de novo.",1)}}
+  else{try{localStorage.setItem(LS,JSON.stringify(marks))}catch(e){}$("status").textContent="Salvo neste aparelho";window.ui&&ui.done($("bSave"),"Salvo")}
 };
 load();sel=today()<START?START:(today()>END?END:today());draft=marks[sel]||null;render();$("status").textContent="Conectando…";
 (async()=>{

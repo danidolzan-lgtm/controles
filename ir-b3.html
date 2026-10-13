@@ -242,12 +242,13 @@ $("meses").addEventListener("change",e=>{
     if(f==="dtOp"||f==="dtTx"){if(res[k].dtOp==null&&res[k].dtTx==null)delete res[k].dt;else res[k].dt=dtOf(res[k])}
   }
   persist(k);
+  window.ui&&ui.toast(f==="pago"?(el.checked?"✓ DARF marcada como paga":"DARF marcada como não paga"):"✓ Salvo");
 });
 $("meses").addEventListener("click",e=>{
   const b=e.target.closest("[data-zero]");if(!b)return;
   if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="Confirmar: apagar o mês";b.classList.add("danger");setTimeout(()=>{if(b.isConnected){b.dataset.armed="";b.textContent="Zerar mês";b.classList.remove("danger")}},4000);return}
   const k=b.dataset.zero; delete res[k];
-  const card=b.closest(".mes"); card.outerHTML=cardHTML(k); persist(k);
+  const card=b.closest(".mes"); card.outerHTML=cardHTML(k); persist(k);window.ui&&ui.toast("Mês zerado");
 });
 load();render();$("status").textContent="Conectando…";
 (async()=>{
@@ -471,8 +472,8 @@ $("ibGo").onclick=ler;
 $("ibCol").addEventListener("change",resumo);
 $("ibOut").addEventListener("click",e=>{
   const b=e.target.closest("[data-lanca]");
-  if(b){const t=window.__ibTot[b.dataset.lanca];window.IRB3.lancar(b.dataset.lanca,r2(t.op),r2(t.tx),r2(t.irrf),t.dias);b.textContent="Lançado ✓";b.disabled=true;return}
-  if(e.target.id==="ibTodos"){document.querySelectorAll("#ibMeses [data-lanca]:not([disabled])").forEach(x=>x.click());e.target.disabled=true}
+  if(b){const t=window.__ibTot[b.dataset.lanca];window.IRB3.lancar(b.dataset.lanca,r2(t.op),r2(t.tx),r2(t.irrf),t.dias);window.ui?ui.done(b,"Lançado em "+mesNome(b.dataset.lanca).split(" ")[0].toLowerCase(),true):(b.textContent="Lançado ✓");b.dataset.ok="1";return}
+  if(e.target.id==="ibTodos"){const bs=[...document.querySelectorAll("#ibMeses [data-lanca]")].filter(x=>!x.dataset.ok);bs.forEach(x=>x.click());window.ui&&ui.done(e.target,(bs.length||"Todos os")+(bs.length===1?" mês lançado":" meses lançados"),true)}
 });
 window.__irb3={parseNotas,parseExtrato,parseExtratoToks,findLabel,vals};
 })();

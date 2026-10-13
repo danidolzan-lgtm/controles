@@ -6,6 +6,34 @@
   var APP = (me && me.dataset.app) || "geral";
   var SHOW_USER = !!(me && me.dataset.showUser);
   var cfg = window.FIREBASE_CONFIG;
+  /* Confirmação visual para os botões de salvar/lançar de todas as páginas:
+     ui.done(botão, "Salvo")  → botão fica verde com ✓ por 2 s e aparece um aviso embaixo da tela
+     ui.toast("texto")        → só o aviso */
+  (function () {
+    var st = document.createElement("style");
+    st.textContent = ".ui-ok{background:#1E7A4C!important;border-color:#1E7A4C!important;color:#fff!important;opacity:1!important;transition:background .2s}" +
+      ".ui-toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;z-index:99;background:#16201D;color:#fff;font:600 14px system-ui,sans-serif;padding:10px 16px;border-radius:9px;box-shadow:0 6px 20px rgba(0,0,0,.25);transition:opacity .2s,transform .2s;max-width:calc(100% - 32px);text-align:center;pointer-events:none}" +
+      ".ui-toast.on{opacity:1;transform:translate(-50%,0)}.ui-toast.err{background:#B23A35}";
+    (document.head || document.documentElement).appendChild(st);
+    var box, tmr;
+    function toast(msg, err) {
+      if (!document.body) return;
+      if (!box) { box = document.createElement("div"); box.className = "ui-toast"; box.setAttribute("role", "status"); document.body.appendChild(box); }
+      box.textContent = msg; box.classList.toggle("err", !!err);
+      box.classList.add("on"); clearTimeout(tmr); tmr = setTimeout(function () { box.classList.remove("on"); }, 2200);
+    }
+    function done(btn, label, keep) {
+      if (btn && !btn.isConnected) btn = null;
+      if (btn) {
+        if (btn._uiT) clearTimeout(btn._uiT); else btn._uiOld = btn.innerHTML;
+        btn.classList.add("ui-ok"); btn.innerHTML = "✓ " + (label || "Salvo");
+        if (!keep) btn._uiT = setTimeout(function () { btn.classList.remove("ui-ok"); btn.innerHTML = btn._uiOld; btn._uiT = null; }, 2000);
+      }
+      toast("✓ " + (label || "Salvo"));
+    }
+    window.ui = { toast: toast, done: done };
+  })();
+
   var resolveDb, dbPromise = new Promise(function (r) { resolveDb = r; });
   window.claude = { use: function (name) { return name === "db" ? dbPromise : Promise.resolve(null); } };
 

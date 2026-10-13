@@ -65,7 +65,7 @@ img,svg{max-width:100%}
 </style>
 <div class="wrap">
   <div class="top">
-    <div><h1>Check-list B3</h1><div class="sub">Responda antes de operar, das 11:30 às 14:00. Quatro "sim" liberam o dia.</div></div>
+    <div><h1>Check-list B3</h1><div class="sub">Responda antes de operar, das 09:45 às 14:00. Quatro "sim" liberam o dia.</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
   <div class="panel">
@@ -83,9 +83,9 @@ img,svg{max-width:100%}
 </div>
 <script>
 const START="2026-10-13", END="2026-12-17", LS="checklistB3.v1";
-const SESS=[{id:"sessao",nome:"Janela",h:"11:30–14:00"}];
+const SESS=[{id:"sessao",nome:"Janela",h:"09:45–14:00"}];
 const QS=[
-  {id:"hor",k:"Horário",t:"Estou entre 11:30 e 14:00 e sem notícia forte nos próximos minutos?"},
+  {id:"hor",k:"Horário",t:"Estou entre 09:45 e 14:00?"},
   {id:"op",k:"Operacional",t:"Vou entrar só num operacional do Além da Previsão, com todos os critérios dele confirmados?"},
   {id:"ger",k:"Gerenciamento",t:"Vou usar só os contratos do meu degrau no Progresso, fazer no máximo 2 operações e parar no primeiro loss?"},
   {id:"men",k:"Mentalidade",t:"Estou calmo, sem vontade de recuperar nada, e aceito o stop se ele vier?"}
@@ -156,8 +156,8 @@ $("bCancel").onclick=()=>pick(sel);
 $("bSave").onclick=async()=>{
   if(!editable(sel))return;
   data[sel]=JSON.parse(JSON.stringify(draft));render();
-  if(db){try{await db.doc("dias/"+sel).set(data[sel]);$("status").textContent="Salvo"}catch(e){$("status").textContent="Não salvou. Tente de novo."}}
-  else{try{localStorage.setItem(LS,JSON.stringify(data))}catch(e){}$("status").textContent="Salvo neste aparelho"}
+  if(db){try{await db.doc("dias/"+sel).set(data[sel]);$("status").textContent="Salvo";window.ui&&ui.done($("bSave"),"Salvo")}catch(e){$("status").textContent="Não salvou. Tente de novo.";window.ui&&ui.toast("Não salvou. Tente de novo.",1)}}
+  else{try{localStorage.setItem(LS,JSON.stringify(data))}catch(e){}$("status").textContent="Salvo neste aparelho";window.ui&&ui.done($("bSave"),"Salvo")}
 };
 load();
 {const t=today();sel=t<START?START:t>END?END:t}
