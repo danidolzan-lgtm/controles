@@ -121,7 +121,7 @@ textarea#ctx,textarea#q{min-height:52px}
       <div class="hint" id="setaTxt">A seta aparece onde você tocar. Toque de novo para mudar.</div>
     </div>
     <div class="step"><i>3</i>O que você operou</div>
-    <div class="seg" id="opSeg"><button type="button" data-op="respiro">Respiro</button><button type="button" data-op="virada">Virada</button><button type="button" data-op="muralha">Muralha</button></div>
+    <div class="seg" id="opSeg"><button type="button" data-op="respiro">Respiro</button><button type="button" data-op="virada">Virada</button><button type="button" data-op="muralha">Muralha</button><button type="button" data-op="giro">Giro</button></div>
     <div class="seg" id="dirSeg"><button type="button" class="call" data-dir="call">Compra (CALL) ▲</button><button type="button" class="put" data-dir="put">Venda (PUT) ▼</button></div>
     <textarea id="ctx" placeholder="Algo a mais para a IA saber (opcional): cores das médias no seu gráfico, ativo, horário…"></textarea>
     <div class="step"><i>4</i>Análise da IA</div>
@@ -143,10 +143,10 @@ textarea#ctx,textarea#q{min-height:52px}
 
   <div class="panel" id="chatBox">
     <h2>Tire suas dúvidas</h2>
-    <div class="hint">Pergunte sobre Respiro, Virada, Muralha, horários, Soros ou gerenciamento. A IA responde com base no seu manual.</div>
+    <div class="hint">Pergunte sobre Respiro, Virada, Muralha, Giro, horários, Soros ou gerenciamento. A IA responde com base no seu manual.</div>
     <div class="msgs" id="msgs"></div>
     <p class="hint iaAviso" hidden style="color:var(--warn);margin:0"></p>
-    <div class="chips" id="chips"><button type="button">Qual a diferença entre Respiro e Muralha?</button><button type="button">Como reconheço a 50 deitada?</button><button type="button">Posso entrar na Virada se a vela de sinal for grande?</button></div>
+    <div class="chips" id="chips"><button type="button">Qual a diferença entre Respiro e Muralha?</button><button type="button">Quando entro no Giro?</button><button type="button">Posso entrar na Virada se a vela de sinal for grande?</button></div>
     <form id="chatForm" style="display:grid;gap:8px"><textarea id="q" rows="2" placeholder="Escreva sua dúvida…"></textarea><div class="row"><button type="submit" class="btn" id="send">Perguntar</button><button type="button" class="btn ghost" id="novaConv">Nova conversa</button></div></form>
   </div>
 
@@ -160,7 +160,7 @@ const LS="analiseOB.v1";
 const $=id=>document.getElementById(id);
 const ui_=window.ui||{toast(){},done(){}};
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const NOME={respiro:"Respiro",virada:"Virada",muralha:"Muralha"};
+const NOME={respiro:"Respiro",virada:"Virada",muralha:"Muralha",giro:"Giro"};
 
 /* ---------- regras do manual ---------- */
 // cada critério: texto para compra / para venda. "c" = precisa ser Sim; "f" = filtro, precisa ser Não.
@@ -188,7 +188,15 @@ const R={
     ["O preço caiu até tocar a 50?","O preço subiu até tocar a 50?"],
     ["A vela tinha pavio inferior maior ou igual ao corpo e fechou acima da 50?","A vela tinha pavio superior maior ou igual ao corpo e fechou abaixo da 50?"],
     ["Entrei na abertura da vela seguinte?"]],
-   f:[["Era o 3º toque seguido na 50?"],["A vela de sinal fechou do outro lado da 50?"],["A 50 estava deitada?"]]}
+   f:[["Era o 3º toque seguido na 50?"],["A vela de sinal fechou do outro lado da 50?"],["A 50 estava deitada?"]]},
+  giro:{c:[
+    ["Antes, o mercado vinha caindo (9 abaixo da 21 e 21 abaixo da 50)?","Antes, o mercado vinha subindo (9 acima da 21 e 21 acima da 50)?"],
+    ["Uma vela de corpo cheio fechou acima da 50?","Uma vela de corpo cheio fechou abaixo da 50?"],
+    ["A 9 cruzou a 21 para cima?","A 9 cruzou a 21 para baixo?"],
+    ["O preço recuou até a 9 ou a 50 sem fechar abaixo da 50?","O preço subiu até a 9 ou a 50 sem fechar acima da 50?"],
+    ["A vela de sinal fechou verde acima da 50?","A vela de sinal fechou vermelha abaixo da 50?"],
+    ["Entrei na abertura da vela seguinte (e não no rompimento)?"]],
+   f:[["A 50 ainda estava bem inclinada contra a entrada?"],["A vela do rompimento era maior que 2x a média das últimas 10 velas?"],["No recuo, alguma vela fechou de volta do outro lado da 50?"],["Passaram mais de 10 velas desde o rompimento sem o recuo?"],["O preço já tinha rompido e voltado pela 50 nas últimas 20 velas?"]]}
 };
 const txt=(t,dir)=>dir==="put"&&t[1]?t[1]:t[0];
 function perguntas(op,dir){
@@ -409,6 +417,7 @@ Não opera em nenhum setup quando: as três médias estão emboladas sem espaço
 RESPIRO (pullback na zona 9–21). CALL: 9 acima da 21, 21 acima da 50, 50 subindo; o preço recua até a zona 9–21 e encosta ou fura um pouco a 21; gatilho: vela fecha acima da 9 com pavio inferior; entrada na abertura da vela seguinte. PUT: 9 abaixo da 21, 21 abaixo da 50, 50 caindo; o preço sobe até a zona 9–21 e encosta ou fura um pouco a 21; gatilho: vela fecha abaixo da 9 com pavio superior; entrada na vela seguinte. Não entra se: no recuo o preço furou a 50; a 50 está deitada; já é o 3º recuo seguido.
 VIRADA (cruzamento 9 x 21 a favor da 50). CALL: preço acima da 50; a 9 cruza a 21 para cima; gatilho: primeira vela verde que fecha depois do cruzamento; entrada na vela seguinte. PUT: preço abaixo da 50; a 9 cruza a 21 para baixo; gatilho: primeira vela vermelha que fecha depois do cruzamento; entrada na vela seguinte. Não entra se: 9 e 21 cruzaram mais de 2 vezes nas últimas 15 velas; a 50 está deitada ou o preço cruzou a 50 nas últimas 10 velas; a vela de confirmação fecha colada na 50.
 MURALHA (rejeição na 50). CALL: 21 acima da 50 e 50 subindo; o preço cai até tocar a 50; gatilho: vela com pavio inferior maior ou igual ao corpo que fecha acima da 50; entrada na vela seguinte. PUT: 21 abaixo da 50 e 50 caindo; o preço sobe até tocar a 50; gatilho: vela com pavio superior maior ou igual ao corpo que fecha abaixo da 50; entrada na vela seguinte. Não entra se: 3º toque seguido na 50; a vela de sinal fecha do outro lado da 50; a 50 está deitada.
+GIRO (reversão: o preço rompe a 50 e as médias viram). CALL: antes o mercado vinha caindo (9 abaixo da 21, 21 abaixo da 50); uma vela de corpo cheio fecha acima da 50; a 9 cruza a 21 para cima; o preço recua até a 9 ou a 50 sem fechar abaixo da 50; gatilho: vela verde fecha acima da 50; entrada na vela seguinte (nunca no rompimento). PUT: antes o mercado vinha subindo (9 acima da 21, 21 acima da 50); uma vela de corpo cheio fecha abaixo da 50; a 9 cruza a 21 para baixo; o preço sobe até a 9 ou a 50 sem fechar acima da 50; gatilho: vela vermelha fecha abaixo da 50; entrada na vela seguinte. Não entra se: a 50 ainda está bem inclinada contra a entrada (precisa estar perdendo inclinação); a vela do rompimento é maior que 2x a média das últimas 10 velas; no recuo uma vela fechou de volta do outro lado da 50 (rompimento falhou); passaram mais de 10 velas desde o rompimento sem o recuo; o preço já rompeu e voltou pela 50 nas últimas 20 velas (lateral). Reversão costuma acertar menos que os setups a favor da tendência.
 Gerenciamento: Soros nível 1, no máximo 2 entradas por sessão (manhã e tarde), para no 1º loss.`;
 
 function parecerHTML(r,op,dir){

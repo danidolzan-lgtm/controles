@@ -73,6 +73,7 @@ input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offs
     <a href="#respiro">Respiro</a>
     <a href="#virada">Virada</a>
     <a href="#muralha">Muralha</a>
+    <a href="#giro">Giro</a>
     <a href="#horarios">Horários</a>
     <a href="#soros">Soros e stop</a>
     <a href="#validar">Validar</a>
@@ -217,6 +218,51 @@ input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offs
     </div>
   </section>
 
+  <!-- GIRO -->
+  <section class="panel" id="giro">
+    <div class="name"><h2>Giro</h2><small>reversão: o preço rompe a 50 e as médias viram</small></div>
+    <p>O mercado vinha numa direção, o preço rompe a 50 e as médias se cruzam para o outro lado. Você <b>não</b> entra no rompimento. Espera o preço voltar e mostrar que a 50 virou apoio, e entra na confirmação.</p>
+    <div class="two">
+      <div class="box call">
+        <span><span class="tag call">CALL</span></span>
+        <ol>
+          <li>Antes: o mercado vinha caindo, com 9 abaixo da 21 e 21 abaixo da 50.</li>
+          <li>Uma vela de corpo cheio fecha <b>acima da 50</b>.</li>
+          <li>A 9 cruza a 21 para cima.</li>
+          <li>O preço recua até a 9 ou a 50 sem fechar abaixo da 50.</li>
+          <li>Gatilho: uma vela verde fecha acima da 50.</li>
+          <li>Entrada na abertura da vela seguinte.</li>
+        </ol>
+      </div>
+      <div class="box put">
+        <span><span class="tag put">PUT</span></span>
+        <ol>
+          <li>Antes: o mercado vinha subindo, com 9 acima da 21 e 21 acima da 50.</li>
+          <li>Uma vela de corpo cheio fecha <b>abaixo da 50</b>.</li>
+          <li>A 9 cruza a 21 para baixo.</li>
+          <li>O preço sobe até a 9 ou a 50 sem fechar acima da 50.</li>
+          <li>Gatilho: uma vela vermelha fecha abaixo da 50.</li>
+          <li>Entrada na abertura da vela seguinte.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="box no">
+      <h3>Filtros: não entra se</h3>
+      <ul>
+        <li>A 50 ainda está bem inclinada contra você. Ela precisa estar perdendo inclinação, ficando deitada.</li>
+        <li>A vela do rompimento é maior que 2x a média das últimas 10 velas (esticou demais).</li>
+        <li>No recuo, uma vela fechou de volta do outro lado da 50: o rompimento falhou.</li>
+        <li>Passaram mais de 10 velas desde o rompimento sem o recuo aparecer.</li>
+        <li>O preço já rompeu e voltou pela 50 nas últimas 20 velas (mercado lateral).</li>
+      </ul>
+    </div>
+    <div class="two">
+      <figure><div data-chart="giro" data-side="call"></div><figcaption>Compra: o mercado vinha caindo, o preço rompe a 50, a 9 cruza a 21 para cima, o preço recua até perto da 50, a vela de sinal fecha verde acima dela e a entrada é na vela seguinte.</figcaption></figure>
+      <figure><div data-chart="giro" data-side="put"></div><figcaption>Venda: o mercado vinha subindo, o preço perde a 50, a 9 cruza a 21 para baixo, o preço sobe até perto da 50, a vela de sinal fecha vermelha abaixo dela e a entrada é na vela seguinte.</figcaption></figure>
+    </div>
+    <p class="hint">Reversão costuma acertar menos que entrada a favor da tendência. Teste o Giro no backtest separado dos outros antes de colocar dinheiro.</p>
+  </section>
+
   <!-- HORÁRIOS -->
   <section class="panel" id="horarios">
     <h2>Horários (Brasília)</h2>
@@ -303,7 +349,12 @@ const EX={
     e50:[30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45],
     e21:[45,46.5,48,49,49.5,49.5,49,48.5,48,48,48.5,49.5,51,52.5,54,55.5],
     e9:[55,57,58,57,55,52,49,46.5,44.5,44,45.5,48,51,54,57,59],
-    c:[[52,58,51,57],[57,61,56,60],[60,62,57,58],[58,59,54,55],[55,56,51,52],[52,53,47,48],[48,49,43,44],[44,45,40,40.5],[40,43,36,42],[42,46,41.5,45.5],[45.5,49,45,48.5],[48.5,52,48,51],[51,54,50.5,53.5],[53.5,57,53,56],[56,59,55.5,58],[58,61,57.5,60]]}
+    c:[[52,58,51,57],[57,61,56,60],[60,62,57,58],[58,59,54,55],[55,56,51,52],[52,53,47,48],[48,49,43,44],[44,45,40,40.5],[40,43,36,42],[42,46,41.5,45.5],[45.5,49,45,48.5],[48.5,52,48,51],[51,54,50.5,53.5],[53.5,57,53,56],[56,59,55.5,58],[58,61,57.5,60]]},
+  giro:{signal:11,entry:12,
+    e50:[62,61,60,59,58,57.2,56.5,56,55.6,55.3,55.1,55,55,55.1,55.3,55.6,56],
+    e21:[56,54.5,53,51.5,50,49,48.3,48,48.2,49,50,51,52,53,54,55,56],
+    e9:[52,50,48,46,44.5,44,44.5,46,48.5,52,54.5,56,57,58.5,60,61.5,63],
+    c:[[53,54,50,51],[51,52,48,49],[49,50,46,47],[47,48,44,45],[45,46,42,43],[43,45,41.5,44.5],[44.5,48,44,47.5],[47.5,51,47,50.5],[50.5,54,50,53.5],[53.5,59,53,58.5],[58.5,59,56,56.5],[56.5,58.5,55.2,58],[58,61,57.5,60.5],[60.5,63,60,62.5],[62.5,64,61.5,63],[63,66,62.5,65.5],[65.5,67,64.5,66.5]]}
 };
 function mirror(d){const f=v=>100-v;return {...d,e50:d.e50.map(f),e21:d.e21.map(f),e9:d.e9.map(f),c:d.c.map(([o,h,l,c])=>[f(o),f(l),f(h),f(c)])}}
 function draw(el){

@@ -96,7 +96,7 @@ td:first-child{font-family:var(--f-body);white-space:normal}
 
 <div class="wrap">
   <div class="top">
-    <div><h1>Diário OB</h1><div class="sub">M1 · expiração 5 min · Respiro, Virada e Muralha · Soros nível 1 · máx. 2 entradas por sessão · parou no 1º loss</div></div>
+    <div><h1>Diário OB</h1><div class="sub">M1 · expiração 5 min · Respiro, Virada, Muralha e Giro · Soros nível 1 · máx. 2 entradas por sessão · parou no 1º loss</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
 
@@ -134,7 +134,7 @@ td:first-child{font-family:var(--f-body);white-space:normal}
 
 <script>
 const START="2026-10-13", END="2026-12-17", LS="diarioOB2.v1";
-const OPS=[{id:"respiro",nome:"Respiro"},{id:"virada",nome:"Virada"},{id:"muralha",nome:"Muralha"}];
+const OPS=[{id:"respiro",nome:"Respiro"},{id:"virada",nome:"Virada"},{id:"muralha",nome:"Muralha"},{id:"giro",nome:"Giro"}];
 const SESS=[{id:"manha",nome:"Manhã"},{id:"tarde",nome:"Tarde"}];
 function janelas(ds){const d=ds>="2026-11-02";return {manha:d?"10:45–12:45":"09:45–11:45",tarde:d?"14:00–16:00":"13:30–15:30"}}
 let days={}, cfg={base:10,payout:85}, db=null;
@@ -331,7 +331,7 @@ function doSave(){
     if(s.status==="op"){
       if(!s.ops.length){err.textContent=x.nome+": registre a entrada ou marque Não operei.";cs=x.id;return}
       for(const [i,o] of s.ops.entries()){
-        if(!o.operacional){err.textContent=x.nome+", "+(i+1)+"ª entrada: escolha Respiro, Virada ou Muralha.";return}
+        if(!o.operacional){err.textContent=x.nome+", "+(i+1)+"ª entrada: escolha o operacional.";return}
         if(!o.res){err.textContent=x.nome+", "+(i+1)+"ª entrada: marque Win ou Loss.";return}
         if(o.valor==null||isNaN(o.valor)){err.textContent=x.nome+", "+(i+1)+"ª entrada: confira o valor.";return}
       }

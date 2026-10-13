@@ -94,7 +94,7 @@ const SESS=[{id:"manha",nome:"Manhã"},{id:"tarde",nome:"Tarde"}];
 const hj=(ds,id)=>janelas(ds)[id].join("–");
 const QS=[
   {id:"hor",k:"Janela de horário",t:ds=>{const [a,b]=janelas(ds)[sess];return "Estou dentro da janela da "+(sess==="manha"?"manhã":"tarde")+", das "+a+" às "+b+", e fora dos 15 minutos depois de notícia forte dos EUA?"}},
-  {id:"op",k:"Operacional",t:"Vou entrar só em Respiro, Virada ou Muralha, com médias 9, 21 e 50 espaçadas, mercado aberto (sem OTC) e todos os filtros do manual conferidos?"},
+  {id:"op",k:"Operacional",t:"Vou entrar só em Respiro, Virada, Muralha ou Giro, com médias 9, 21 e 50 espaçadas (no Giro: esperei o recuo depois do rompimento da 50), mercado aberto (sem OTC) e todos os filtros do manual conferidos?"},
   {id:"ger",k:"Gerenciamento",t:"Mão base definida, Soros nível 1, no máximo 2 entradas na sessão, e paro se a 1ª der loss?"},
   {id:"men",k:"Mentalidade",t:"Estou calmo, sem vontade de recuperar nada, e aceito o stop se ele vier?"}
 ];
