@@ -20,6 +20,10 @@
       ".ui-busy{position:relative;pointer-events:none;opacity:.85}" +
       ".ui-spin{display:inline-block;width:13px;height:13px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;vertical-align:-2px;margin-right:6px;animation:uispin .7s linear infinite}" +
       "@keyframes uispin{to{transform:rotate(360deg)}}" +
+      /* "← Meus Controles" fixo no topo enquanto rola a página */
+      "html,body{overflow-x:clip!important}" +
+      ".voltar{position:sticky!important;top:8px;z-index:60;display:flex!important;width:max-content;align-items:center;gap:4px;margin:10px 16px 0!important;padding:7px 14px;border-radius:999px;opacity:1!important;color:#2563EB!important;background:rgba(255,255,255,.88);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(37,99,235,.25);box-shadow:0 4px 14px -4px rgba(19,32,59,.25)}" +
+      "@media (prefers-color-scheme: dark){.voltar{background:rgba(22,33,58,.88);color:#93C5FD!important;border-color:rgba(147,197,253,.3)}}" +
       /* visual mais vivo em todas as páginas */
       "body{background-image:radial-gradient(900px 420px at 0% -8%,rgba(37,99,235,.16),transparent 62%),radial-gradient(800px 380px at 100% 0%,rgba(124,58,237,.12),transparent 60%),radial-gradient(700px 500px at 50% 110%,rgba(34,197,94,.08),transparent 60%);background-attachment:fixed}" +
       ".panel,.wrap>.grid>a,.step,.it,.ib{box-shadow:0 1px 2px rgba(19,32,59,.05),0 6px 18px -6px rgba(37,99,235,.18)}" +

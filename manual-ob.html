@@ -22,12 +22,12 @@ p{margin:0}
 .sub,.hint{color:var(--muted);font-size:.85rem}
 .top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}
 .back{color:var(--accent);text-decoration:none;font-weight:600;font-size:.9rem}
-.panel{scroll-margin-top:96px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:12px;min-width:0}
+.panel{scroll-margin-top:150px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:12px;min-width:0}
 .lbl{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px}
 .kpi{border:1px solid var(--line);border-radius:8px;padding:10px}
 .kpi b{display:block;font-family:var(--f-num);font-weight:600;font-size:1.05rem}
-nav.tabs{display:flex;gap:6px;flex-wrap:wrap;position:sticky;top:0;z-index:2;background:var(--bg);padding-block:8px}
+nav.tabs{display:flex;gap:6px;flex-wrap:wrap;position:sticky;top:48px;z-index:2;background:var(--bg);padding-block:8px}
 nav.tabs a{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:6px;padding:6px 12px;text-decoration:none;font-weight:600;font-size:.88rem}
 nav.tabs a:hover{border-color:var(--accent);color:var(--accent)}
 ul,ol{margin:0;padding-left:20px;display:grid;gap:4px}
@@ -340,6 +340,19 @@ function soros(){
   document.getElementById("sMeio").textContent="−"+brl(Math.max(0,nxt-l1));
   document.getElementById("sBe").textContent=p>0?(100/(1+p)).toFixed(1).replace(".",",")+"%":"—";
 }
-["sBase","sPay"].forEach(id=>document.getElementById(id).addEventListener("input",soros)); soros();
+["sBase","sPay"].forEach(id=>document.getElementById(id).addEventListener("input",soros));
+// mão base e payout ficam salvos (no aparelho e na conta)
+const SLS="manualOB.soros";
+function sorosLoad(v){if(!v)return;const a=document.activeElement;if(v.base!=null&&a!==document.getElementById("sBase"))document.getElementById("sBase").value=v.base;if(v.payout!=null&&a!==document.getElementById("sPay"))document.getElementById("sPay").value=v.payout;soros()}
+try{sorosLoad(JSON.parse(localStorage.getItem(SLS)||"null"))}catch(e){}
+let sorosDb=null;
+["sBase","sPay"].forEach(id=>document.getElementById(id).addEventListener("change",async()=>{
+  const v={base:parseFloat(document.getElementById("sBase").value)||0,payout:parseFloat(document.getElementById("sPay").value)||0};
+  try{localStorage.setItem(SLS,JSON.stringify(v))}catch(e){}
+  if(sorosDb){try{await sorosDb.doc("config/soros").set(v)}catch(e){}}
+  window.ui&&ui.toast(id==="sPay"?"✓ Payout salvo":"✓ Mão base salva");
+}));
+soros();
+(async()=>{try{sorosDb=window.claude?await window.claude.use("db"):null}catch(e){}if(sorosDb)sorosDb.doc("config/soros").onSnapshot(d=>{if(d.exists){const v=d.data();try{localStorage.setItem(SLS,JSON.stringify(v))}catch(e){}sorosLoad(v)}},()=>{})})();
 </script>
 </body></html>

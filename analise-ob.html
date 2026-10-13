@@ -1,0 +1,476 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="analise-ob"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Análise de Entrada</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: placar no topo; nova análise em passos (print → seta na vela → operacional e direção → critérios do manual → resultado); lista de análises salvas. */
+:root{
+  --bg:#EEF3FC; --surface:#FFFFFF; --line:#DDE4F2; --fg:#13203B; --muted:#58668A;
+  --accent:#2563EB; --accent-soft:#DCE7FF; --win:#15803D; --win-soft:#DCFCE7; --loss:#E11D48; --loss-soft:#FFE4EA; --warn:#B45309; --warn-soft:#FEF3C7;
+  --f-display:"Archivo",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7; --accent:#60A5FA; --accent-soft:#1E3A8A; --win:#4ADE80; --win-soft:#123D26; --loss:#FB7185; --loss-soft:#4A1A28; --warn:#FBBF24; --warn-soft:#3F2A06; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7; --accent:#60A5FA; --accent-soft:#1E3A8A; --win:#4ADE80; --win-soft:#123D26; --loss:#FB7185; --loss-soft:#4A1A28; --warn:#FBBF24; --warn-soft:#3F2A06; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
+.wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:16px}
+.wrap>*{min-width:0}
+h1{font-family:var(--f-display);font-weight:800;font-size:1.6rem;margin:0}
+h2{font-family:var(--f-display);font-weight:700;font-size:1.05rem;margin:0}
+.sub,.status,.hint{color:var(--muted);font-size:.84rem}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:12px;min-width:0}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.big{font-family:var(--f-num);font-weight:600;font-size:1.3rem}
+.pos{color:var(--win)} .neg{color:var(--loss)}
+.step{display:flex;gap:8px;align-items:center;font-family:var(--f-display);font-weight:700}
+.step i{font-style:normal;display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--surface);font-size:.8rem;flex:none}
+.drop{border:2px dashed var(--line);border-radius:10px;padding:18px;text-align:center;display:grid;gap:8px;place-items:center;color:var(--muted)}
+.drop.on{border-color:var(--accent);background:var(--accent-soft)}
+input[type=file]{font:inherit;font-size:.9rem;max-width:100%}
+.shot{position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--line);touch-action:manipulation;cursor:crosshair;background:#000}
+.shot img{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
+.shot svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{appearance:none;font:inherit;font-weight:600;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:7px;padding:9px 14px;cursor:pointer;flex:1;min-width:0}
+.seg button.on{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.seg button.call.on{background:var(--win);border-color:var(--win)}
+.seg button.put.on{background:var(--loss);border-color:var(--loss)}
+.q{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.q:last-child{border-bottom:0}
+.q p{margin:0;font-size:.92rem}
+.q .yn{display:flex;gap:4px}
+.q .yn button{appearance:none;font:inherit;font-size:.85rem;font-weight:600;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:6px;padding:6px 12px;cursor:pointer}
+.q .yn button.on.ok{background:var(--win);border-color:var(--win);color:var(--surface)}
+.q .yn button.on.bad{background:var(--loss);border-color:var(--loss);color:var(--surface)}
+.grp{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-top:6px}
+.grp.f{color:var(--warn)}
+.ver{border-radius:10px;padding:14px;display:grid;gap:4px;background:var(--bg)}
+.ver>b{font-family:var(--f-display);font-size:1.25rem}
+.ver.ok{background:var(--win-soft)} .ver.ok>b{color:var(--win)}
+.ver.no{background:var(--loss-soft)} .ver.no>b{color:var(--loss)}
+.ver ul{margin:4px 0 0;padding-left:18px;font-size:.88rem}
+textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;width:100%;min-height:64px;resize:vertical}
+.btn{appearance:none;font:inherit;font-weight:600;border-radius:7px;padding:10px 16px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--surface)}
+.btn.ghost{background:var(--surface);color:var(--fg);border-color:var(--line)}
+.btn.danger{background:var(--surface);color:var(--loss);border-color:var(--loss)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.list{display:grid;gap:8px}
+.it{display:grid;grid-template-columns:72px 1fr;gap:10px;align-items:center;border:1px solid var(--line);border-radius:9px;padding:8px;cursor:pointer;background:var(--surface);text-align:left;font:inherit;color:var(--fg);width:100%}
+.it img{width:72px;height:54px;object-fit:cover;border-radius:6px;background:#000}
+.it b{font-family:var(--f-display)}
+.tag{display:inline-block;font-size:.7rem;font-weight:700;border-radius:999px;padding:2px 8px;margin-right:4px}
+.tag.ok{background:var(--win-soft);color:var(--win)} .tag.no{background:var(--loss-soft);color:var(--loss)}
+.tag.w{background:var(--win);color:var(--surface)} .tag.l{background:var(--loss);color:var(--surface)}
+.empty{color:var(--muted);font-size:.9rem;margin:0}
+.note{background:var(--accent-soft);border-radius:8px;padding:10px 12px;font-size:.86rem}
+details.panel summary{cursor:pointer;list-style-position:inside}
+.crit2{display:grid;gap:6px}
+.ci{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start;font-size:.9rem}
+.ci>b{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;font-size:.75rem;color:var(--surface)}
+.ci .y{background:var(--win)} .ci .n{background:var(--loss)} .ci .qq{background:var(--muted)}
+.ci small{display:block;color:var(--muted)}
+.ver.mid{background:var(--warn-soft)} .ver.mid>b{color:var(--warn)}
+.tag.mid{background:var(--warn-soft);color:var(--warn)}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;vertical-align:-2px;margin-right:6px;animation:spn .7s linear infinite}
+@keyframes spn{to{transform:rotate(360deg)}}
+.msgs{display:grid;gap:8px}
+.msg{border-radius:12px;padding:10px 12px;max-width:92%;white-space:pre-wrap;overflow-wrap:anywhere;font-size:.93rem}
+.msg.u{justify-self:end;background:var(--accent);color:var(--surface);border-bottom-right-radius:4px}
+.msg.a{justify-self:start;background:var(--bg);border:1px solid var(--line);border-bottom-left-radius:4px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{appearance:none;font:inherit;font-size:.82rem;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:6px 12px;cursor:pointer}
+textarea#ctx,textarea#q{min-height:52px}
+</style>
+<div class="wrap">
+  <div class="top">
+    <div><h1>Análise de Entrada</h1><div class="sub">Print da entrada · seta na vela · a IA confere com o seu manual</div></div>
+    <div class="status" id="status">Carregando…</div>
+  </div>
+
+  <div class="kpis">
+    <div class="panel"><div class="lbl">Dentro da regra</div><div class="big" id="kOk">–</div><div class="hint" id="kOkW"></div></div>
+    <div class="panel"><div class="lbl">Fora da regra</div><div class="big" id="kNo">–</div><div class="hint" id="kNoW"></div></div>
+    <div class="panel"><div class="lbl">Analisadas</div><div class="big" id="kTot">0</div></div>
+  </div>
+
+  <details class="panel" id="cfgKey">
+    <summary><b>Chave da IA (Gemini)</b> <span class="hint" id="keyState">não configurada</span></summary>
+    <p class="hint" style="margin:0">A chave fica salva só neste aparelho (não vai para o GitHub nem para a sua conta). Em cada aparelho que usar, cole a chave uma vez.</p>
+    <label for="gKey" class="hint">Chave da API do Google AI Studio<input id="gKey" type="password" autocomplete="off" placeholder="AIza…" style="font:inherit;width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)"></label>
+    <div class="row"><button type="button" class="btn" id="keySave">Salvar e testar</button><button type="button" class="btn ghost" id="keyDel">Apagar chave</button></div>
+    <div class="hint" id="keyMsg"></div>
+  </details>
+
+  <div class="panel" id="nova">
+    <h2>Nova análise</h2>
+    <div class="step"><i>1</i>Print da entrada</div>
+    <label class="drop" id="drop">
+      <span>Toque para escolher o print (ou cole com Ctrl+V no PC)</span>
+      <input id="file" type="file" accept="image/*">
+    </label>
+    <div id="shotBox" hidden style="display:grid;gap:8px">
+      <div class="step"><i>2</i>Toque na vela em que você entrou</div>
+      <div class="shot" id="shot"><img id="img" alt="Print da entrada"><svg id="ov" viewBox="0 0 100 100" preserveAspectRatio="none"></svg></div>
+      <div class="hint" id="setaTxt">A seta aparece onde você tocar. Toque de novo para mudar.</div>
+    </div>
+    <div class="step"><i>3</i>O que você operou</div>
+    <div class="seg" id="opSeg"><button type="button" data-op="respiro">Respiro</button><button type="button" data-op="virada">Virada</button><button type="button" data-op="muralha">Muralha</button></div>
+    <div class="seg" id="dirSeg"><button type="button" class="call" data-dir="call">Compra (CALL) ▲</button><button type="button" class="put" data-dir="put">Venda (PUT) ▼</button></div>
+    <textarea id="ctx" placeholder="Algo a mais para a IA saber (opcional): cores das médias no seu gráfico, ativo, horário…"></textarea>
+    <div class="step"><i>4</i>Análise da IA</div>
+    <div class="row"><button type="button" class="btn" id="aiGo">Analisar com IA</button></div>
+    <div id="aiRes"></div>
+    <details id="critDet"><summary class="hint" style="cursor:pointer">Conferir eu mesmo, item por item (opcional)</summary>
+    <div id="critBox" hidden style="display:grid;gap:4px;margin-top:8px">
+      <div id="crit"></div>
+    </div>
+    <div class="ver" id="ver" hidden style="margin-top:8px"></div>
+    </details>
+    <div class="step"><i>5</i>Resultado e observação</div>
+    <div class="seg" id="resSeg"><button type="button" data-res="win">Win</button><button type="button" data-res="loss">Loss</button><button type="button" data-res="">Ainda não sei</button></div>
+    <textarea id="obs" placeholder="Observação (opcional): o que viu, o que sentiu, o que faria diferente"></textarea>
+    <div class="row"><button type="button" class="btn" id="salvar">Salvar análise</button><button type="button" class="btn ghost" id="limpar">Limpar</button></div>
+    <div class="note">A IA (Gemini, do Google) olha o print e confere com as regras do seu manual. Ela pode errar em print pequeno ou com médias de cores parecidas: use o parecer como segunda opinião.</div>
+  </div>
+
+  <div class="panel" id="chatBox">
+    <h2>Tire suas dúvidas</h2>
+    <div class="hint">Pergunte sobre Respiro, Virada, Muralha, horários, Soros ou gerenciamento. A IA responde com base no seu manual.</div>
+    <div class="msgs" id="msgs"></div>
+    <div class="chips" id="chips"><button type="button">Qual a diferença entre Respiro e Muralha?</button><button type="button">Como reconheço a 50 deitada?</button><button type="button">Posso entrar na Virada se a vela de sinal for grande?</button></div>
+    <form id="chatForm" style="display:grid;gap:8px"><textarea id="q" rows="2" placeholder="Escreva sua dúvida…"></textarea><div class="row"><button type="submit" class="btn" id="send">Perguntar</button><button type="button" class="btn ghost" id="novaConv">Nova conversa</button></div></form>
+  </div>
+
+  <div class="panel">
+    <h2>Análises salvas</h2>
+    <div class="list" id="lista"><p class="empty">Nenhuma análise ainda.</p></div>
+  </div>
+</div>
+<script>
+const LS="analiseOB.v1";
+const $=id=>document.getElementById(id);
+const ui_=window.ui||{toast(){},done(){}};
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const NOME={respiro:"Respiro",virada:"Virada",muralha:"Muralha"};
+
+/* ---------- regras do manual ---------- */
+// cada critério: texto para compra / para venda. "c" = precisa ser Sim; "f" = filtro, precisa ser Não.
+const BASE_F=[
+  ["As três médias estavam emboladas, sem espaço entre elas?"],
+  ["Era 5 min antes ou até 15 min depois de notícia forte?"],
+  ["A vela de sinal era maior que 2x a média das últimas 10 velas?"],
+  ["O ativo era OTC?"]
+];
+const R={
+  respiro:{c:[
+    ["Médias alinhadas: 9 acima da 21, 21 acima da 50, com a 50 subindo?","Médias alinhadas: 9 abaixo da 21, 21 abaixo da 50, com a 50 caindo?"],
+    ["O preço recuou até a zona 9–21 e encostou ou furou pouco a 21?","O preço subiu até a zona 9–21 e encostou ou furou pouco a 21?"],
+    ["A vela de sinal fechou acima da 9, com pavio inferior?","A vela de sinal fechou abaixo da 9, com pavio superior?"],
+    ["Entrei na abertura da vela seguinte ao sinal?"]],
+   f:[["No recuo, o preço furou a média de 50?"],["A 50 estava deitada (sem inclinação)?"],["Já era o 3º recuo seguido na mesma tendência?"]]},
+  virada:{c:[
+    ["O preço estava acima da 50?","O preço estava abaixo da 50?"],
+    ["A 9 cruzou a 21 para cima?","A 9 cruzou a 21 para baixo?"],
+    ["Entrei depois da primeira vela verde que fechou após o cruzamento?","Entrei depois da primeira vela vermelha que fechou após o cruzamento?"],
+    ["Entrei na abertura da vela seguinte?"]],
+   f:[["A 9 e a 21 cruzaram mais de 2 vezes nas últimas 15 velas?"],["A 50 estava deitada ou o preço cruzou a 50 nas últimas 10 velas?"],["A vela de confirmação fechou colada na 50?"]]},
+  muralha:{c:[
+    ["Tendência de alta: 21 acima da 50 e a 50 subindo?","Tendência de baixa: 21 abaixo da 50 e a 50 caindo?"],
+    ["O preço caiu até tocar a 50?","O preço subiu até tocar a 50?"],
+    ["A vela tinha pavio inferior maior ou igual ao corpo e fechou acima da 50?","A vela tinha pavio superior maior ou igual ao corpo e fechou abaixo da 50?"],
+    ["Entrei na abertura da vela seguinte?"]],
+   f:[["Era o 3º toque seguido na 50?"],["A vela de sinal fechou do outro lado da 50?"],["A 50 estava deitada?"]]}
+};
+const txt=(t,dir)=>dir==="put"&&t[1]?t[1]:t[0];
+function perguntas(op,dir){
+  if(!op||!dir)return [];
+  const r=R[op];
+  return [...r.c.map((t,i)=>({id:"c"+i,t:txt(t,dir),tipo:"c"})),...r.f.map((t,i)=>({id:"f"+i,t:txt(t,dir),tipo:"f"})),...BASE_F.map((t,i)=>({id:"b"+i,t:t[0],tipo:"f"}))];
+}
+function veredito(op,dir,resp){
+  const qs=perguntas(op,dir); if(!qs.length)return null;
+  const faltam=qs.filter(q=>resp[q.id]==null).length;
+  const erros=qs.filter(q=>resp[q.id]!=null&&(q.tipo==="c"?resp[q.id]!==true:resp[q.id]!==false));
+  return {faltam,erros,ok:!faltam&&!erros.length};
+}
+
+/* ---------- estado da nova análise ---------- */
+let cur=null, items=[], db=null, openId=null, delArm=null;
+function novo(){cur={id:Math.random().toString(36).slice(2,10),img:null,seta:null,op:null,dir:null,resp:{},res:null,obs:"",ia:null}}
+novo();
+
+/* imagem: reduz para caber no salvamento (até ~1000 px, JPEG) */
+function carregar(file){
+  if(!file||!/^image\//.test(file.type)){ui_.toast("Escolha uma imagem",1);return}
+  const fr=new FileReader();
+  fr.onload=()=>{const im=new Image();im.onload=()=>{
+    const max=1100, k=Math.min(1,max/Math.max(im.width,im.height)), c=document.createElement("canvas");
+    c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+    let q=.8, url=c.toDataURL("image/jpeg",q); while(url.length>650000&&q>.35){q-=.1;url=c.toDataURL("image/jpeg",q)}
+    cur.img=url;cur.w=c.width;cur.h=c.height;cur.seta=null;drawShot();ui_.toast("✓ Print carregado");
+  };im.src=fr.result};
+  fr.readAsDataURL(file);
+}
+$("file").addEventListener("change",e=>carregar(e.target.files[0]));
+document.addEventListener("paste",e=>{const f=[...(e.clipboardData||{}).files||[]].find(x=>/^image\//.test(x.type));if(f)carregar(f)});
+["dragover","dragenter"].forEach(t=>$("drop").addEventListener(t,e=>{e.preventDefault();$("drop").classList.add("on")}));
+["dragleave","drop"].forEach(t=>$("drop").addEventListener(t,e=>{e.preventDefault();$("drop").classList.remove("on");if(t==="drop"&&e.dataTransfer.files[0])carregar(e.dataTransfer.files[0])}));
+
+function setaSVG(seta,dir){
+  if(!seta)return "";
+  const col=dir==="put"?"#E11D48":"#16A34A", x=seta.x*100, y=seta.y*100;
+  // compra: seta embaixo apontando para cima; venda: seta em cima apontando para baixo
+  const up=dir!=="put", y0=up?y+16:y-16, y1=up?y+3:y-3;
+  return "<circle cx='"+x+"' cy='"+y+"' r='2.2' fill='none' stroke='"+col+"' stroke-width='.6' vector-effect='non-scaling-stroke'/>"+
+    "<line x1='"+x+"' y1='"+y0+"' x2='"+x+"' y2='"+(up?y1+2:y1-2)+"' stroke='"+col+"' stroke-width='4' vector-effect='non-scaling-stroke' stroke-linecap='round'/>"+
+    "<polygon points='"+(x-2.4)+","+(up?y1+3.5:y1-3.5)+" "+(x+2.4)+","+(up?y1+3.5:y1-3.5)+" "+x+","+y1+"' fill='"+col+"'/>";
+}
+function drawShot(){
+  $("shotBox").hidden=!cur.img; if(!cur.img)return;
+  if($("img").src!==cur.img)$("img").src=cur.img;
+  $("ov").innerHTML=setaSVG(cur.seta,cur.dir);
+  $("setaTxt").textContent=cur.seta?"Seta marcada. Toque em outro lugar para mudar.":"A seta aparece onde você tocar. Toque de novo para mudar.";
+}
+$("shot").addEventListener("click",e=>{const r=$("shot").getBoundingClientRect();cur.seta={x:(e.clientX-r.left)/r.width,y:(e.clientY-r.top)/r.height};drawShot()});
+
+$("opSeg").addEventListener("click",e=>{const b=e.target.closest("[data-op]");if(!b)return;if(cur.op!==b.dataset.op){cur.op=b.dataset.op;cur.resp={};cur.ia=null;$("aiRes").innerHTML=""}drawForm()});
+$("dirSeg").addEventListener("click",e=>{const b=e.target.closest("[data-dir]");if(!b)return;cur.dir=b.dataset.dir;drawForm();drawShot()});
+$("resSeg").addEventListener("click",e=>{const b=e.target.closest("[data-res]");if(!b)return;cur.res=b.dataset.res||null;drawForm()});
+$("obs").addEventListener("input",e=>{cur.obs=e.target.value});
+
+function drawForm(){
+  [...$("opSeg").children].forEach(b=>b.classList.toggle("on",b.dataset.op===cur.op));
+  [...$("dirSeg").children].forEach(b=>b.classList.toggle("on",b.dataset.dir===cur.dir));
+  [...$("resSeg").children].forEach(b=>b.classList.toggle("on",(b.dataset.res||null)===cur.res));
+  const qs=perguntas(cur.op,cur.dir);
+  $("critBox").hidden=!qs.length;
+  if(qs.length){
+    let h="",grp="";
+    qs.forEach(q=>{
+      const g=q.tipo==="c"?"Gatilho do "+NOME[cur.op]+" (precisa ser Sim)":q.id[0]==="f"?"Filtros do "+NOME[cur.op]+" (precisa ser Não)":"Filtros de todos os setups (precisa ser Não)";
+      if(g!==grp){h+="<div class='grp"+(q.tipo==="f"?" f":"")+"'>"+g+"</div>";grp=g}
+      const v=cur.resp[q.id], bom=q.tipo==="c"?true:false;
+      h+="<div class='q'><p>"+esc(q.t)+"</p><div class='yn'>"+
+        "<button type='button' data-q='"+q.id+"' data-v='1' class='"+(v===true?"on "+(bom===true?"ok":"bad"):"")+"'>Sim</button>"+
+        "<button type='button' data-q='"+q.id+"' data-v='0' class='"+(v===false?"on "+(bom===false?"ok":"bad"):"")+"'>Não</button></div></div>";
+    });
+    $("crit").innerHTML=h;
+  }
+  const V=veredito(cur.op,cur.dir,cur.resp), ve=$("ver");
+  if(!V){ve.hidden=true;return}
+  ve.hidden=false;
+  if(V.ok){ve.className="ver ok";ve.innerHTML="<b>✓ Entrada dentro do "+NOME[cur.op]+"</b><span>Todos os critérios do manual batem"+(cur.dir==="put"?" para venda.":" para compra.")+"</span>"}
+  else if(V.erros.length){ve.className="ver no";ve.innerHTML="<b>✕ Entrada fora do "+NOME[cur.op]+"</b><span>"+V.erros.length+(V.erros.length===1?" item não bate":" itens não batem")+" com o manual:</span><ul>"+V.erros.map(q=>"<li>"+esc(q.t)+" → "+(cur.resp[q.id]?"Sim":"Não")+"</li>").join("")+"</ul>"+(V.faltam?"<span class='hint'>Faltam "+V.faltam+" respostas.</span>":"")}
+  else{ve.className="ver";ve.innerHTML="<b>Responda os critérios</b><span>Faltam "+V.faltam+" respostas.</span>"}
+}
+$("crit").addEventListener("click",e=>{const b=e.target.closest("[data-q]");if(!b)return;cur.resp[b.dataset.q]=b.dataset.v==="1";drawForm()});
+
+/* imagem final com a seta desenhada (para a lista e o histórico) */
+function imagemComSeta(){
+  return new Promise(ok=>{
+    if(!cur.img)return ok(null);
+    const im=new Image();im.onload=()=>{
+      const c=document.createElement("canvas");c.width=im.width;c.height=im.height;const g=c.getContext("2d");g.drawImage(im,0,0);
+      if(cur.seta){const x=cur.seta.x*c.width,y=cur.seta.y*c.height,s=Math.max(c.width,c.height)/60,up=cur.dir!=="put",col=cur.dir==="put"?"#E11D48":"#16A34A";
+        g.strokeStyle=col;g.fillStyle=col;g.lineWidth=s*.45;g.lineCap="round";
+        g.beginPath();g.arc(x,y,s*.9,0,7);g.stroke();
+        const y1=up?y+s*1.3:y-s*1.3,y0=up?y+s*5:y-s*5;
+        g.beginPath();g.moveTo(x,y0);g.lineTo(x,up?y1+s:y1-s);g.stroke();
+        g.beginPath();g.moveTo(x,y1);g.lineTo(x-s,up?y1+s*1.4:y1-s*1.4);g.lineTo(x+s,up?y1+s*1.4:y1-s*1.4);g.closePath();g.fill()}
+      let q=.75,url=c.toDataURL("image/jpeg",q);while(url.length>700000&&q>.3){q-=.1;url=c.toDataURL("image/jpeg",q)}
+      ok(url);
+    };im.src=cur.img;
+  });
+}
+
+/* ---------- salvar ---------- */
+function lsSave(){try{localStorage.setItem(LS,JSON.stringify(items))}catch(e){try{localStorage.setItem(LS,JSON.stringify(items.slice(-15)))}catch(_){}}}
+$("salvar").onclick=async()=>{
+  if(!cur.img){ui_.toast("Coloque o print primeiro",1);return}
+  if(!cur.op||!cur.dir){ui_.toast("Escolha o operacional e a direção",1);return}
+  const V=veredito(cur.op,cur.dir,cur.resp);
+  const manual=!V.faltam;
+  if(!cur.ia&&!manual){ui_.toast("Toque em Analisar com IA ou responda os itens",1);$("aiGo").scrollIntoView({behavior:"smooth",block:"center"});return}
+  const fim=window.ui?ui.busy($("salvar"),"Salvando…"):()=>{};
+  const img=await imagemComSeta();
+  const iaV=cur.ia&&cur.ia.veredito;
+  const a={id:cur.id,data:new Date().toISOString(),op:cur.op,dir:cur.dir,resp:manual?cur.resp:{},ok:manual?V.ok:iaV==="certo",incerto:!manual&&iaV!=="certo"&&iaV!=="errado",erros:manual?V.erros.map(q=>q.t):[],ia:cur.ia||null,res:cur.res||"",obs:cur.obs||"",img};
+  items=items.filter(x=>x.id!==a.id).concat([a]);lsSave();draw();
+  if(db){try{await db.doc("analises/"+a.id).set(a);$("status").textContent="Salvo"}catch(e){$("status").textContent="Não salvou na conta (imagem grande?). Ficou neste aparelho.";ui_.toast("Não salvou na conta",1)}}
+  else $("status").textContent="Salvo neste aparelho";
+  fim();ui_.done($("salvar"),"Análise salva");
+  novo();$("file").value="";$("obs").value="";$("ctx").value="";$("aiRes").innerHTML="";drawShot();drawForm();
+  window.scrollTo({top:$("lista").getBoundingClientRect().top+scrollY-80,behavior:"smooth"});
+};
+$("limpar").onclick=()=>{novo();$("file").value="";$("obs").value="";$("ctx").value="";$("aiRes").innerHTML="";drawShot();drawForm();ui_.toast("Limpo")};
+
+/* ---------- lista ---------- */
+function draw(){
+  const L=items.slice().sort((a,b)=>(b.data||"").localeCompare(a.data||""));
+  // placar
+  const ok=L.filter(a=>a.ok),no=L.filter(a=>!a.ok&&!a.incerto),wr=arr=>{const c=arr.filter(a=>a.res==="win"||a.res==="loss");return c.length?Math.round(c.filter(a=>a.res==="win").length/c.length*100)+"% de win ("+c.length+")":"sem resultado"};
+  $("kTot").textContent=L.length;
+  $("kOk").textContent=L.length?Math.round(ok.length/L.length*100)+"%":"–";$("kOk").className="big pos";$("kOkW").textContent=wr(ok);
+  $("kNo").textContent=L.length?Math.round(no.length/L.length*100)+"%":"–";$("kNo").className="big neg";$("kNoW").textContent=wr(no);
+  if(!L.length){$("lista").innerHTML="<p class='empty'>Nenhuma análise ainda.</p>";return}
+  $("lista").innerHTML=L.map(a=>{
+    const d=new Date(a.data), on=openId===a.id;
+    let h="<button type='button' class='it' data-open='"+a.id+"'>"+(a.img?"<img src='"+a.img+"' alt=''>":"<span></span>")+"<span><b>"+NOME[a.op]+" · "+(a.dir==="put"?"Venda ▼":"Compra ▲")+"</b><br><span class='tag "+(a.incerto?"mid":a.ok?"ok":"no")+"'>"+(a.incerto?"incerta":a.ok?"dentro da regra":"fora da regra")+"</span>"+(a.ia?"<span class='tag mid' style='background:var(--accent-soft);color:var(--accent)'>IA</span>":"")+(a.res?"<span class='tag "+(a.res==="win"?"w":"l")+"'>"+(a.res==="win"?"Win":"Loss")+"</span>":"")+"<br><span class='hint'>"+d.toLocaleDateString("pt-BR")+" "+d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})+"</span></span></button>";
+    if(on){h+="<div class='panel' style='gap:8px'>"+(a.img?"<img src='"+a.img+"' alt='Print com a seta' style='width:100%;border-radius:8px'>":"")+
+      (a.ia?parecerHTML(a.ia,a.op,a.dir):"<div class='ver "+(a.ok?"ok":"no")+"'><b>"+(a.ok?"✓ Dentro do "+NOME[a.op]:"✕ Fora do "+NOME[a.op])+"</b>"+(a.erros&&a.erros.length?"<ul>"+a.erros.map(t=>"<li>"+esc(t)+"</li>").join("")+"</ul>":"")+"</div>")+
+      (a.obs?"<p style='margin:0'>"+esc(a.obs)+"</p>":"")+
+      "<div class='row'><button type='button' class='btn ghost' data-close>Fechar</button><button type='button' class='btn "+(delArm===a.id?"danger":"ghost")+"' data-del='"+a.id+"'>"+(delArm===a.id?"Confirmar exclusão":"Excluir")+"</button></div></div>"}
+    return h;
+  }).join("");
+}
+$("lista").addEventListener("click",async e=>{
+  const o=e.target.closest("[data-open]");if(o){openId=openId===o.dataset.open?null:o.dataset.open;delArm=null;draw();return}
+  if(e.target.closest("[data-close]")){openId=null;draw();return}
+  const d=e.target.closest("[data-del]");if(!d)return;
+  const id=d.dataset.del;if(delArm!==id){delArm=id;draw();return}
+  items=items.filter(x=>x.id!==id);delArm=null;openId=null;lsSave();draw();ui_.toast("Análise excluída");
+  if(db){try{await db.doc("analises/"+id).delete()}catch(err){}}
+});
+
+
+/* ---------- IA (Gemini, Google AI Studio) ----------
+   A chave fica só no navegador deste aparelho (localStorage). Nunca vai para o Firebase nem para o GitHub. */
+const GKEY="analiseOB.geminiKey", GMODEL="analiseOB.geminiModel", API="https://generativelanguage.googleapis.com/v1beta/";
+const getKey=()=>{try{return localStorage.getItem(GKEY)||""}catch(e){return ""}};
+function keyState(){const k=getKey();$("keyState").textContent=k?"✓ configurada neste aparelho":"não configurada — toque para colar";$("keyState").style.color=k?"var(--win)":"var(--loss)";if(!k)$("cfgKey").open=true}
+async function gfetch(path,body){
+  const r=await fetch(API+path,{method:body?"POST":"GET",headers:Object.assign({"x-goog-api-key":getKey()},body?{"Content-Type":"application/json"}:{}),body:body?JSON.stringify(body):undefined});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok){const m=(j.error&&j.error.message)||"";const e=new Error(m);e.status=r.status;e.reason=(j.error&&j.error.status)||"";throw e}
+  return j;
+}
+function erroIA(e){
+  if(!navigator.onLine)return "Sem internet.";
+  if(e.status===400&&/API key|API_KEY/i.test(e.message))return "Chave inválida. Confira a chave no Google AI Studio e cole de novo.";
+  if(e.status===403)return "A chave não tem permissão para usar a API (ou a região não está liberada). Gere uma nova chave no AI Studio.";
+  if(e.status===429)return "Limite gratuito atingido por agora. Espere um minuto (ou até amanhã, se for o limite do dia) e tente de novo.";
+  if(e.status===503||e.status===500)return "O serviço do Google está ocupado. Tente de novo em instantes.";
+  return "Não deu certo"+(e.message?": "+e.message:".");
+}
+/* escolhe um modelo "flash" que aceita imagem e geração de texto, o mais novo disponível para a chave */
+async function modelo(force){
+  let m="";try{m=localStorage.getItem(GMODEL)||""}catch(e){}
+  if(m&&!force)return m;
+  const j=await gfetch("models?pageSize=1000");
+  const ok=(j.models||[]).filter(x=>(x.supportedGenerationMethods||[]).includes("generateContent")&&/flash/i.test(x.name)&&!/(image|tts|audio|live|embedding|thinking-exp|8b)/i.test(x.name));
+  const score=n=>{const v=(n.match(/(\d+(?:\.\d+)?)/)||[0,0])[1];return parseFloat(v)*100-(/lite/.test(n)?30:0)-(/preview|exp/.test(n)?5:0)};
+  ok.sort((a,b)=>score(b.name)-score(a.name));
+  if(!ok.length)throw Object.assign(new Error("Nenhum modelo disponível para esta chave."),{status:0});
+  m=ok[0].name.replace(/^models\//,"");try{localStorage.setItem(GMODEL,m)}catch(e){}
+  return m;
+}
+async function gerar(body){
+  let m=await modelo();
+  try{return await gfetch("models/"+m+":generateContent",body)}
+  catch(e){if(e.status===404){m=await modelo(true);return gfetch("models/"+m+":generateContent",body)}throw e}
+}
+const textoDe=j=>((j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts)||[]).map(p=>p.text||"").join("");
+
+const MANUAL=`MANUAL OB (opções binárias, mercado aberto)
+Base: gráfico M1, expiração 5 minutos, médias exponenciais 9, 21 e 50. Entrada na abertura da vela seguinte à vela de sinal.
+Não opera em nenhum setup quando: as três médias estão emboladas sem espaço entre elas (lateral); faltam 5 min ou menos para notícia de impacto ou ela saiu há menos de 15 min; a vela de sinal é maior que 2x o tamanho médio das últimas 10 velas; o ativo está em OTC.
+RESPIRO (pullback na zona 9–21). CALL: 9 acima da 21, 21 acima da 50, 50 subindo; o preço recua até a zona 9–21 e encosta ou fura um pouco a 21; gatilho: vela fecha acima da 9 com pavio inferior; entrada na abertura da vela seguinte. PUT: 9 abaixo da 21, 21 abaixo da 50, 50 caindo; o preço sobe até a zona 9–21 e encosta ou fura um pouco a 21; gatilho: vela fecha abaixo da 9 com pavio superior; entrada na vela seguinte. Não entra se: no recuo o preço furou a 50; a 50 está deitada; já é o 3º recuo seguido.
+VIRADA (cruzamento 9 x 21 a favor da 50). CALL: preço acima da 50; a 9 cruza a 21 para cima; gatilho: primeira vela verde que fecha depois do cruzamento; entrada na vela seguinte. PUT: preço abaixo da 50; a 9 cruza a 21 para baixo; gatilho: primeira vela vermelha que fecha depois do cruzamento; entrada na vela seguinte. Não entra se: 9 e 21 cruzaram mais de 2 vezes nas últimas 15 velas; a 50 está deitada ou o preço cruzou a 50 nas últimas 10 velas; a vela de confirmação fecha colada na 50.
+MURALHA (rejeição na 50). CALL: 21 acima da 50 e 50 subindo; o preço cai até tocar a 50; gatilho: vela com pavio inferior maior ou igual ao corpo que fecha acima da 50; entrada na vela seguinte. PUT: 21 abaixo da 50 e 50 caindo; o preço sobe até tocar a 50; gatilho: vela com pavio superior maior ou igual ao corpo que fecha abaixo da 50; entrada na vela seguinte. Não entra se: 3º toque seguido na 50; a vela de sinal fecha do outro lado da 50; a 50 está deitada.
+Gerenciamento: Soros nível 1, no máximo 2 entradas por sessão (manhã e tarde), para no 1º loss.`;
+
+function parecerHTML(r,op,dir){
+  r=r||{};const v=r.veredito==="certo"?"ok":r.veredito==="errado"?"no":"mid";
+  const t=v==="ok"?"✓ Entrada certa no "+NOME[op]:v==="no"?"✕ Entrada fora do "+NOME[op]:"? Não deu para confirmar";
+  return "<div class='ver "+v+"'><b>"+t+"</b><span class='hint'>"+(dir==="put"?"Venda ▼":"Compra ▲")+" · confiança "+esc(r.confianca||"–")+"</span><div>"+esc(r.resumo)+"</div>"+
+    "<div class='crit2'>"+(r.criterios||[]).map(c=>"<div class='ci'><b class='"+(c.ok===true?"y":c.ok===false?"n":"qq")+"'>"+(c.ok===true?"✓":c.ok===false?"✕":"?")+"</b><span>"+esc(c.item)+"<small>"+esc(c.obs)+"</small></span></div>").join("")+"</div>"+
+    (r.melhor_setup?"<div><b>Outro setup:</b> "+esc(r.melhor_setup)+"</div>":"")+(r.conselho?"<div><b>Para a próxima:</b> "+esc(r.conselho)+"</div>":"")+"</div>";
+}
+function imagemB64(){return new Promise(ok=>{const im=new Image();im.onload=()=>{
+  const k=Math.min(1,1400/im.width),c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
+  const g=c.getContext("2d");g.drawImage(im,0,0,c.width,c.height);
+  if(cur.seta){const x=cur.seta.x*c.width,y=cur.seta.y*c.height,s=Math.max(c.width,c.height)/55,up=cur.dir!=="put",col=up?"#00E676":"#FF1744";
+    g.strokeStyle=col;g.fillStyle=col;g.lineWidth=s*.45;g.lineCap="round";g.beginPath();g.arc(x,y,s*.9,0,7);g.stroke();
+    const y1=up?y+s*1.3:y-s*1.3,y0=up?y+s*5:y-s*5;g.beginPath();g.moveTo(x,y0);g.lineTo(x,up?y1+s:y1-s);g.stroke();
+    g.beginPath();g.moveTo(x,y1);g.lineTo(x-s,up?y1+s*1.4:y1-s*1.4);g.lineTo(x+s,up?y1+s*1.4:y1-s*1.4);g.closePath();g.fill()}
+  ok(c.toDataURL("image/jpeg",.85).split(",")[1]);
+};im.src=cur.img})}
+
+$("aiGo").onclick=async()=>{
+  if(!getKey()){$("cfgKey").open=true;$("cfgKey").scrollIntoView({behavior:"smooth",block:"start"});ui_.toast("Cole a chave da IA primeiro",1);return}
+  if(!cur.img){ui_.toast("Coloque o print primeiro",1);return}
+  if(!cur.seta){ui_.toast("Toque na vela em que entrou",1);return}
+  if(!cur.op||!cur.dir){ui_.toast("Escolha o operacional e a direção",1);return}
+  const fim=window.ui?ui.busy($("aiGo"),"Analisando…"):()=>{};
+  $("aiRes").innerHTML="<p class='hint'><span class='spin'></span>A IA está olhando o gráfico…</p>";
+  const lado=cur.dir==="put"?"VENDA (PUT)":"COMPRA (CALL)", ctx=$("ctx").value.trim();
+  const prompt=MANUAL+`
+
+TAREFA: A imagem é um print de gráfico de opções binárias (M1). O trader marcou com uma seta ${cur.dir==="put"?"vermelha apontando para baixo":"verde apontando para cima"} e um círculo a vela em que ENTROU (a vela de sinal é a anterior).
+Ele diz que operou ${NOME[cur.op].toUpperCase()} em ${lado}.${ctx?"\nObservação do trader: "+ctx:""}
+Analise só pelo que dá para ver no print, comparando com as regras do ${NOME[cur.op]} para ${lado} e os filtros da Base. Identifique as médias pelas cores e posição; se não der para saber qual é qual, diga. Se um item não dá para confirmar no print, marque ok como null em vez de chutar. Escreva em português do Brasil.
+Responda APENAS com JSON: {"veredito":"certo"|"errado"|"incerto","confianca":"alta"|"media"|"baixa","resumo":"1-2 frases","criterios":[{"item":"critério","ok":true|false|null,"obs":"o que viu"}],"melhor_setup":"outro operacional que combina mais, ou vazio","conselho":"1 frase prática"}`;
+  try{
+    const b64=await imagemB64();
+    const j=await gerar({contents:[{role:"user",parts:[{text:prompt},{inline_data:{mime_type:"image/jpeg",data:b64}}]}],generationConfig:{temperature:0.2,responseMimeType:"application/json"}});
+    let t=textoDe(j).trim().replace(/^```(?:json)?|```$/g,"").trim();
+    const r=JSON.parse(t.slice(t.indexOf("{"),t.lastIndexOf("}")+1));
+    cur.ia=r;$("aiRes").innerHTML=parecerHTML(r,cur.op,cur.dir);
+    fim();ui_.done($("aiGo"),"Análise pronta");
+  }catch(e){
+    fim();cur.ia=null;
+    $("aiRes").innerHTML="<p class='hint neg' style='color:var(--loss)'>"+esc(e instanceof SyntaxError?"A resposta veio incompleta. Toque em Analisar de novo.":erroIA(e))+"</p>";
+  }
+};
+
+/* chave */
+$("keySave").onclick=async()=>{
+  const k=$("gKey").value.trim();if(!k){ui_.toast("Cole a chave",1);return}
+  try{localStorage.setItem(GKEY,k);localStorage.removeItem(GMODEL)}catch(e){}
+  const fim=window.ui?ui.busy($("keySave"),"Testando…"):()=>{};
+  try{const m=await modelo(true);$("keyMsg").textContent="✓ Chave funcionando. Modelo: "+m;$("keyMsg").style.color="var(--win)";$("gKey").value="";fim();ui_.done($("keySave"),"Chave salva");setTimeout(()=>{$("cfgKey").open=false},1200)}
+  catch(e){fim();$("keyMsg").textContent=erroIA(e);$("keyMsg").style.color="var(--loss)"}
+  keyState();
+};
+$("keyDel").onclick=()=>{try{localStorage.removeItem(GKEY);localStorage.removeItem(GMODEL)}catch(e){}$("keyMsg").textContent="Chave apagada deste aparelho.";keyState();ui_.toast("Chave apagada")};
+
+/* dúvidas */
+let turns=[];
+const REGRAS=MANUAL+`
+
+Você é um mentor de opções binárias que conhece este manual. Responda em português do Brasil, direto e prático, sempre com base nas regras acima (cite a regra quando usar). Se a pergunta sair do manual, responda com bom senso de gestão de risco e deixe claro o que é do manual e o que é opinião. Não prometa lucro. No máximo 8 linhas, sem markdown.`;
+function drawMsgs(live){
+  $("msgs").innerHTML=turns.map(t=>"<div class='msg "+(t.role==="user"?"u":"a")+"'>"+esc(t.text)+"</div>").join("")+(live?"<div class='msg a'><span class='spin'></span>Pensando…</div>":"");
+  $("chips").hidden=turns.length>0;
+}
+async function perguntar(txt){
+  txt=txt.trim();if(!txt)return;
+  if(!getKey()){$("cfgKey").open=true;ui_.toast("Cole a chave da IA primeiro",1);return}
+  turns.push({role:"user",text:txt});$("q").value="";drawMsgs(true);$("send").disabled=true;
+  try{
+    const j=await gerar({systemInstruction:{parts:[{text:REGRAS}]},contents:turns.slice(-12).map(t=>({role:t.role==="user"?"user":"model",parts:[{text:t.text}]})),generationConfig:{temperature:0.4}});
+    turns.push({role:"model",text:textoDe(j).trim()||"Sem resposta. Tente perguntar de outro jeito."});
+  }catch(e){turns.push({role:"model",text:erroIA(e)})}
+  $("send").disabled=false;drawMsgs();
+}
+$("chatForm").addEventListener("submit",e=>{e.preventDefault();perguntar($("q").value)});
+$("q").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();perguntar($("q").value)}});
+$("chips").addEventListener("click",e=>{const b=e.target.closest("button");if(b)perguntar(b.textContent)});
+$("novaConv").onclick=()=>{turns=[];drawMsgs()};
+keyState();drawMsgs();
+try{items=JSON.parse(localStorage.getItem(LS)||"[]")}catch(e){items=[]}
+draw();drawForm();$("status").textContent="Conectando…";
+(async()=>{
+  try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
+  if(!db){$("status").textContent="Salvando neste aparelho";return}
+  let first=true;
+  db.collection("analises").onSnapshot(q=>{
+    const remote=q.docs.map(d=>d.data()), ids=new Set(remote.map(x=>x.id));
+    if(first){first=false;items.filter(a=>!ids.has(a.id)).forEach(a=>{remote.push(a);db.doc("analises/"+a.id).set(a).catch(()=>{})})}
+    items=remote;lsSave();draw();$("status").textContent="Sincronizado";
+  },()=>{$("status").textContent="Sem conexão com o salvamento"});
+})();
+</script>
+</body></html>
