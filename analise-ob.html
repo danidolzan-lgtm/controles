@@ -126,6 +126,7 @@ textarea#ctx,textarea#q{min-height:52px}
     <textarea id="ctx" placeholder="Algo a mais para a IA saber (opcional): cores das médias no seu gráfico, ativo, horário…"></textarea>
     <div class="step"><i>4</i>Análise da IA</div>
     <div class="row"><button type="button" class="btn" id="aiGo">Analisar com IA</button></div>
+    <p class="hint iaAviso" hidden style="color:var(--warn);margin:0"></p>
     <div id="aiRes"></div>
     <details id="critDet"><summary class="hint" style="cursor:pointer">Conferir eu mesmo, item por item (opcional)</summary>
     <div id="critBox" hidden style="display:grid;gap:4px;margin-top:8px">
@@ -144,6 +145,7 @@ textarea#ctx,textarea#q{min-height:52px}
     <h2>Tire suas dúvidas</h2>
     <div class="hint">Pergunte sobre Respiro, Virada, Muralha, horários, Soros ou gerenciamento. A IA responde com base no seu manual.</div>
     <div class="msgs" id="msgs"></div>
+    <p class="hint iaAviso" hidden style="color:var(--warn);margin:0"></p>
     <div class="chips" id="chips"><button type="button">Qual a diferença entre Respiro e Muralha?</button><button type="button">Como reconheço a 50 deitada?</button><button type="button">Posso entrar na Virada se a vela de sinal for grande?</button></div>
     <form id="chatForm" style="display:grid;gap:8px"><textarea id="q" rows="2" placeholder="Escreva sua dúvida…"></textarea><div class="row"><button type="submit" class="btn" id="send">Perguntar</button><button type="button" class="btn ghost" id="novaConv">Nova conversa</button></div></form>
   </div>
@@ -356,25 +358,48 @@ function erroIA(e){
   if(e.status===400&&/API key|API_KEY/i.test(e.message))return "Chave inválida. Confira a chave no Google AI Studio e cole de novo.";
   if(e.status===403)return "A chave não tem permissão para usar a API (ou a região não está liberada). Gere uma nova chave no AI Studio.";
   if(e.status===429)return "Limite gratuito atingido por agora. Espere um minuto (ou até amanhã, se for o limite do dia) e tente de novo.";
-  if(e.status===503||e.status===500)return "O serviço do Google está ocupado. Tente de novo em instantes.";
+  if(e.status>=500)return "O Google está sobrecarregado agora (tentei 3 vezes e em outros modelos). Espere 1 ou 2 minutos e toque de novo; sua marcação não se perdeu.";
   return "Não deu certo"+(e.message?": "+e.message:".");
 }
-/* escolhe um modelo "flash" que aceita imagem e geração de texto, o mais novo disponível para a chave */
-async function modelo(force){
-  let m="";try{m=localStorage.getItem(GMODEL)||""}catch(e){}
-  if(m&&!force)return m;
+/* lista de modelos "flash" que aceitam imagem e texto, do melhor para o mais leve */
+let LISTA=null;
+async function modelos(){
+  if(LISTA)return LISTA;
   const j=await gfetch("models?pageSize=1000");
   const ok=(j.models||[]).filter(x=>(x.supportedGenerationMethods||[]).includes("generateContent")&&/flash/i.test(x.name)&&!/(image|tts|audio|live|embedding|thinking-exp|8b)/i.test(x.name));
   const score=n=>{const v=(n.match(/(\d+(?:\.\d+)?)/)||[0,0])[1];return parseFloat(v)*100-(/lite/.test(n)?30:0)-(/preview|exp/.test(n)?5:0)};
   ok.sort((a,b)=>score(b.name)-score(a.name));
   if(!ok.length)throw Object.assign(new Error("Nenhum modelo disponível para esta chave."),{status:0});
-  m=ok[0].name.replace(/^models\//,"");try{localStorage.setItem(GMODEL,m)}catch(e){}
+  LISTA=ok.map(x=>x.name.replace(/^models\//,""));return LISTA;
+}
+async function modelo(force){
+  let m="";try{m=localStorage.getItem(GMODEL)||""}catch(e){}
+  if(m&&!force)return m;
+  if(force)LISTA=null;
+  m=(await modelos())[0];try{localStorage.setItem(GMODEL,m)}catch(e){}
   return m;
 }
+const espera=ms=>new Promise(r=>setTimeout(r,ms));
+const ocupado=e=>e.status===503||e.status===500||e.status===502||e.status===504||(e.status===429&&!/per ?day|PerDay|daily/i.test(e.message||""));
+function aviso(t){document.querySelectorAll(".iaAviso").forEach(el=>{el.textContent=t;el.hidden=!t})}
+/* tenta o modelo principal 3 vezes; se o Google seguir ocupado, passa para outro modelo flash */
 async function gerar(body){
-  let m=await modelo();
-  try{return await gfetch("models/"+m+":generateContent",body)}
-  catch(e){if(e.status===404){m=await modelo(true);return gfetch("models/"+m+":generateContent",body)}throw e}
+  let m=await modelo(),ultimo;
+  const tentar=async(mod,vezes)=>{
+    for(let i=0;i<vezes;i++){
+      try{const j=await gfetch("models/"+mod+":generateContent",body);aviso("");return j}
+      catch(e){
+        if(e.status===404&&mod===m){m=await modelo(true);mod=m;i--;continue}
+        if(!ocupado(e))throw e;
+        ultimo=e;if(i<vezes-1){aviso("Google ocupado, tentando de novo ("+(i+2)+"/"+vezes+")…");await espera(1500*(i+1)+Math.random()*500)}
+      }
+    }
+    return null;
+  };
+  let j=await tentar(m,3);if(j)return j;
+  let outros=[];try{outros=(await modelos()).filter(x=>x!==m).slice(0,3)}catch(e){}
+  for(const o of outros){aviso("Google ocupado no "+m+", tentando o "+o+"…");j=await tentar(o,2);if(j)return j}
+  aviso("");throw ultimo;
 }
 const textoDe=j=>((j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts)||[]).map(p=>p.text||"").join("");
 
