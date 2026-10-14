@@ -74,6 +74,7 @@ input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offs
     <a href="#virada">Virada</a>
     <a href="#muralha">Muralha</a>
     <a href="#giro">Giro</a>
+    <a href="#armadilha">Armadilha</a>
     <a href="#horarios">Horários</a>
     <a href="#soros">Soros e stop</a>
     <a href="#validar">Validar</a>
@@ -190,8 +191,8 @@ input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offs
         <ol>
           <li>Tendência de alta: a 21 acima da 50 e a 50 subindo.</li>
           <li>O preço cai até tocar a 50.</li>
-          <li>Gatilho: a vela tem <b>pavio inferior maior ou igual ao corpo</b> e fecha <b>acima da 50</b>.</li>
-          <li>Entrada na abertura da vela seguinte.</li>
+          <li>Gatilho, um dos dois:<br><b>Pavio:</b> a vela tem pavio inferior maior ou igual ao corpo e fecha <b>acima da 50</b>.<br><b>Engolfo:</b> a vela que toca a 50 fecha acima dela, e a vela seguinte é verde e <b>engole o corpo inteiro</b> dela.</li>
+          <li>Entrada na abertura da vela seguinte ao pavio ou ao engolfo.</li>
         </ol>
       </div>
       <div class="box put">
@@ -199,8 +200,8 @@ input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offs
         <ol>
           <li>Tendência de baixa: a 21 abaixo da 50 e a 50 caindo.</li>
           <li>O preço sobe até tocar a 50.</li>
-          <li>Gatilho: a vela tem <b>pavio superior maior ou igual ao corpo</b> e fecha <b>abaixo da 50</b>.</li>
-          <li>Entrada na abertura da vela seguinte.</li>
+          <li>Gatilho, um dos dois:<br><b>Pavio:</b> a vela tem pavio superior maior ou igual ao corpo e fecha <b>abaixo da 50</b>.<br><b>Engolfo:</b> a vela que toca a 50 fecha abaixo dela, e a vela seguinte é vermelha e <b>engole o corpo inteiro</b> dela.</li>
+          <li>Entrada na abertura da vela seguinte ao pavio ou ao engolfo.</li>
         </ol>
       </div>
     </div>
@@ -210,12 +211,18 @@ input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offs
         <li>É o 3º toque seguido na 50 (ela tende a romper).</li>
         <li>A vela de sinal fecha do outro lado da 50.</li>
         <li>A 50 está deitada.</li>
+        <li>No engolfo: a vela que tocou a 50 fechou do outro lado dela (aí é <a href="#armadilha">Armadilha</a>), ou o corpo dela é minúsculo, tipo doji (qualquer vela engole).</li>
       </ul>
     </div>
     <div class="two">
       <figure><div data-chart="muralha" data-side="call"></div><figcaption>Compra: na tendência de alta, o preço cai até a 50, a vela deixa pavio embaixo e fecha acima dela; a entrada é na vela seguinte.</figcaption></figure>
       <figure><div data-chart="muralha" data-side="put"></div><figcaption>Venda: na tendência de baixa, o preço sobe até a 50, a vela deixa pavio em cima e fecha abaixo dela; a entrada é na vela seguinte.</figcaption></figure>
     </div>
+    <div class="two">
+      <figure><div data-chart="muralhaEng" data-side="call"></div><figcaption>Engolfo na compra: a vela toca a 50 sem pavio grande e fecha acima dela; a seguinte é verde e engole o corpo dela. A entrada é na vela seguinte.</figcaption></figure>
+      <figure><div data-chart="muralhaEng" data-side="put"></div><figcaption>Engolfo na venda: a vela toca a 50 sem pavio grande e fecha abaixo dela; a seguinte é vermelha e engole o corpo dela. A entrada é na vela seguinte.</figcaption></figure>
+    </div>
+    <p class="hint">Anote no diário a Muralha com pavio e a Muralha engolfo separadas, para saber qual das duas rende mais.</p>
   </section>
 
   <!-- GIRO -->
@@ -251,7 +258,7 @@ input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offs
       <ul>
         <li>A 50 ainda está bem inclinada contra você. Ela precisa estar perdendo inclinação, ficando deitada.</li>
         <li>A vela do rompimento é maior que 2x a média das últimas 10 velas (esticou demais).</li>
-        <li>No recuo, uma vela fechou de volta do outro lado da 50: o rompimento falhou.</li>
+        <li>No recuo, uma vela fechou de volta do outro lado da 50: o rompimento falhou. Se foi só uma vela do outro lado, veja se virou <a href="#armadilha">Armadilha</a> para o lado contrário.</li>
         <li>Passaram mais de 10 velas desde o rompimento sem o recuo aparecer.</li>
         <li>O preço já rompeu e voltou pela 50 nas últimas 20 velas (mercado lateral).</li>
       </ul>
@@ -261,6 +268,49 @@ input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offs
       <figure><div data-chart="giro" data-side="put"></div><figcaption>Venda: o mercado vinha subindo, o preço perde a 50, a 9 cruza a 21 para baixo, o preço sobe até perto da 50, a vela de sinal fecha vermelha abaixo dela e a entrada é na vela seguinte.</figcaption></figure>
     </div>
     <p class="hint">Reversão costuma acertar menos que entrada a favor da tendência. Teste o Giro no backtest separado dos outros antes de colocar dinheiro.</p>
+  </section>
+
+  <!-- ARMADILHA -->
+  <section class="panel" id="armadilha">
+    <div class="name"><h2>Armadilha</h2><small>falso rompimento da 50</small></div>
+    <p>Parece que a 50 caiu: uma vela fecha do outro lado dela. Mas a vela seguinte devolve tudo e quem apostou no rompimento fica preso. Você entra a favor da tendência, quando o preço volta para o lado certo da 9.</p>
+    <div class="two">
+      <div class="box call">
+        <span><span class="tag call">CALL</span></span>
+        <ol>
+          <li>Tendência de alta: a 21 acima da 50 e a 50 subindo.</li>
+          <li><b>Uma única vela</b> fecha abaixo da 50.</li>
+          <li>A vela seguinte é verde e engole o corpo da que furou.</li>
+          <li>Gatilho: o engolfo fecha <b>acima da 9</b>. Se ele fechar acima da 50 mas abaixo da 9, a vela seguinte ainda pode fechar acima da 9. Passou disso, cancelado.</li>
+          <li>Entrada na abertura da vela seguinte ao gatilho.</li>
+        </ol>
+      </div>
+      <div class="box put">
+        <span><span class="tag put">PUT</span></span>
+        <ol>
+          <li>Tendência de baixa: a 21 abaixo da 50 e a 50 caindo.</li>
+          <li><b>Uma única vela</b> fecha acima da 50.</li>
+          <li>A vela seguinte é vermelha e engole o corpo da que furou.</li>
+          <li>Gatilho: o engolfo fecha <b>abaixo da 9</b>. Se ele fechar abaixo da 50 mas acima da 9, a vela seguinte ainda pode fechar abaixo da 9. Passou disso, cancelado.</li>
+          <li>Entrada na abertura da vela seguinte ao gatilho.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="box no">
+      <h3>Filtros: não entra se</h3>
+      <ul>
+        <li>Fecharam 2 velas ou mais do outro lado da 50: a 50 caiu de verdade.</li>
+        <li>Nem o engolfo nem a vela seguinte fecharam do lado certo da 9.</li>
+        <li>A 9 já cruzou a 21 com força para o lado do rompimento e a 50 está perdendo inclinação: pode ser um Giro começando.</li>
+        <li>A 50 está deitada.</li>
+      </ul>
+    </div>
+    <div class="note">Aparece de dois jeitos: na <b>Muralha</b>, quando o toque fecha do outro lado da 50; e no <b>Giro</b> que falhou, quando o rompimento teve uma vela só do outro lado da 50 e o preço voltou. Aí a entrada é a favor da tendência antiga.</div>
+    <div class="two">
+      <figure><div data-chart="armadilha" data-side="call"></div><figcaption>Compra: uma vela fecha abaixo da 50, a seguinte engole e fecha acima da 50, e a próxima fecha acima da 9. A entrada é na vela seguinte.</figcaption></figure>
+      <figure><div data-chart="armadilha" data-side="put"></div><figcaption>Venda: uma vela fecha acima da 50, a seguinte engole e fecha abaixo da 50, e a próxima fecha abaixo da 9. A entrada é na vela seguinte.</figcaption></figure>
+    </div>
+    <p class="hint">Aparece pouco e é um setup novo: teste no backtest separado dos outros antes de colocar dinheiro.</p>
   </section>
 
   <!-- HORÁRIOS -->
@@ -350,6 +400,16 @@ const EX={
     e21:[45,46.5,48,49,49.5,49.5,49,48.5,48,48,48.5,49.5,51,52.5,54,55.5],
     e9:[55,57,58,57,55,52,49,46.5,44.5,44,45.5,48,51,54,57,59],
     c:[[52,58,51,57],[57,61,56,60],[60,62,57,58],[58,59,54,55],[55,56,51,52],[52,53,47,48],[48,49,43,44],[44,45,40,40.5],[40,43,36,42],[42,46,41.5,45.5],[45.5,49,45,48.5],[48.5,52,48,51],[51,54,50.5,53.5],[53.5,57,53,56],[56,59,55.5,58],[58,61,57.5,60]]},
+  muralhaEng:{signal:9,entry:10,
+    e50:[39.3,40.0,40.7,41.2,41.7,42.0,42.2,42.3,42.4,42.5,42.7,43.0,43.4,43.8,44.2,44.8],
+    e21:[53.7,54.1,54.4,54.4,54.3,53.9,53.3,52.5,51.7,51.1,50.9,50.8,50.9,51.2,51.6,52.2],
+    e9:[56.0,56.4,56.5,56.2,55.5,54.4,53.0,51.4,49.7,48.9,48.8,49.0,49.6,50.5,51.6,52.9],
+    c:[[54,57,53,56],[56,59,55,58],[58,60,56.5,57],[57,58,54.5,55],[55,55.5,52,52.5],[52.5,53,49.5,50],[50,50.5,47,47.5],[47.5,48,44.6,45],[45,45.3,42.3,42.8],[42.6,46.5,42.4,46],[46,48.5,45.5,48],[48,50.5,47.5,50],[50,52.5,49.5,52],[52,54.5,51.5,54],[54,56.5,53.5,56],[56,58.5,55.5,58]]},
+  armadilha:{signal:10,entry:11,
+    e50:[41.2,41.9,42.6,43.1,43.5,43.7,43.9,43.9,43.8,43.8,44.0,44.3,44.7,45.1,45.7,46.2],
+    e21:[54.4,54.8,55.2,55.2,55.0,54.6,53.9,53.0,52.0,51.4,51.2,51.2,51.4,51.8,52.4,53.1],
+    e9:[57.2,57.7,57.8,57.5,56.6,55.3,53.6,51.8,49.7,48.8,48.9,49.3,50.1,51.3,52.8,54.3],
+    c:[[56,58.5,55.5,58],[58,60,57.5,59.5],[59.5,60.5,58,58.5],[58.5,59,55.5,56],[56,56.5,52.5,53],[53,53.5,49.5,50],[50,50.5,46.5,47],[47,47.5,44,44.5],[44.5,45,41,41.5],[41.5,45.5,41.2,45],[45,49.5,44.6,49.3],[49.3,51.5,48.8,51],[51,54,50.5,53.5],[53.5,56.5,53,56],[56,59,55.5,58.5],[58.5,61,58,60.5]]},
   giro:{signal:11,entry:12,
     e50:[62,61,60,59,58,57.2,56.5,56,55.6,55.3,55.1,55,55,55.1,55.3,55.6,56],
     e21:[56,54.5,53,51.5,50,49,48.3,48,48.2,49,50,51,52,53,54,55,56],

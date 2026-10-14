@@ -95,7 +95,7 @@ const SESS=[{id:"manha",nome:"Manhã"},{id:"tarde",nome:"Tarde"}];
 const hj=(ds,id)=>janelas(ds)[id].join("–");
 const QS=[
   {id:"hor",k:"Janela de horário",t:ds=>{const [a,b]=janelas(ds)[sess];return "Estou dentro da janela da "+(sess==="manha"?"manhã":"tarde")+", das "+a+" às "+b+", fora dos 15 min depois da notícia dos EUA ("+noticiaEUA(ds)+") e da abertura de Nova York ("+aberturaNY(ds)+"), e conferi o calendário (IPCA, Copom, FOMC)?"}},
-  {id:"op",k:"Operacional",t:"Vou entrar só em Respiro, Virada, Muralha ou Giro no M2, com médias 9, 21 e 50 espaçadas, volume da vela de sinal acima da média, stop técnico dentro do limite (WIN 150 pts · WDO 5 pts), o outro ativo não indo forte no mesmo sentido (WIN × WDO) e todos os filtros do manual conferidos?"},
+  {id:"op",k:"Operacional",t:"Vou entrar só em Respiro, Virada, Muralha (pavio ou engolfo), Giro ou Armadilha no M2, com médias 9, 21 e 50 espaçadas, volume da vela de sinal acima da média, stop técnico dentro do limite (WIN 150 pts · WDO 5 pts), o outro ativo não indo forte no mesmo sentido (WIN × WDO) e todos os filtros do manual conferidos?"},
   {id:"ger",k:"Gerenciamento",t:"Contratos do meu degrau no Progresso, ordem com stop e alvo de 2x o stop junto (OCO), no máximo 2 operações no dia, uma aberta por vez (nunca WIN e WDO juntos), e paro no 1º loss?"},
   {id:"men",k:"Mentalidade",t:"Estou calmo, sem vontade de recuperar nada, e aceito o stop se ele vier?"}
 ];

@@ -85,7 +85,7 @@ td:first-child{font-family:var(--f-body);white-space:normal}
 
 <div class="wrap">
   <div class="top">
-    <div><h1>Diário B3</h1><div class="sub">WIN e WDO · M2 · Respiro, Virada, Muralha e Giro · alvo 2x o stop · máx. 2 operações no dia · parou no 1º loss</div></div>
+    <div><h1>Diário B3</h1><div class="sub">WIN e WDO · M2 · Respiro, Virada, Muralha, Giro e Armadilha · alvo 2x o stop · máx. 2 operações no dia · parou no 1º loss</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
 
@@ -119,7 +119,7 @@ td:first-child{font-family:var(--f-body);white-space:normal}
 
 <script>
 const START="2026-10-14", END="2026-12-17", LS="diarioB3m.v1";
-const OPS=[{id:"respiro",nome:"Respiro"},{id:"virada",nome:"Virada"},{id:"muralha",nome:"Muralha"},{id:"giro",nome:"Giro"}];
+const OPS=[{id:"respiro",nome:"Respiro"},{id:"virada",nome:"Virada"},{id:"muralha",nome:"Muralha"},{id:"muralhaEng",nome:"Muralha engolfo"},{id:"giro",nome:"Giro"},{id:"armadilha",nome:"Armadilha"}];
 const opNome=id=>(OPS.find(o=>o.id===id)||{nome:id||"Sem operacional"}).nome;
 const ATIVOS={WIN:{nome:"Mini índice",pt:0.20},WDO:{nome:"Mini dólar",pt:10}};
 let days={}, cfg={ct:1}, db=null;
