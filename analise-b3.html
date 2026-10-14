@@ -120,6 +120,8 @@ textarea#ctx,textarea#q,textarea#resp{min-height:52px}
     <div class="seg" id="opSeg"><button type="button" data-op="respiro">Respiro</button><button type="button" data-op="virada">Virada</button><button type="button" data-op="muralha">Muralha</button><button type="button" data-op="giro">Giro</button></div>
     <div class="seg" id="dirSeg"><button type="button" class="call" data-dir="call">Compra ▲</button><button type="button" class="put" data-dir="put">Venda ▼</button></div>
     <div class="seg" id="atSeg"><button type="button" data-at="WIN">WIN</button><button type="button" data-at="WDO">WDO</button></div>
+    <span class="hint">Volume da vela de sinal (comparado com a média das últimas 10):</span>
+    <div class="seg" id="volSeg"><button type="button" data-vol="acima">Volume acima da média</button><button type="button" data-vol="abaixo">Volume abaixo</button></div>
     <textarea id="ctx" placeholder="Algo a mais para o Claude saber (opcional): stop e alvo em pontos, cores das médias, horário…"></textarea>
     <div class="step"><i>4</i>Mandar para o Claude</div>
     <div class="hint">O print vai com uma faixa em cima dizendo o operacional, a direção e a sua observação. É só colar na sua conversa de análise.</div>
@@ -195,21 +197,25 @@ const R={
     ["O preço recuou até a zona 9–21 e encostou ou furou pouco a 21?","O preço subiu até a zona 9–21 e encostou ou furou pouco a 21?"],
     ["A vela de sinal fechou acima da 9, com pavio inferior?","A vela de sinal fechou abaixo da 9, com pavio superior?"],
     ["Entrei na abertura da vela seguinte ao sinal?"],
-    ["Stop 1–2 ticks abaixo da mínima do sinal ou da 21 (o mais baixo) e alvo 2x?", "Stop 1–2 ticks acima da máxima do sinal ou da 21 (o mais alto) e alvo 2x?"]],
+    ["Stop 1–2 ticks abaixo da mínima do sinal ou da 21 (o mais baixo) e alvo 2x?", "Stop 1–2 ticks acima da máxima do sinal ou da 21 (o mais alto) e alvo 2x?"],
+    ["No recuo até a 21 o volume diminuiu?"],
+    ["A vela de sinal teve volume acima da média das últimas 10?"]],
    f:[["No recuo, o preço furou a média de 50?"],["A 50 estava deitada (sem inclinação)?"],["Já era o 3º recuo seguido na mesma tendência?"]]},
   virada:{c:[
     ["O preço estava acima da 50?","O preço estava abaixo da 50?"],
     ["A 9 cruzou a 21 para cima?","A 9 cruzou a 21 para baixo?"],
     ["Entrei depois da primeira vela verde que fechou após o cruzamento?","Entrei depois da primeira vela vermelha que fechou após o cruzamento?"],
     ["Entrei na abertura da vela seguinte?"],
-    ["Stop 1–2 ticks abaixo da menor mínima das últimas 3 velas e alvo 2x?", "Stop 1–2 ticks acima da maior máxima das últimas 3 velas e alvo 2x?"]],
+    ["Stop 1–2 ticks abaixo da menor mínima das últimas 3 velas e alvo 2x?", "Stop 1–2 ticks acima da maior máxima das últimas 3 velas e alvo 2x?"],
+    ["A vela de confirmação teve volume acima da média das últimas 10?"]],
    f:[["A 9 e a 21 cruzaram mais de 2 vezes nas últimas 15 velas?"],["A 50 estava deitada ou o preço cruzou a 50 nas últimas 10 velas?"],["A vela de confirmação fechou colada na 50?"]]},
   muralha:{c:[
     ["Tendência de alta: 21 acima da 50 e a 50 subindo?","Tendência de baixa: 21 abaixo da 50 e a 50 caindo?"],
     ["O preço caiu até tocar a 50?","O preço subiu até tocar a 50?"],
     ["A vela tinha pavio inferior maior ou igual ao corpo e fechou acima da 50?","A vela tinha pavio superior maior ou igual ao corpo e fechou abaixo da 50?"],
     ["Entrei na abertura da vela seguinte?"],
-    ["Stop 1–2 ticks abaixo do pavio da vela de sinal e alvo 2x?", "Stop 1–2 ticks acima do pavio da vela de sinal e alvo 2x?"]],
+    ["Stop 1–2 ticks abaixo do pavio da vela de sinal e alvo 2x?", "Stop 1–2 ticks acima do pavio da vela de sinal e alvo 2x?"],
+    ["A vela de rejeição (pavio na 50) teve volume acima da média?"]],
    f:[["Era o 3º toque seguido na 50?"],["A vela de sinal fechou do outro lado da 50?"],["A 50 estava deitada?"]]},
   giro:{c:[
     ["Antes, o mercado vinha caindo (9 abaixo da 21 e 21 abaixo da 50)?","Antes, o mercado vinha subindo (9 acima da 21 e 21 acima da 50)?"],
@@ -218,7 +224,10 @@ const R={
     ["O preço recuou até a 9 ou a 50 sem fechar abaixo da 50?","O preço subiu até a 9 ou a 50 sem fechar acima da 50?"],
     ["A vela de sinal fechou verde acima da 50?","A vela de sinal fechou vermelha abaixo da 50?"],
     ["Entrei na abertura da vela seguinte (e não no rompimento)?"],
-    ["Stop 1–2 ticks abaixo da 50 ou da mínima do recuo (o mais baixo) e alvo 2x?", "Stop 1–2 ticks acima da 50 ou da máxima do recuo (o mais alto) e alvo 2x?"]],
+    ["Stop 1–2 ticks abaixo da 50 ou da mínima do recuo (o mais baixo) e alvo 2x?", "Stop 1–2 ticks acima da 50 ou da máxima do recuo (o mais alto) e alvo 2x?"],
+    ["A vela do rompimento da 50 teve volume forte (pelo menos 1,5x a média das últimas 10)?"],
+    ["No recuo o volume diminuiu?"],
+    ["A vela de sinal voltou com volume acima da média?"]],
    f:[["A 50 ainda estava bem inclinada contra a entrada?"],["A vela do rompimento era maior que 2x a média das últimas 10 velas?"],["No recuo, alguma vela fechou de volta do outro lado da 50?"],["Passaram mais de 10 velas desde o rompimento sem o recuo?"],["O preço já tinha rompido e voltado pela 50 nas últimas 20 velas?"]]}
 };
 const txt=(t,dir)=>dir==="put"&&t[1]?t[1]:t[0];
@@ -236,7 +245,7 @@ function veredito(op,dir,resp){
 
 /* ---------- estado da nova análise ---------- */
 let cur=null, items=[], db=null, openId=null, delArm=null;
-function novo(){cur={id:Math.random().toString(36).slice(2,10),img:null,seta:null,op:null,dir:null,ativo:"WIN",resp:{},res:null,obs:"",ia:null}}
+function novo(){cur={id:Math.random().toString(36).slice(2,10),img:null,seta:null,op:null,dir:null,ativo:"WIN",vol:"",resp:{},res:null,obs:"",ia:null}}
 novo();
 
 /* imagem: reduz para caber no salvamento (até ~1000 px, JPEG) */
@@ -275,6 +284,7 @@ function drawShot(){
 $("shot").addEventListener("click",e=>{const r=$("shot").getBoundingClientRect();cur.seta={x:(e.clientX-r.left)/r.width,y:(e.clientY-r.top)/r.height};drawShot()});
 
 $("opSeg").addEventListener("click",e=>{const b=e.target.closest("[data-op]");if(!b)return;if(cur.op!==b.dataset.op){cur.op=b.dataset.op;cur.resp={};cur.ia=null;$("aiRes").innerHTML="";$("guia").hidden=true;$("resp").value=""}drawForm()});
+$("volSeg").addEventListener("click",e=>{const b=e.target.closest("[data-vol]");if(!b)return;cur.vol=cur.vol===b.dataset.vol?"":b.dataset.vol;drawForm()});
 $("atSeg").addEventListener("click",e=>{const b=e.target.closest("[data-at]");if(!b)return;cur.ativo=b.dataset.at;drawForm()});
 $("dirSeg").addEventListener("click",e=>{const b=e.target.closest("[data-dir]");if(!b)return;cur.dir=b.dataset.dir;drawForm();drawShot()});
 $("resSeg").addEventListener("click",e=>{const b=e.target.closest("[data-res]");if(!b)return;cur.res=b.dataset.res||null;drawForm()});
@@ -285,6 +295,7 @@ function drawForm(){
   [...$("opSeg").children].forEach(b=>b.classList.toggle("on",b.dataset.op===cur.op));
   [...$("dirSeg").children].forEach(b=>b.classList.toggle("on",b.dataset.dir===cur.dir));
   [...$("atSeg").children].forEach(b=>b.classList.toggle("on",b.dataset.at===cur.ativo));
+  [...$("volSeg").children].forEach(b=>b.classList.toggle("on",b.dataset.vol===cur.vol));
   [...$("resSeg").children].forEach(b=>b.classList.toggle("on",(b.dataset.res||null)===cur.res));
   [...$("vSeg").children].forEach(b=>b.classList.toggle("on",!!cur.ia&&cur.ia.veredito===b.dataset.v));
   const qs=perguntas(cur.op,cur.dir);
@@ -340,7 +351,7 @@ $("salvar").onclick=async()=>{
   const fim=window.ui?ui.busy($("salvar"),"Salvando…"):()=>{};
   const img=await imagemComSeta();
   const iaV=cur.ia&&cur.ia.veredito;
-  const a={id:cur.id,data:new Date().toISOString(),op:cur.op,dir:cur.dir,ativo:cur.ativo||"WIN",resp:manual?cur.resp:{},ok:manual?V.ok:iaV==="certo",incerto:!manual&&iaV!=="certo"&&iaV!=="errado",erros:manual?V.erros.map(q=>q.t):[],ia:cur.ia||null,res:cur.res||"",obs:cur.obs||"",img};
+  const a={id:cur.id,data:new Date().toISOString(),op:cur.op,dir:cur.dir,ativo:cur.ativo||"WIN",vol:cur.vol||"",resp:manual?cur.resp:{},ok:manual?V.ok:iaV==="certo",incerto:!manual&&iaV!=="certo"&&iaV!=="errado",erros:manual?V.erros.map(q=>q.t):[],ia:cur.ia||null,res:cur.res||"",obs:cur.obs||"",img};
   items=items.filter(x=>x.id!==a.id).concat([a]);lsSave();draw();
   if(db){try{await db.doc("analises/"+a.id).set(a);$("status").textContent="Salvo"}catch(e){$("status").textContent="Não salvou na conta (imagem grande?). Ficou neste aparelho.";ui_.toast("Não salvou na conta",1)}}
   else $("status").textContent="Salvo neste aparelho";
@@ -384,14 +395,14 @@ $("lista").addEventListener("click",async e=>{
 const MANUAL=`MANUAL B3 (mini índice WIN e mini dólar WDO)
 Base: gráfico M2, médias exponenciais 9, 21 e 50. Entrada na abertura da vela seguinte à vela de sinal. Toda entrada já vai com ordem de stop e de alvo (OCO). Alvo = 2x a distância do stop. Máximo 2 operações por dia; para no 1º loss. Valor do ponto: WIN R$ 0,20, WDO R$ 10 por contrato.
 Não opera em nenhum setup quando: as três médias estão emboladas sem espaço entre elas (lateral); faltam 5 min ou menos para notícia de impacto ou ela saiu há menos de 15 min; a vela de sinal é maior que 2x o tamanho médio das últimas 10 velas; o volume da vela de sinal está abaixo da média das últimas 10 velas; o stop técnico passa de WIN 150 pontos ou WDO 5 pontos; são os primeiros 15 minutos do pregão.
-RESPIRO (pullback na zona 9–21). COMPRA: 9 acima da 21, 21 acima da 50, 50 subindo; o preço recua até a zona 9–21 e encosta ou fura um pouco a 21; gatilho: vela fecha acima da 9 com pavio inferior; entrada na abertura da vela seguinte; stop 1–2 ticks abaixo da mínima da vela de sinal ou da 21 (o mais baixo). VENDA: espelho (9 abaixo da 21, 21 abaixo da 50, 50 caindo; vela fecha abaixo da 9 com pavio superior; stop acima da máxima do sinal ou da 21, o mais alto). Não entra se: no recuo o preço furou a 50; a 50 está deitada; já é o 3º recuo seguido.
-VIRADA (cruzamento 9 x 21 a favor da 50). COMPRA: preço acima da 50; a 9 cruza a 21 para cima; gatilho: primeira vela verde que fecha depois do cruzamento; entrada na vela seguinte; stop 1–2 ticks abaixo da menor mínima das últimas 3 velas. VENDA: espelho (abaixo da 50, cruza para baixo, primeira vela vermelha, stop acima da maior máxima das últimas 3 velas). Não entra se: 9 e 21 cruzaram mais de 2 vezes nas últimas 15 velas; a 50 está deitada ou o preço cruzou a 50 nas últimas 10 velas; a vela de confirmação fecha colada na 50.
-MURALHA (rejeição na 50). COMPRA: 21 acima da 50 e 50 subindo; o preço cai até tocar a 50; gatilho: vela com pavio inferior maior ou igual ao corpo que fecha acima da 50; entrada na vela seguinte; stop 1–2 ticks abaixo do pavio da vela de sinal. VENDA: espelho (pavio superior, fecha abaixo da 50, stop acima do pavio). Não entra se: 3º toque seguido na 50; a vela de sinal fecha do outro lado da 50; a 50 está deitada.
-GIRO (reversão: o preço rompe a 50 e as médias viram). COMPRA: antes o mercado vinha caindo (9 abaixo da 21, 21 abaixo da 50); uma vela de corpo cheio fecha acima da 50; a 9 cruza a 21 para cima; o preço recua até a 9 ou a 50 sem fechar abaixo da 50; gatilho: vela verde fecha acima da 50; entrada na vela seguinte (nunca no rompimento); stop 1–2 ticks abaixo da 50 ou da mínima do recuo (o mais baixo). VENDA: espelho. Não entra se: a 50 ainda está bem inclinada contra a entrada; a vela do rompimento é maior que 2x a média das últimas 10 velas; no recuo uma vela fechou de volta do outro lado da 50; passaram mais de 10 velas desde o rompimento sem o recuo; o preço já rompeu e voltou pela 50 nas últimas 20 velas. Reversão costuma acertar menos.
+RESPIRO (pullback na zona 9–21). COMPRA: 9 acima da 21, 21 acima da 50, 50 subindo; o preço recua até a zona 9–21 e encosta ou fura um pouco a 21; gatilho: vela fecha acima da 9 com pavio inferior; entrada na abertura da vela seguinte; stop 1–2 ticks abaixo da mínima da vela de sinal ou da 21 (o mais baixo). VENDA: espelho (9 abaixo da 21, 21 abaixo da 50, 50 caindo; vela fecha abaixo da 9 com pavio superior; stop acima da máxima do sinal ou da 21, o mais alto). Volume: no recuo até a 21 o volume diminui; a vela de sinal tem volume acima da média das últimas 10. Não entra se: no recuo o preço furou a 50; a 50 está deitada; já é o 3º recuo seguido.
+VIRADA (cruzamento 9 x 21 a favor da 50). COMPRA: preço acima da 50; a 9 cruza a 21 para cima; gatilho: primeira vela verde que fecha depois do cruzamento; entrada na vela seguinte; stop 1–2 ticks abaixo da menor mínima das últimas 3 velas. VENDA: espelho (abaixo da 50, cruza para baixo, primeira vela vermelha, stop acima da maior máxima das últimas 3 velas). Volume: a vela de confirmação tem volume acima da média das últimas 10; cruzamento com volume fraco costuma virar lateral, fique de fora. Não entra se: 9 e 21 cruzaram mais de 2 vezes nas últimas 15 velas; a 50 está deitada ou o preço cruzou a 50 nas últimas 10 velas; a vela de confirmação fecha colada na 50.
+MURALHA (rejeição na 50). COMPRA: 21 acima da 50 e 50 subindo; o preço cai até tocar a 50; gatilho: vela com pavio inferior maior ou igual ao corpo que fecha acima da 50; entrada na vela seguinte; stop 1–2 ticks abaixo do pavio da vela de sinal. VENDA: espelho (pavio superior, fecha abaixo da 50, stop acima do pavio). Volume: a vela de rejeição (pavio na 50) tem volume acima da média; toque na 50 com volume baixo é rejeição fraca e pode romper. Não entra se: 3º toque seguido na 50; a vela de sinal fecha do outro lado da 50; a 50 está deitada.
+GIRO (reversão: o preço rompe a 50 e as médias viram). COMPRA: antes o mercado vinha caindo (9 abaixo da 21, 21 abaixo da 50); uma vela de corpo cheio fecha acima da 50; a 9 cruza a 21 para cima; o preço recua até a 9 ou a 50 sem fechar abaixo da 50; gatilho: vela verde fecha acima da 50; entrada na vela seguinte (nunca no rompimento); stop 1–2 ticks abaixo da 50 ou da mínima do recuo (o mais baixo). VENDA: espelho. Volume: a vela do rompimento da 50 tem volume forte (pelo menos 1,5x a média das últimas 10); no recuo o volume diminui; a vela de sinal volta com volume acima da média. Não entra se: a 50 ainda está bem inclinada contra a entrada; a vela do rompimento é maior que 2x a média das últimas 10 velas; no recuo uma vela fechou de volta do outro lado da 50; passaram mais de 10 velas desde o rompimento sem o recuo; o preço já rompeu e voltou pela 50 nas últimas 20 velas. Reversão costuma acertar menos.
 Horários: manhã 09:15–11:30 e tarde 14:00–16:30. Evitar primeiros 15 min, notícias dos EUA (09:30 até 01/11, 10:30 depois) e abertura de Nova York (10:30 até 01/11, 11:30 depois), IPCA/Copom/FOMC e almoço.`;
 const CONFIG_MSG=MANUAL+`
 
-Esta conversa é só para analisar minhas entradas na B3 (WIN e WDO). Vou mandar prints do gráfico M2. Cada print tem uma faixa escura no topo dizendo o operacional, a direção (compra ou venda), o ativo e às vezes uma observação. Se o stop e o alvo aparecerem no print, confira também se estão no lugar do manual e se o alvo é 2x o stop. No gráfico há um círculo e uma seta (verde para cima = compra, vermelha para baixo = venda) marcando a vela em que ENTREI; a vela de sinal é a anterior.
+Esta conversa é só para analisar minhas entradas na B3 (WIN e WDO). Vou mandar prints do gráfico M2. Cada print tem uma faixa escura no topo dizendo o operacional, a direção (compra ou venda), o ativo e às vezes uma observação. Confira sempre o VOLUME da vela de sinal: ele precisa estar acima da média das últimas 10 velas (a faixa diz o que eu vi; se as barras de volume aparecerem no print, confira também) e coloque o volume como um dos critérios da resposta. Se o stop e o alvo aparecerem no print, confira também se estão no lugar do manual e se o alvo é 2x o stop. No gráfico há um círculo e uma seta (verde para cima = compra, vermelha para baixo = venda) marcando a vela em que ENTREI; a vela de sinal é a anterior.
 Para cada print, compare só pelo que dá para ver com as regras do operacional informado e com os filtros da Base. Se algo não dá para confirmar no print, diga em vez de chutar. Responda em português, curto, neste formato:
 VEREDITO: CERTA, ERRADA ou INCERTA (confiança alta/média/baixa)
 Critérios: um por linha com ✓, ✕ ou ?
@@ -413,7 +424,7 @@ function abrirConversa(fallbackTexto){
 }
 /* print final: faixa com a legenda + gráfico + seta */
 let PNG=null, PNGkey="";
-function chavePrint(){return [cur.ativo,cur.img&&cur.img.length,cur.seta&&cur.seta.x,cur.seta&&cur.seta.y,cur.op,cur.dir,$("ctx").value].join("|")}
+function chavePrint(){return [cur.vol,cur.ativo,cur.img&&cur.img.length,cur.seta&&cur.seta.x,cur.seta&&cur.seta.y,cur.op,cur.dir,$("ctx").value].join("|")}
 function linhas(g,txt,max){const out=[];txt.split("\n").forEach(par=>{let l="";par.split(" ").forEach(w=>{const t=l?l+" "+w:w;if(g.measureText(t).width>max&&l){out.push(l);l=w}else l=t});out.push(l)});return out}
 function gerarPrint(){return new Promise(ok=>{
   if(!cur.img)return ok(null);
@@ -425,7 +436,7 @@ function gerarPrint(){return new Promise(ok=>{
     tmp.font="700 "+fs+"px system-ui,sans-serif";
     const l1="ENTRADA: "+(NOME[cur.op]||"?").toUpperCase()+" · "+lado;
     tmp.font=Math.round(fs*.78)+"px system-ui,sans-serif";
-    const ls=linhas(tmp,"Seta = vela em que entrei (o sinal é a vela anterior)"+(ctx?"\nObs.: "+ctx:""),W-pad*2);
+    const ls=linhas(tmp,"Seta = vela em que entrei (o sinal é a vela anterior)"+"\nVolume do sinal: "+(cur.vol==="acima"?"ACIMA da média das últimas 10":cur.vol==="abaixo"?"ABAIXO da média das últimas 10":"confira no print (barras de volume)")+(ctx?"\nObs.: "+ctx:""),W-pad*2);
     const band=pad*2+fs+ls.length*Math.round(fs*1.05);
     const c=document.createElement("canvas");c.width=W;c.height=H+band;const g=c.getContext("2d");
     g.fillStyle="#0B1220";g.fillRect(0,0,W,band);
