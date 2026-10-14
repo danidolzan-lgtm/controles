@@ -134,7 +134,7 @@ td:first-child{font-family:var(--f-body);white-space:normal}
 
 <script>
 const START="2026-10-13", END="2026-12-17", LS="diarioOB2.v1";
-const OPS=[{id:"respiro",nome:"Respiro"},{id:"virada",nome:"Virada"},{id:"muralha",nome:"Muralha"},{id:"muralhaEng",nome:"Muralha engolfo"},{id:"giro",nome:"Giro"},{id:"armadilha",nome:"Armadilha"}];
+const OPS=[{id:"respiro",nome:"Respiro"},{id:"virada",nome:"Virada"},{id:"muralha",nome:"Muralha"},{id:"giro",nome:"Giro"},{id:"armadilha",nome:"Armadilha"}];
 const SESS=[{id:"manha",nome:"Manhã"},{id:"tarde",nome:"Tarde"}];
 function janelas(ds){const d=ds>="2026-11-02";return {manha:d?"10:45–12:45":"09:45–11:45",tarde:d?"14:00–16:00":"13:30–15:30"}}
 let days={}, cfg={base:10,payout:85}, db=null;
@@ -143,7 +143,7 @@ const brl=v=>(v<0?"-":"")+"R$ "+Math.abs(v).toLocaleString("pt-BR",{minimumFract
 const n2=v=>(v<0?"−":v>0?"+":"")+Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
 const pct=(a,b)=>b?(a/b*100).toLocaleString("pt-BR",{maximumFractionDigits:1})+"%":"–";
 const r2=v=>Math.round(v*100)/100;
-const opNome=id=>(OPS.find(o=>o.id===id)||{nome:"Sem operacional"}).nome;
+const opNome=id=>(OPS.find(o=>o.id===(id==="muralhaEng"?"muralha":id))||{nome:"Sem operacional"}).nome;
 function todayStr(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
 function setStatus(t){$("status").textContent=t}
 const ui_=window.ui||{toast(){},done(){}};
@@ -233,7 +233,7 @@ function statRow(nome,ops){const w=ops.filter(o=>o.res==="win").length,v=ops.red
   return "<tr><td>"+nome+"</td><td>"+ops.length+"</td><td class='pos'>"+w+"</td><td class='neg'>"+(ops.length-w)+"</td><td>"+pct(w,ops.length)+"</td><td class='"+(v>0?"pos":v<0?"neg":"")+"'>"+n2(v)+"</td></tr>"}
 function renderTables(){
   const ops=allOps(), head="<thead><tr><th></th><th>Ops</th><th>Win</th><th>Loss</th><th>Acerto</th><th>R$</th></tr></thead><tbody>";
-  $("tOp").innerHTML=head+OPS.map(x=>statRow(x.nome,ops.filter(o=>o.operacional===x.id))).join("")+"</tbody>";
+  $("tOp").innerHTML=head+OPS.map(x=>statRow(x.nome,ops.filter(o=>(o.operacional==="muralhaEng"?"muralha":o.operacional)===x.id))).join("")+"</tbody>";
   $("tSe").innerHTML=head+SESS.map(x=>statRow(x.nome,ops.filter(o=>o.sess===x.id))).join("")+statRow("Mão base",ops.filter(o=>o.kind==="base"))+statRow("Soros",ops.filter(o=>o.kind==="soros"))+"</tbody>";
 }
 

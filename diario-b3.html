@@ -119,8 +119,8 @@ td:first-child{font-family:var(--f-body);white-space:normal}
 
 <script>
 const START="2026-10-14", END="2026-12-17", LS="diarioB3m.v1";
-const OPS=[{id:"respiro",nome:"Respiro"},{id:"virada",nome:"Virada"},{id:"muralha",nome:"Muralha"},{id:"muralhaEng",nome:"Muralha engolfo"},{id:"giro",nome:"Giro"},{id:"armadilha",nome:"Armadilha"}];
-const opNome=id=>(OPS.find(o=>o.id===id)||{nome:id||"Sem operacional"}).nome;
+const OPS=[{id:"respiro",nome:"Respiro"},{id:"virada",nome:"Virada"},{id:"muralha",nome:"Muralha"},{id:"giro",nome:"Giro"},{id:"armadilha",nome:"Armadilha"}];
+const opNome=id=>(OPS.find(o=>o.id===(id==="muralhaEng"?"muralha":id))||{nome:id||"Sem operacional"}).nome;
 const ATIVOS={WIN:{nome:"Mini índice",pt:0.20},WDO:{nome:"Mini dólar",pt:10}};
 let days={}, cfg={ct:1}, db=null;
 const $=id=>document.getElementById(id);
@@ -190,7 +190,7 @@ function statRow(nome,ops){const g=ops.filter(o=>opVal(o)>0).length,v=ops.reduce
   return "<tr><td>"+esc(nome)+"</td><td>"+ops.length+"</td><td>"+pct(g,ops.length)+"</td><td class='"+(v>0?"pos":v<0?"neg":"")+"'>"+n2(v)+"</td></tr>"}
 function renderTables(){
   const ops=allOps(), head="<thead><tr><th></th><th>Ops</th><th>Acerto</th><th>R$</th></tr></thead><tbody>";
-  $("tOp").innerHTML=head+OPS.map(x=>statRow(x.nome,ops.filter(o=>o.operacional===x.id))).join("")+"</tbody>";
+  $("tOp").innerHTML=head+OPS.map(x=>statRow(x.nome,ops.filter(o=>(o.operacional==="muralhaEng"?"muralha":o.operacional)===x.id))).join("")+"</tbody>";
   $("tAt").innerHTML=head+Object.keys(ATIVOS).map(k=>statRow(ATIVOS[k].nome,ops.filter(o=>o.ativo===k))).join("")+statRow("1ª operação",ops.filter(o=>o.idx===0))+statRow("2ª operação",ops.filter(o=>o.idx===1))+"</tbody>";
 }
 function renderList(){}

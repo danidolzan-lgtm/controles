@@ -1,0 +1,320 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="consorcio"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Consórcios</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: totais dos contratados no topo, tabela para comparar todos, um cartão por consórcio (dados → resultado → lance → reajuste). */
+:root{
+  --bg:#EEF3FC; --surface:#FFFFFF; --line:#DDE4F2; --fg:#13203B; --muted:#58668A;
+  --accent:#2563EB; --accent-soft:#DCE7FF; --win:#15803D; --loss:#E11D48; --warn:#B45309;
+  --f-display:"Archivo",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7; --accent:#60A5FA; --accent-soft:#1E3A8A; --win:#4ADE80; --loss:#FB7185; --warn:#FBBF24; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7; --accent:#60A5FA; --accent-soft:#1E3A8A; --win:#4ADE80; --loss:#FB7185; --warn:#FBBF24; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
+.wrap{max-width:860px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:16px}
+.wrap>*{min-width:0}
+h1{font-family:var(--f-display);font-weight:800;font-size:1.6rem;margin:0}
+h3{font-family:var(--f-display);font-size:1rem;margin:0}
+.sub,.status,.hint{color:var(--muted);font-size:.84rem}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0;display:grid;gap:12px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.kpis .panel{gap:2px}
+.lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.big{font-family:var(--f-num);font-weight:600;font-size:1.15rem;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.btn{appearance:none;font:inherit;font-weight:600;border-radius:7px;padding:10px 16px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--surface)}
+.btn.ghost{background:var(--surface);color:var(--fg);border-color:var(--line)}
+.btn.sm{padding:6px 10px;font-size:.82rem}
+.btn.danger{color:var(--loss);border-color:var(--loss);background:var(--surface)}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.86rem}
+th,td{text-align:right;padding:7px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+th:first-child,td:first-child{text-align:left;white-space:normal}
+td{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+td:first-child{font-family:var(--f-body);font-weight:600}
+tr.best td{color:var(--win)}
+.card{display:grid;gap:12px}
+.ch{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.ch input.nome{font-family:var(--f-display);font-weight:800;font-size:1.15rem;border:1px solid transparent;background:transparent;color:var(--fg);padding:4px 6px;border-radius:6px;min-width:0;flex:1 1 12rem}
+.ch input.nome:hover,.ch input.nome:focus{border-color:var(--line);background:var(--bg)}
+.tag{font-size:.72rem;font-weight:600;padding:3px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.tag.c{background:color-mix(in srgb,var(--win) 18%,transparent);color:var(--win)}
+.fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(150px,100%),1fr));gap:10px}
+label{display:grid;gap:3px;font-size:.72rem;color:var(--muted);min-width:0}
+label input,label select{font:inherit;font-size:.92rem;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 8px;width:100%;min-width:0}
+label input[type=number]{font-family:var(--f-num)}
+.res{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(160px,100%),1fr));gap:8px}
+.r{border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;gap:1px}
+.r b{font-family:var(--f-num);font-weight:600;font-size:1rem;font-variant-numeric:tabular-nums}
+.r.main{border-color:var(--accent);background:var(--accent-soft)}
+.r small{font-size:.74rem;color:var(--muted)}
+.ok{color:var(--win)}.bad{color:var(--loss)}.warn{color:var(--warn)}
+details{border-top:1px solid var(--line);padding-top:10px}
+details>summary{cursor:pointer;font-family:var(--f-display);font-weight:700;font-size:.95rem;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details>summary::-webkit-details-marker{display:none}
+details>summary::after{content:"＋";color:var(--muted)}
+details[open]>summary::after{content:"－"}
+details>.in{display:grid;gap:10px;margin-top:10px}
+.cf{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:10px}
+.empty{color:var(--muted);font-size:.9rem;margin:0}
+@media (max-width:640px){.kpis{grid-template-columns:1fr 1fr}}
+</style>
+<div class="wrap">
+  <div class="top">
+    <div><h1>Consórcios</h1><div class="sub">Simule, compare e acompanhe · valores aproximados, em reais de hoje</div></div>
+    <div class="status" id="status">Carregando…</div>
+  </div>
+
+  <div class="kpis">
+    <div class="panel"><div class="lbl">Crédito contratado</div><div class="big" id="kCred">R$ 0,00</div></div>
+    <div class="panel"><div class="lbl">Parcelas por mês</div><div class="big" id="kParc">R$ 0,00</div></div>
+    <div class="panel"><div class="lbl">Ainda a pagar</div><div class="big" id="kFalta">R$ 0,00</div></div>
+    <div class="panel"><div class="lbl">Custo total (adm + seguro)</div><div class="big" id="kCusto">R$ 0,00</div></div>
+  </div>
+  <p class="hint" style="margin:-6px 0 0">Os totais somam só os marcados como <b>Contratado</b> ou <b>Contemplado</b>. Simulações aparecem só na comparação.</p>
+
+  <section class="panel">
+    <div class="ch"><h3>Comparar</h3>
+      <label style="flex-direction:row;display:flex;align-items:center;gap:6px;font-size:.8rem">Financiamento a <input type="number" id="fin" step="0.1" min="0" style="width:5.5rem"> % a.a.</label>
+    </div>
+    <div class="tbl"><table id="cmp"></table></div>
+    <p class="hint">Custo = tudo que você paga a mais que o crédito (taxa de administração, seguro e fundo de reserva). A linha verde é o menor custo. "Financiamento" é a parcela de um financiamento do mesmo valor e prazo, na taxa acima (tabela Price, sem seguros), só para ter uma referência.</p>
+  </section>
+
+  <div><button type="button" class="btn" id="novo">+ Novo consórcio</button></div>
+  <div id="lista" style="display:grid;gap:12px"></div>
+
+  <p class="hint">Como a conta é feita: taxa de adm. total = taxa ao mês × prazo. A parcela é (crédito + taxa de adm. + fundo de reserva) ÷ prazo, mais o seguro do mês (calculado sobre esse mesmo total). É o jeito do plano de parcela integral linear. Confira sempre com a simulação da administradora: o campo "Parcela da administradora" mostra se bate.</p>
+</div>
+<script>
+const LS="consorcio.v1", LSF="consorcio.fin";
+let lista=[], db=null;
+const $=id=>document.getElementById(id);
+const ui_=window.ui||{toast(){},done(){}};
+const brl=v=>"R$ "+(+v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const brl0=v=>"R$ "+(+v||0).toLocaleString("pt-BR",{maximumFractionDigits:0});
+const pct=(v,d=2)=>(isFinite(v)?(v*100).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d})+"%":"—");
+const n=v=>{const x=parseFloat(v);return isFinite(x)?x:0};
+const uid=()=>Math.random().toString(36).slice(2,10);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+const SEED={id:"rodobens-imovel",nome:"Rodobens Imóvel",adm:"Rodobens",tipo:"Imóvel",status:"Contratado",credito:300000,prazo:216,taxaAdm:0.10556,seguro:0.03245,fr:0,indice:"INCC",reaj:6,inicio:"",pagas:0,parcAdm:1825.10,kCont:0,lanceEmb:0,lanceProp:0,abater:"prazo",obs:"Parcela integral linear · atualização anual pelo INCC",criado:1};
+const NOVO=()=>({id:uid(),nome:"Novo consórcio",adm:"",tipo:"Imóvel",status:"Simulação",credito:100000,prazo:180,taxaAdm:0.1,seguro:0.03,fr:0,indice:"INCC",reaj:6,inicio:"",pagas:0,parcAdm:0,kCont:0,lanceEmb:0,lanceProp:0,abater:"prazo",obs:"",criado:Date.now()});
+
+/* ---------- contas ---------- */
+// taxa interna de retorno mensal de um fluxo (bisseção); null se não tiver troca de sinal
+function tir(fluxo){
+  const vpl=r=>fluxo.reduce((s,f,t)=>s+f/Math.pow(1+r,t),0);
+  // procura a primeira troca de sinal (o fluxo pode ter duas raízes) e refina por bisseção
+  let lo=-0.03, flo=vpl(lo);
+  for(let r=-0.029;r<=0.15;r+=0.001){const fr=vpl(r);
+    if(isFinite(flo)&&isFinite(fr)&&flo*fr<=0){let hi=r;for(let i=0;i<80;i++){const m=(lo+hi)/2,fm=vpl(m);if(flo*fm<=0)hi=m;else{lo=m;flo=fm}}return (lo+hi)/2}
+    lo=r;flo=fr}
+  return null;
+}
+function calc(c){
+  const C=n(c.credito), N=Math.max(1,Math.round(n(c.prazo))), ta=n(c.taxaAdm)/100, sg=n(c.seguro)/100, fr=n(c.fr)/100;
+  const taxaTot=ta*N, base=C*(1+taxaTot+fr), amort=base/N, segM=base*sg, parc=amort+segM;
+  const total=parc*N, custo=total-C;
+  const pagas=Math.min(N,Math.max(0,Math.round(n(c.pagas))));
+  const r={C,N,taxaTot,base,amort,segM,parc,total,custo,custoPct:C?custo/C:0,pagas,falta:parc*(N-pagas)};
+  // contemplação + lance
+  const k=Math.min(N,Math.max(0,Math.round(n(c.kCont))));
+  r.k=k;
+  if(k>0){
+    const emb=Math.min(C,C*n(c.lanceEmb)/100), prop=Math.max(0,n(c.lanceProp)), L=emb+prop;
+    const saldo=Math.max(0,base-amort*k), novoSaldo=Math.max(0,saldo-L);
+    const fluxo=[0]; for(let t=1;t<=k;t++)fluxo.push(-parc);
+    fluxo[k]+=C-emb-prop;
+    let resto=0, novaParc=parc, novoPrazo=N;
+    if(c.abater==="parcela"&&N>k){
+      novaParc=novoSaldo/(N-k)+segM; for(let t=k+1;t<=N;t++)fluxo.push(-novaParc); resto=novaParc*(N-k);
+    }else{
+      const m=novoSaldo/amort, cheias=Math.floor(m+1e-9), frac=m-cheias;
+      for(let i=0;i<cheias;i++)fluxo.push(-parc);
+      if(frac>1e-6)fluxo.push(-(amort*frac+segM));
+      novoPrazo=k+cheias+(frac>1e-6?1:0); resto=fluxo.slice(k+1).reduce((s,f)=>s-f,0);
+    }
+    const pago=parc*k+prop+resto, naMao=C-emb;
+    const i=tir(fluxo);
+    Object.assign(r,{emb,prop,L,lancePct:C?L/C:0,naMao,novaParc,novoPrazo,pagoLance:pago,custoLance:pago-naMao,tirM:i,tirA:i==null?null:Math.pow(1+i,12)-1});
+  }
+  // financiamento de referência (Price)
+  const fa=n(localFin())/100;
+  if(fa>0){const im=Math.pow(1+fa,1/12)-1;r.finParc=C*im/(1-Math.pow(1+im,-N));r.finTot=r.finParc*N}
+  return r;
+}
+function localFin(){return $("fin").value}
+function projecao(c,r){
+  const g=n(c.reaj)/100, linhas=[]; let acum=0;
+  for(let a=0;a*12<r.N;a++){
+    const meses=Math.min(12,r.N-a*12), f=Math.pow(1+g,a), p=r.parc*f, cr=r.C*f, ano=p*meses; acum+=ano;
+    linhas.push({a:a+1,meses,p,cr,ano,acum});
+  }
+  return linhas;
+}
+
+/* ---------- tela ---------- */
+const F=(c,f,lbl,tipo="number",extra="")=>`<label>${lbl}<input type="${tipo}" data-f="${f}" value="${esc(c[f])}" ${tipo==="number"?'step="any" inputmode="decimal"':""} ${extra}></label>`;
+const S=(c,f,lbl,ops)=>`<label>${lbl}<select data-f="${f}">${ops.map(o=>`<option${o===c[f]?" selected":""}>${o}</option>`).join("")}</select></label>`;
+function cardHTML(c){
+  return `<article class="panel card" data-c="${c.id}">
+    <div class="ch"><input class="nome" data-f="nome" value="${esc(c.nome)}" aria-label="Nome do consórcio"><span class="tag" data-tag></span></div>
+    <div class="fields">
+      ${F(c,"adm","Administradora","text")}
+      ${S(c,"tipo","Tipo",["Imóvel","Veículo","Moto","Serviços","Outro"])}
+      ${S(c,"status","Situação",["Simulação","Contratado","Contemplado","Encerrado"])}
+      ${F(c,"credito","Valor do crédito (R$)")}
+      ${F(c,"prazo","Prazo (meses)")}
+      ${F(c,"taxaAdm","Taxa de adm. (% ao mês)")}
+      ${F(c,"seguro","Seguro prestamista (% ao mês)")}
+      ${F(c,"fr","Fundo de reserva (% total)")}
+      ${F(c,"parcAdm","Parcela da administradora (R$)")}
+      ${S(c,"indice","Reajuste anual pelo",["INCC","IPCA","IGP-M","Tabela do bem","Outro"])}
+      ${F(c,"reaj","Reajuste estimado (% a.a.)")}
+      ${F(c,"inicio","1ª parcela","month")}
+      ${F(c,"pagas","Parcelas pagas")}
+    </div>
+    <div class="res" data-res></div>
+    <details data-d="lance"><summary>Contemplação e lance</summary><div class="in">
+      <div class="fields">
+        ${F(c,"kCont","Contemplado no mês")}
+        ${F(c,"lanceEmb","Lance embutido (% do crédito)")}
+        ${F(c,"lanceProp","Lance do bolso (R$)")}
+        <label>Lance abate<select data-f="abater"><option value="prazo"${c.abater!=="parcela"?" selected":""}>Prazo (parcela igual)</option><option value="parcela"${c.abater==="parcela"?" selected":""}>Parcela (prazo igual)</option></select></label>
+      </div>
+      <div class="res" data-lres></div>
+      <p class="hint">"Custo efetivo" é a taxa de juros que o consórcio equivale, olhando quando o dinheiro sai e quando o crédito chega. Contemplado cedo, o consórcio funciona como um empréstimo e tem custo. Contemplado tarde, a taxa pode ficar negativa: você pagou antes de receber. O reajuste corrige crédito e parcela juntos, por isso fica de fora dessa conta.</p>
+    </div></details>
+    <details data-d="proj"><summary>Projeção com reajuste</summary><div class="in"><div class="tbl"><table data-proj></table></div><p class="hint">Estimativa: parcela e crédito sobem pelo reajuste informado uma vez por ano. O índice de verdade muda todo ano.</p></div></details>
+    <label style="font-size:.72rem">Observações<input type="text" data-f="obs" value="${esc(c.obs)}"></label>
+    <div class="cf"><span class="hint" data-cfh></span><span style="display:flex;gap:6px"><button type="button" class="btn ghost sm" data-a="dup">Duplicar</button><button type="button" class="btn ghost sm" data-a="del">Excluir</button></span></div>
+  </article>`;
+}
+function fillCard(el,c){
+  const r=calc(c);
+  const tag=el.querySelector("[data-tag]");tag.textContent=c.status;tag.className="tag"+(c.status==="Contratado"||c.status==="Contemplado"?" c":"");
+  let bate="";
+  if(n(c.parcAdm)>0){const d=r.parc-n(c.parcAdm);bate=Math.abs(d)<=Math.max(1,n(c.parcAdm)*0.002)?`<small class="ok">Bate com a administradora (${brl(n(c.parcAdm))})</small>`:`<small class="warn">Administradora: ${brl(n(c.parcAdm))} (diferença ${brl(Math.abs(d))})</small>`}
+  const finTxt=r.finParc?`<div class="r"><span class="lbl">Financiamento de referência</span><b>${brl(r.finParc)}</b><small>total ${brl0(r.finTot)} · ${brl0(r.finTot-r.C)} de juros</small></div>`:"";
+  el.querySelector("[data-res]").innerHTML=
+    `<div class="r main"><span class="lbl">Parcela</span><b>${brl(r.parc)}</b>${bate||`<small>${brl(r.amort)} + ${brl(r.segM)} de seguro</small>`}</div>
+     <div class="r"><span class="lbl">Taxa de adm. total</span><b>${pct(r.taxaTot)}</b><small>${brl0(r.C*r.taxaTot)}</small></div>
+     <div class="r"><span class="lbl">Seguro no total</span><b>${brl0(r.segM*r.N)}</b><small>${brl(r.segM)} por mês</small></div>
+     <div class="r"><span class="lbl">Total pago</span><b>${brl0(r.total)}</b><small>${r.N} parcelas</small></div>
+     <div class="r"><span class="lbl">Custo (a mais que o crédito)</span><b>${brl0(r.custo)}</b><small>${pct(r.custoPct,1)} do crédito</small></div>
+     <div class="r"><span class="lbl">Andamento</span><b>${r.pagas} de ${r.N}</b><small>falta ${brl0(r.falta)}${fimTxt(c,r)}</small></div>${finTxt}`;
+  const lr=el.querySelector("[data-lres]");
+  if(r.k>0){
+    lr.innerHTML=`<div class="r"><span class="lbl">Lance total</span><b>${brl0(r.L)}</b><small>${pct(r.lancePct,1)} do crédito</small></div>
+      <div class="r main"><span class="lbl">Crédito na mão</span><b>${brl0(r.naMao)}</b><small>${r.emb?brl0(r.emb)+" foram de lance embutido":"sem lance embutido"}</small></div>
+      <div class="r"><span class="lbl">${c.abater==="parcela"?"Nova parcela":"Novo prazo"}</span><b>${c.abater==="parcela"?brl(r.novaParc):r.novoPrazo+" meses"}</b><small>${c.abater==="parcela"?"até o mês "+r.N:"parcela de "+brl(r.parc)}</small></div>
+      <div class="r"><span class="lbl">Total pago</span><b>${brl0(r.pagoLance)}</b><small>custo ${brl0(r.custoLance)} sobre o que recebeu</small></div>
+      <div class="r"><span class="lbl">Custo efetivo</span><b class="${r.tirA==null?"":r.tirA>0?"":"ok"}">${r.tirA==null?"—":pct(r.tirA,1)+" a.a."}</b><small>${r.tirM==null?"sem como calcular":pct(r.tirM,2)+" ao mês"}</small></div>`;
+  }else lr.innerHTML=`<p class="hint" style="margin:0;grid-column:1/-1">Coloque o mês da contemplação (real ou que você imagina) para ver o crédito na mão, o efeito do lance e o custo efetivo.</p>`;
+  const pj=projecao(c,r);
+  el.querySelector("[data-proj]").innerHTML="<tr><th>Ano</th><th>Parcela</th><th>Crédito</th><th>Pago no ano</th><th>Acumulado</th></tr>"+
+    pj.map(l=>`<tr><td>${l.a}º${l.meses<12?" ("+l.meses+" m)":""}</td><td>${brl(l.p)}</td><td>${brl0(l.cr)}</td><td>${brl0(l.ano)}</td><td>${brl0(l.acum)}</td></tr>`).join("");
+  el.querySelector("[data-cfh]").textContent=c.indice+(n(c.reaj)?" estimado em "+String(c.reaj).replace(".",",")+"% a.a.":"");
+}
+function fimTxt(c,r){
+  if(!c.inicio)return "";
+  const [y,m]=c.inicio.split("-").map(Number); if(!y||!m)return "";
+  const d=new Date(y,m-1+r.N-1,1);
+  return " · última em "+d.toLocaleDateString("pt-BR",{month:"short",year:"numeric"}).replace(". de "," ").replace(" de "," ");
+}
+function kpis(){
+  const at=lista.filter(c=>c.status==="Contratado"||c.status==="Contemplado").map(c=>[c,calc(c)]);
+  $("kCred").textContent=brl0(at.reduce((s,[,r])=>s+r.C,0));
+  $("kParc").textContent=brl(at.reduce((s,[c,r])=>s+(r.pagas<r.N?r.parc:0),0));
+  $("kFalta").textContent=brl0(at.reduce((s,[,r])=>s+r.falta,0));
+  $("kCusto").textContent=brl0(at.reduce((s,[,r])=>s+r.custo,0));
+  // tabela de comparação
+  const rows=lista.map(c=>[c,calc(c)]);
+  if(!rows.length){$("cmp").innerHTML="<tr><td class='empty'>Nenhum consórcio ainda.</td></tr>";return}
+  const best=rows.reduce((b,x)=>x[1].custoPct<b[1].custoPct?x:b,rows[0])[0].id;
+  const temFin=rows.some(([,r])=>r.finParc), temK=rows.some(([,r])=>r.k>0);
+  $("cmp").innerHTML="<tr><th>Consórcio</th><th>Crédito</th><th>Prazo</th><th>Parcela</th><th>Adm. total</th><th>Custo</th>"+(temK?"<th>Custo efetivo</th>":"")+(temFin?"<th>Financ.</th>":"")+"</tr>"+
+    rows.map(([c,r])=>`<tr class="${rows.length>1&&c.id===best?"best":""}"><td>${esc(c.nome)}<br><span class="hint" style="font-weight:400">${esc(c.status)}</span></td><td>${brl0(r.C)}</td><td>${r.N}</td><td>${brl(r.parc)}</td><td>${pct(r.taxaTot,1)}</td><td>${pct(r.custoPct,1)}</td>`+
+      (temK?`<td>${r.k>0&&r.tirA!=null?pct(r.tirA,1)+" a.a.":"—"}</td>`:"")+(temFin?`<td>${r.finParc?brl(r.finParc):"—"}</td>`:"")+"</tr>").join("");
+}
+function render(){
+  const box=$("lista");
+  if(!lista.length){box.innerHTML="<p class='empty'>Nenhum consórcio. Toque em + Novo consórcio.</p>";kpis();return}
+  const abertos={};box.querySelectorAll("article[data-c]").forEach(a=>a.querySelectorAll("details").forEach(d=>{if(d.open)abertos[a.dataset.c+d.dataset.d]=1}));
+  lista.sort((a,b)=>(a.criado||0)-(b.criado||0));
+  box.innerHTML=lista.map(cardHTML).join("");
+  box.querySelectorAll("article[data-c]").forEach(el=>{const c=lista.find(x=>x.id===el.dataset.c);fillCard(el,c);el.querySelectorAll("details").forEach(d=>{if(abertos[c.id+d.dataset.d])d.open=true})});
+  kpis();
+}
+
+/* ---------- salvar ---------- */
+function lsSave(){try{localStorage.setItem(LS,JSON.stringify(lista))}catch(e){}}
+const tmr={}, pend=new Set();
+async function push(id){
+  const c=lista.find(x=>x.id===id); if(!c){pend.delete(id);return}
+  if(!db){pend.delete(id);$("status").textContent="Salvo neste aparelho";return}
+  try{await db.doc("itens/"+id).set(JSON.parse(JSON.stringify(c)));$("status").textContent="Salvo"}catch(e){$("status").textContent="Não salvou. Tente de novo.";ui_.toast("Não salvou. Tente de novo.",1)}
+  if(!tmr[id])pend.delete(id);
+}
+function save(c,now){
+  lsSave();pend.add(c.id);clearTimeout(tmr[c.id]);$("status").textContent="Salvando…";
+  tmr[c.id]=setTimeout(()=>{tmr[c.id]=null;push(c.id)},now?0:700);
+}
+
+/* ---------- eventos ---------- */
+$("lista").addEventListener("input",e=>{
+  const f=e.target.dataset.f, el=e.target.closest("article[data-c]"); if(!f||!el)return;
+  const c=lista.find(x=>x.id===el.dataset.c); if(!c)return;
+  c[f]=e.target.type==="number"?(e.target.value===""?"":n(e.target.value)):e.target.value;
+  fillCard(el,c);kpis();save(c);
+});
+$("lista").addEventListener("change",e=>{if(e.target.tagName==="SELECT"){const el=e.target.closest("article[data-c]");const c=el&&lista.find(x=>x.id===el.dataset.c);if(c)ui_.toast("✓ Salvo")}});
+$("lista").addEventListener("click",async e=>{
+  const b=e.target.closest("[data-a]"); if(!b)return;
+  const el=b.closest("article[data-c]"), c=lista.find(x=>x.id===el.dataset.c); if(!c)return;
+  if(b.dataset.a==="dup"){const d={...c,id:uid(),nome:c.nome+" (cópia)",status:"Simulação",criado:Date.now()};lista.push(d);render();save(d,true);ui_.toast("Cópia criada: ajuste os valores");
+    setTimeout(()=>{const x=document.querySelector("article[data-c='"+d.id+"']");x&&x.scrollIntoView({behavior:"smooth",block:"start"})},50);return}
+  if(b.dataset.a==="del"){
+    if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="Confirmar exclusão";b.classList.add("danger");setTimeout(()=>{if(b.isConnected){b.dataset.armed="";b.textContent="Excluir";b.classList.remove("danger")}},4000);return}
+    lista=lista.filter(x=>x.id!==c.id);lsSave();render();ui_.toast(c.nome+" excluído");
+    if(db){try{await db.doc("itens/"+c.id).delete()}catch(err){$("status").textContent="Não excluiu. Tente de novo."}}
+  }
+});
+$("novo").onclick=()=>{const c=NOVO();lista.push(c);render();save(c,true);
+  setTimeout(()=>{const x=document.querySelector("article[data-c='"+c.id+"'] input.nome");if(x){x.scrollIntoView({behavior:"smooth",block:"center"});x.select()}},50)};
+$("fin").addEventListener("input",()=>{try{localStorage.setItem(LSF,$("fin").value)}catch(e){}
+  document.querySelectorAll("article[data-c]").forEach(el=>fillCard(el,lista.find(x=>x.id===el.dataset.c)));kpis();
+  if(db){clearTimeout(tmr._fin);tmr._fin=setTimeout(()=>db.doc("config/geral").set({fin:$("fin").value}).catch(()=>{}),700)}});
+
+/* ---------- início ---------- */
+try{$("fin").value=localStorage.getItem(LSF)??"12"}catch(e){$("fin").value="12"}
+let semNada=false;
+try{const raw=localStorage.getItem(LS);lista=raw?JSON.parse(raw):[];semNada=raw==null}catch(e){lista=[]}
+render();$("status").textContent="Conectando…";
+(async()=>{
+  try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
+  if(!db){if(semNada){lista=[{...SEED}];lsSave();render()}$("status").textContent="Salvando neste aparelho";return}
+  db.doc("config/geral").onSnapshot(d=>{if(d.exists&&d.data().fin!=null&&document.activeElement!==$("fin")){$("fin").value=d.data().fin;try{localStorage.setItem(LSF,$("fin").value)}catch(e){}render()}},()=>{});
+  let first=true;
+  db.collection("itens").onSnapshot(q=>{
+    const remote=q.docs.map(d=>d.data()), ids=new Set(remote.map(x=>x.id));
+    if(first){first=false;
+      if(!remote.length&&semNada&&!lista.length){lista=[{...SEED}];}
+      lista.filter(c=>!ids.has(c.id)).forEach(c=>{pend.add(c.id);push(c.id)});
+    }
+    const merged=remote.map(r=>pend.has(r.id)?(lista.find(x=>x.id===r.id)||r):r);
+    lista.forEach(c=>{if(!ids.has(c.id)&&pend.has(c.id))merged.push(c)});
+    lista=merged;lsSave();
+    const a=document.activeElement, editando=a&&a.closest&&a.closest("#lista");
+    const naTela=[...document.querySelectorAll("article[data-c]")].map(x=>x.dataset.c).sort().join(), agora=lista.map(c=>c.id).sort().join();
+    if(naTela!==agora||!editando)render();else kpis();
+    $("status").textContent="Sincronizado";
+  },()=>{$("status").textContent="Sem conexão · salvando neste aparelho"});
+})();
+</script>
+</body></html>
