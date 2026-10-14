@@ -1,18 +1,18 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="progresso-b3"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Progresso B3</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="progresso-b3m"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Progresso B3</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 /* Layout: escada vertical de metas de banca, resumo da meta atual no topo. */
 :root{
   --bg:#EEF3FC; --surface:#FFFFFF; --line:#DDE4F2; --fg:#13203B; --muted:#58668A;
-  --accent:#2563EB; --accent-soft:#DCE7FF; --win:#15803D; --win-soft:#DCFCE7;
+  --accent:#2563EB; --accent-soft:#DCE7FF; --win:#15803D; --win-soft:#DCFCE7; --loss:#E11D48; --loss-soft:#FFE4EA; --warn:#B45309;
   --f-display:"Archivo",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7;
-  --accent:#60A5FA; --accent-soft:#1E3A8A; --win:#4ADE80; --win-soft:#123D26; color-scheme:dark}}
+  --accent:#60A5FA; --accent-soft:#1E3A8A; --win:#4ADE80; --win-soft:#123D26; --loss:#FB7185; --loss-soft:#4A1A28; --warn:#FBBF24; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7;
-  --accent:#60A5FA; --accent-soft:#1E3A8A; --win:#4ADE80; --win-soft:#123D26; color-scheme:dark}
+  --accent:#60A5FA; --accent-soft:#1E3A8A; --win:#4ADE80; --win-soft:#123D26; --loss:#FB7185; --loss-soft:#4A1A28; --warn:#FBBF24; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
 .wrap{max-width:640px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:16px}
@@ -42,13 +42,39 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
 .step.next{border:2px solid var(--accent)}
 .hint{font-size:.8rem;color:var(--muted)}
 .wrap>*{min-width:0}
+.tabs{display:flex;gap:6px}
+.tabs button{appearance:none;font:inherit;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:8px;padding:9px 16px;cursor:pointer;flex:1}
+.tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.sim{display:grid;gap:14px}
+.fields{align-items:end;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(130px,100%),1fr));gap:10px}
+.fields input{width:100%}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:10px 12px;display:grid;gap:2px;min-width:0}
+.card .v{font-family:var(--f-num);font-weight:600;font-size:1.2rem}
+.card.g{background:var(--win-soft);border-color:var(--win)} .card.g .v{color:var(--win)}
+.card.r{background:var(--loss-soft);border-color:var(--loss)} .card.r .v{color:var(--loss)}
+.pos{color:var(--win)} .neg{color:var(--loss)}
+h2{font-family:var(--f-display);font-weight:700;font-size:1.05rem;margin:0}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{appearance:none;font:inherit;font-size:.85rem;font-weight:600;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:7px;padding:7px 10px;cursor:pointer;flex:1}
+.seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th,td{padding:7px 5px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+th{font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600}
+td{font-family:var(--f-num)} th:first-child,td:first-child{text-align:left}
+tfoot td{font-weight:600}
+.warn{color:var(--warn);font-size:.82rem}
+@media (max-width:420px){th,td{padding:6px 3px}table{font-size:.74rem}th{letter-spacing:0;white-space:normal;vertical-align:bottom}}
 img,svg{max-width:100%}
 </style>
 <div class="wrap">
   <div class="top">
-    <div><h1>Progresso B3</h1><div class="sub">Contratos por tamanho de banca · toque no degrau quando chegar nele</div></div>
+    <div><h1>Progresso B3</h1><div class="sub">Contratos por banca e simulador WIN/WDO</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
+  <div class="tabs" role="tablist"><button type="button" class="on" data-tab="metas">Metas</button><button type="button" data-tab="sim">Simulador</button></div>
+  <div id="tabMetas" style="display:grid;gap:16px">
   <div class="panel goal">
     <div class="row">
       <div><span class="lbl">Nível atual</span><span class="big" id="gNivel">–</span></div>
@@ -62,13 +88,61 @@ img,svg{max-width:100%}
     <div class="bar" aria-hidden="true"><i id="gBar"></i></div>
   </div>
   <div class="ladder" id="ladder"></div>
+  </div>
+  <div id="tabSim" class="sim" hidden>
+    <div class="panel sim">
+      <h2>Seus números</h2>
+      <div class="fields">
+        <label>Banca (R$)<input id="sBanca" type="number" min="0" step="0.01" inputmode="decimal"></label>
+        <label>Ativo<select id="sAtivo" style="font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%"><option value="WIN">WIN (R$ 0,20/pt)</option><option value="WDO">WDO (R$ 10/pt)</option></select></label>
+        <label>Contratos<input id="sCt" type="number" min="1" step="1" inputmode="numeric" placeholder="pela escada"></label>
+        <label>Stop (pontos)<input id="sStopPts" type="number" min="0" step="0.5" inputmode="decimal"></label>
+        <label>Alvo (x o stop)<input id="sMult" type="number" min="0.5" step="0.1" inputmode="decimal"></label>
+        <label>Custo por contrato (R$)<input id="sCusto" type="number" min="0" step="0.01" inputmode="decimal" placeholder="ida e volta"></label>
+      </div>
+      <div class="hint" id="sCtTxt">Contratos em branco = o degrau da escada para essa banca.</div>
+    </div>
+    <div class="panel sim">
+      <h2>Por operação</h2>
+      <div class="cards">
+        <div class="card"><span class="lbl">Contratos</span><span class="v" id="oCt">–</span><span class="hint" id="oCt1">–</span></div>
+        <div class="card"><span class="lbl">Alvo em pontos</span><span class="v" id="oAlvoPts">–</span><span class="hint" id="oAlvoPts1">–</span></div>
+        <div class="card g"><span class="lbl">Gain (bateu o alvo)</span><span class="v" id="oG">–</span><span class="hint" id="oG1">–</span></div>
+        <div class="card r"><span class="lbl">Loss (bateu o stop)</span><span class="v" id="oL">–</span><span class="hint" id="oL1">–</span></div>
+      </div>
+      <div class="hint" id="oPaga"></div>
+    </div>
+    <div class="panel sim">
+      <h2>Por semana</h2>
+      <div class="fields">
+        <label>Dias na semana<input id="sDias" type="number" min="1" max="7" step="1" inputmode="numeric"></label>
+        <label>Gains<input id="sGain" type="number" min="0" step="1" inputmode="numeric"></label>
+        <label>Losses<input id="sLoss" type="number" min="0" step="1" inputmode="numeric"></label>
+      </div>
+      <div class="warn" id="oWarn" hidden></div>
+      <div class="cards">
+        <div class="card" id="cSem"><span class="lbl">Resultado da semana</span><span class="v" id="oSem">–</span><span class="hint" id="oSem1">–</span></div>
+        <div class="card"><span class="lbl">Acerto</span><span class="v" id="oAss">–</span><span class="hint" id="oAss1">–</span></div>
+      </div>
+    </div>
+    <div class="panel sim">
+      <h2>Por mês (4 semanas)</h2>
+      <div class="seg" id="sModo"><button type="button" data-m="fixo" class="on">Contratos fixos (semana × 4)</button><button type="button" data-m="re">Subir contratos pela escada</button></div>
+      <div class="hint">Valores em R$.</div><div class="tw"><table><thead><tr><th>Sem.</th><th>Banca início</th><th>Contr.</th><th>Resultado</th><th>Banca fim</th></tr></thead><tbody id="tMes"></tbody><tfoot id="fMes"></tfoot></table></div>
+      <div class="cards">
+        <div class="card" id="cMes"><span class="lbl">Resultado do mês</span><span class="v" id="oMes">–</span><span class="hint" id="oMes1">–</span></div>
+        <div class="card"><span class="lbl">Banca no fim do mês</span><span class="v" id="oFim">–</span><span class="hint">se repetir a semana 4 vezes</span></div>
+      </div>
+    </div>
+  </div>
 </div>
 <script>
 const LV=[500,1000,3000,5000,7000,10000,12000,15000,20000,25000,30000,35000,40000,50000,60000,70000,80000,90000,100000];
 const CT=[1,2,3,5,7,10,12,15,20,25,30,35,40,50,60,70,80,90,100];
-const ct=n=>n+(n===1?" contrato":" contratos");
+const ctTxt=n=>n+(n===1?" contrato":" contratos");
+const ctDaBanca=b=>{let c=1;LV.forEach((v,i)=>{if(b>=v)c=CT[i]});return c};
 let st={conquistados:[],banca:null}, db=null, ref=null;
-const LS="progressoB3.v1";
+const LS="progressoB3m.v1";
 const $=id=>document.getElementById(id);
 const brl=v=>"R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:0,maximumFractionDigits:2});
 function load(){try{const r=JSON.parse(localStorage.getItem(LS)||"null");if(r)st=r}catch(e){}}
@@ -79,10 +153,10 @@ async function save(){
 function render(){
   const done=new Set(st.conquistados);
   let last=-1; LV.forEach((v,i)=>{if(done.has(i))last=i});
-  const nextI=LV.findIndex((v,i)=>!done.has(i));
+  const nextI=LV.findIndex((v,i)=>i>last&&!done.has(i));
   $("gNivel").textContent= last>=0 ? brl(LV[last]) : "início";
-  $("gProxC").textContent= nextI>=0 ? "libera "+ct(CT[nextI]) : "";
-  $("gEntrada").textContent= last>=0 ? ct(CT[last]) : "0";
+  $("gProxC").textContent= nextI>=0 ? "libera "+ctTxt(CT[nextI]) : "";
+  $("gEntrada").textContent= ctTxt(last>=0?CT[last]:1);
   $("gProx").textContent= nextI>=0 ? brl(LV[nextI]) : "concluído";
   const b=st.banca;
   if(nextI>=0 && b!=null && !isNaN(b)){
@@ -107,15 +181,74 @@ function render(){
 }
 $("banca").addEventListener("change",e=>{const v=parseFloat(e.target.value),n=isNaN(v)?null:v;if(n===st.banca)return;st.banca=n;render();save();window.ui&&ui.toast("✓ Banca salva")});
 load(); if(st.banca!=null) $("banca").value=st.banca; render(); $("status").textContent="Conectando…";
+/* ---------- Simulador B3 ---------- */
+const PT={WIN:0.2,WDO:10}, STOPDEF={WIN:150,WDO:5}, LIM={WIN:150,WDO:5};
+const SLS="simuladorB3.v1", DEF={banca:null,ativo:"WIN",ct:null,stopPts:150,mult:2,custo:0,dias:5,gain:6,loss:4,modo:"fixo"};
+let sim=Object.assign({},DEF), sref=null;
+try{const r=JSON.parse(localStorage.getItem(SLS)||"null");if(r)sim=Object.assign({},DEF,r)}catch(e){}
+const F={sBanca:"banca",sCt:"ct",sStopPts:"stopPts",sMult:"mult",sCusto:"custo",sDias:"dias",sGain:"gain",sLoss:"loss"};
+const brl2=v=>"R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}), r2=v=>Math.round(v*100)/100, pc=v=>(v*100).toLocaleString("pt-BR",{maximumFractionDigits:1})+"%";
+const n2=v=>v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}), sgn=v=>(v>0?"+":v<0?"−":"")+n2(Math.abs(r2(v)));
+const sg=v=>(v>0?"+":v<0?"−":"")+brl2(Math.abs(r2(v)));
+const nf=v=>v.toLocaleString("pt-BR",{maximumFractionDigits:1});
+function fillSim(){for(const id in F){if(document.activeElement!==$(id))$(id).value=sim[F[id]]??""}
+  if(document.activeElement!==$("sAtivo"))$("sAtivo").value=sim.ativo;
+  if((sim.banca==null||sim.banca==="")&&st.banca!=null&&document.activeElement!==$("sBanca"))$("sBanca").value=st.banca;
+  [...$("sModo").children].forEach(b=>b.classList.toggle("on",b.dataset.m===sim.modo))}
+function semana(banca,ctFix){
+  const ct=ctFix||(+sim.ct||ctDaBanca(banca)), risco=(+sim.stopPts||0)*PT[sim.ativo]*ct, custo=(+sim.custo||0)*ct;
+  const g=risco*(+sim.mult||0)-custo, l=risco+custo;
+  return {ct,g,l,res:(+sim.gain||0)*g-(+sim.loss||0)*l};
+}
+function calcSim(){
+  const banca=parseFloat($("sBanca").value);
+  if(!(banca>0)||!(+sim.stopPts>0)){["oCt","oAlvoPts","oG","oL","oSem","oMes","oFim"].forEach(i=>$(i).textContent="–");$("tMes").innerHTML="";$("fMes").innerHTML="";$("oPaga").textContent="Informe a banca e o stop em pontos.";return}
+  const w=semana(banca), m=+sim.mult||0;
+  $("sCtTxt").textContent=sim.ct?"Usando "+ctTxt(+sim.ct)+" (apague para seguir a escada).":"Pela escada, a banca de "+brl2(banca)+" usa "+ctTxt(ctDaBanca(banca))+".";
+  $("oCt").textContent=w.ct; $("oCt1").textContent=sim.ativo+" · "+(sim.ct?"definido por você":"pela escada");
+  $("oAlvoPts").textContent=nf((+sim.stopPts)*m)+" pts"; $("oAlvoPts1").textContent="stop de "+nf(+sim.stopPts)+" pts × "+nf(m)+(+sim.stopPts>LIM[sim.ativo]?" · stop acima do limite do manual ("+LIM[sim.ativo]+" pts)":"");
+  $("oG").textContent=sg(w.g); $("oG1").textContent=pc(w.g/banca)+" da banca"+(+sim.custo?" · já tirando o custo":"");
+  $("oL").textContent=sg(-w.l); $("oL1").textContent=pc(w.l/banca)+" da banca"+(+sim.custo?" · com o custo":"");
+  const be=w.l/(w.g+w.l);
+  $("oPaga").textContent="Um gain paga "+(w.l>0?(w.g/w.l).toLocaleString("pt-BR",{maximumFractionDigits:2}):"–")+" losses. Para empatar, precisa acertar "+pc(be)+" das operações.";
+  const ops=(+sim.dias||0)*2, usadas=(+sim.gain||0)+(+sim.loss||0);
+  $("oWarn").hidden=usadas<=ops; $("oWarn").textContent="Você colocou "+usadas+" operações, mas o manual permite no máximo "+ops+" na semana (2 por dia × "+sim.dias+" dias).";
+  $("oSem").textContent=sg(w.res); $("oSem1").textContent=pc(w.res/banca)+" da banca";
+  $("cSem").className="card "+(w.res>0?"g":w.res<0?"r":"");
+  $("oAss").textContent=usadas?pc((+sim.gain||0)/usadas):"–"; $("oAss1").textContent=(+sim.gain||0)+" gains em "+usadas+" operações (empate em "+pc(be)+")";
+  let b=banca, rows="", tot=0;
+  for(let k=1;k<=4;k++){const x=semana(b,sim.modo==="fixo"?w.ct:null); rows+="<tr><td>"+k+"</td><td>"+n2(r2(b))+"</td><td>"+x.ct+"</td><td class='"+(x.res>0?"pos":x.res<0?"neg":"")+"'>"+sgn(x.res)+"</td><td>"+n2(r2(b+x.res))+"</td></tr>"; tot+=x.res; b+=x.res; if(b<=0){rows+="<tr><td colspan='5' class='neg' style='text-align:left'>Banca zerada nesta semana.</td></tr>";break}}
+  $("tMes").innerHTML=rows; $("fMes").innerHTML="<tr><td>Mês</td><td></td><td></td><td class='"+(tot>0?"pos":tot<0?"neg":"")+"'>"+sgn(tot)+"</td><td>"+n2(r2(Math.max(0,b)))+"</td></tr>";
+  $("oMes").textContent=sg(tot); $("oMes1").textContent=pc(tot/banca)+" sobre a banca inicial"; $("cMes").className="card "+(tot>0?"g":tot<0?"r":"");
+  $("oFim").textContent=brl2(Math.max(0,b));
+}
+$("sAtivo").addEventListener("change",e=>{sim.ativo=e.target.value;sim.stopPts=STOPDEF[sim.ativo];fillSim();calcSim();saveSim()});
+let simT=null;
+function saveSim(){clearTimeout(simT);simT=setTimeout(async()=>{
+  try{localStorage.setItem(SLS,JSON.stringify(sim))}catch(e){}
+  if(sref){try{await sref.set(sim);$("status").textContent="Salvo"}catch(e){$("status").textContent="Não salvou. Tente de novo."}}
+  window.ui&&ui.toast("✓ Simulação salva")},700)}
+for(const id in F){$(id).addEventListener("input",e=>{const v=e.target.value===""?null:parseFloat(e.target.value);sim[F[id]]=isNaN(v)?null:v;calcSim()});$(id).addEventListener("change",saveSim)}
+$("sModo").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;sim.modo=b.dataset.m;fillSim();calcSim();saveSim()});
+document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("on",x===b));
+  $("tabMetas").hidden=b.dataset.tab!=="metas";$("tabSim").hidden=b.dataset.tab!=="sim";
+  try{localStorage.setItem("progressoB3.tab",b.dataset.tab)}catch(e){}
+  if(b.dataset.tab==="sim"){fillSim();calcSim()}});
+try{if(localStorage.getItem("progressoB3.tab")==="sim")document.querySelector('[data-tab=sim]').click()}catch(e){}
+fillSim();calcSim();
+
 (async()=>{
   try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
   if(!db){$("status").textContent="Salvando neste aparelho";return}
   ref=db.doc("estado/progresso");
+  sref=db.doc("estado/simulador");
+  sref.onSnapshot(s=>{if(s.exists){sim=Object.assign({},DEF,s.data());fillSim();calcSim()}else if(localStorage.getItem(SLS)){sref.set(sim).catch(()=>{})}},()=>{});
   ref.onSnapshot(s=>{
     if(s.exists){const d=s.data(); st={conquistados:[...(d.conquistados||[])],banca:d.banca??null};
       if(document.activeElement!==$("banca")) $("banca").value=st.banca??"";}
     else st={conquistados:[],banca:null};
-    render(); $("status").textContent="Sincronizado";
+    render(); fillSim(); calcSim(); $("status").textContent="Sincronizado";
   },()=>{$("status").textContent="Sem conexão com o salvamento"});
 })();
 </script>

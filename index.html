@@ -25,32 +25,93 @@ a::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;backgroun
 a:hover{transform:translateY(-2px)}
 .grid.b3 a{--c:#2563EB}.grid.pes a{--c:#7C3AED}
 .grid.b3 a:nth-child(2){--c:#0EA5E9}.grid.b3 a:nth-child(3){--c:#16A34A}.grid.b3 a:nth-child(4){--c:#F59E0B}.grid.b3 a:nth-child(5){--c:#E11D48}.grid.b3 a:nth-child(6){--c:#7C3AED}.grid.b3 a:nth-child(7){--c:#0D9488}.grid.b3 a:nth-child(8){--c:#64748B}
+.grid.bolsa a{--c:#0F766E}.grid.bolsa a:nth-child(2){--c:#0284C7}.grid.bolsa a:nth-child(3){--c:#4F46E5}.grid.bolsa a:nth-child(4){--c:#D97706}.grid.bolsa a:nth-child(5){--c:#DB2777}.grid.bolsa a:nth-child(6){--c:#9333EA}.grid.bolsa a:nth-child(7){--c:#059669}
 .grid.lnk a{--c:#16A34A}.grid.lnk a:nth-child(2){--c:#F59E0B}
 .grid.pes a:nth-child(2){--c:#B7791F}.grid.pes a:nth-child(3){--c:#EA580C}.grid.pes a:nth-child(4){--c:#0D9488}
+.app{display:grid;gap:16px}
+.side{display:flex;gap:6px;position:sticky;top:52px;z-index:5;background:var(--bg);padding-block:6px}
+.side button{appearance:none;font:inherit;font-weight:600;font-size:.9rem;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;flex:1;display:flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap}
+.side button i{width:10px;height:10px;border-radius:50%;flex:none}
+.side button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.side button.on i{background:#fff!important}
+.content{display:grid;gap:18px;min-width:0}
+.content section{display:grid;gap:14px;min-width:0}
+[hidden]{display:none!important}
+@media (max-width:380px){.side button{font-size:.82rem;padding:9px 6px;gap:5px}}
+@media (min-width:900px){
+  .wrap{max-width:1000px}
+  .app{grid-template-columns:210px 1fr;align-items:start}
+  .side{flex-direction:column;top:60px;padding:0}
+  .side button{justify-content:flex-start;padding:12px 14px}
+  .grid{grid-template-columns:repeat(3,1fr)}
+}
 </style></head><body>
 <div class="wrap">
   <div><h1>Meus Controles</h1><p class="sub">Seus dados ficam salvos na sua conta e aparecem iguais no celular e no PC.</p></div>
-  <h2>Opções binárias</h2>
-  <div class="grid b3">
-    <a href="checklist-ob.html"><b>Check-list</b><span>Antes de cada sessão</span></a>
-    <a href="diario-ob.html"><b>Diário OB</b><span>Manhã e tarde</span></a>
-    <a href="manual-ob.html"><b>Manual</b><span>Respiro, Virada, Muralha, Giro</span></a>
-    <a href="progresso-ob.html"><b>Progresso</b><span>Metas e simulador do Soros</span></a>
-    <a href="dopamina.html"><b>Dopamina</b><span>Acertei ou errei</span></a>
-    <a href="ir-ob.html"><b>IR OB</b><span>Resultado mensal</span></a>
-    <a href="analise-ob.html"><b>Análise de entrada</b><span>Print e seta na vela</span></a>
+  <div class="app">
+  <nav class="side" role="tablist" aria-label="Áreas">
+    <button type="button" role="tab" data-tab="ob"><i style="background:#2563EB"></i>Opções binárias</button>
+    <button type="button" role="tab" data-tab="b3"><i style="background:#0F766E"></i>B3</button>
+    <button type="button" role="tab" data-tab="pes"><i style="background:#7C3AED"></i>Pessoal</button>
+  </nav>
+  <div class="content">
+  <section data-sec="ob">
+    <h2>Opções binárias</h2>
+    <div class="grid b3">
+      <a href="checklist-ob.html"><b>Check-list OB</b><span>Antes de cada sessão</span></a>
+      <a href="diario-ob.html"><b>Diário OB</b><span>Manhã e tarde</span></a>
+      <a href="manual-ob.html"><b>Manual OB</b><span>Respiro, Virada, Muralha, Giro</span></a>
+      <a href="progresso-ob.html"><b>Progresso OB</b><span>Metas e simulador do Soros</span></a>
+      <a href="dopamina.html"><b>Dopamina OB</b><span>Acertei ou errei</span></a>
+      <a href="ir-ob.html"><b>IR OB</b><span>Resultado mensal</span></a>
+      <a href="analise-ob.html"><b>Análise de entrada OB</b><span>Print e seta na vela</span></a>
+    </div>
+    <h2>Links</h2>
+    <div class="grid lnk">
+      <a href="https://quotex.com/pt/trade" target="_blank" rel="noopener"><b>Quotex ↗</b><span>Corretora · operar</span></a>
+      <a href="https://br.investing.com/economic-calendar" target="_blank" rel="noopener"><b>Notícias ↗</b><span>Calendário econômico (Investing)</span></a>
+      <a data-claude="analiseOB.claudeUrl" data-cfg="analise-ob.html#cfgBox" href="analise-ob.html#cfgBox"><b>Claude · conversa OB ↗</b><span>Prints e dúvidas de OB</span></a>
+    </div>
+  </section>
+  <section data-sec="b3">
+    <h2>B3 · mini índice e mini dólar</h2>
+    <div class="grid bolsa">
+      <a href="checklist-b3.html"><b>Check-list B3</b><span>Antes de cada sessão</span></a>
+      <a href="diario-b3.html"><b>Diário B3</b><span>Pontos, contratos e R$</span></a>
+      <a href="manual-b3.html"><b>Manual B3</b><span>M2 · stop e alvo 2x</span></a>
+      <a href="progresso-b3.html"><b>Progresso B3</b><span>Contratos e simulador</span></a>
+      <a href="dopamina-b3.html"><b>Dopamina B3</b><span>Acertei ou errei</span></a>
+      <a href="ir-b3.html"><b>IR B3</b><span>Day trade · DARF</span></a>
+      <a href="analise-b3.html"><b>Análise de entrada B3</b><span>Print e seta na vela</span></a>
+    </div>
+    <h2>Links</h2>
+    <div class="grid lnk">
+      <a href="https://br.investing.com/economic-calendar" target="_blank" rel="noopener"><b>Notícias ↗</b><span>Calendário econômico (Investing)</span></a>
+      <a data-claude="analiseB3.claudeUrl" href="analise-b3.html#cfgBox"><b>Claude · conversa B3 ↗</b><span>Prints e dúvidas de B3</span></a>
+    </div>
+  </section>
+  <section data-sec="pes">
+    <h2>Pessoal</h2>
+    <div class="grid pes">
+      <a href="salario.html"><b>Salário</b><span>Danrlei e Cristiane</span></a>
+      <a href="oracao.html"><b>Oração</b><span>Noite e consagração</span></a>
+      <a href="receitas.html"><b>Receitas</b><span>Caderno de receitas</span></a>
+      <a href="limpeza.html"><b>Limpeza de peças</b><span>Lotes, quantidade e valor</span></a>
+    </div>
+  </section>
   </div>
-  <h2>Links para operar</h2>
-  <div class="grid lnk">
-    <a href="https://quotex.com/pt/trade" target="_blank" rel="noopener"><b>Quotex ↗</b><span>Corretora · operar</span></a>
-    <a href="https://br.investing.com/economic-calendar" target="_blank" rel="noopener"><b>Notícias ↗</b><span>Calendário econômico (Investing)</span></a>
-  </div>
-  <h2>Pessoal</h2>
-  <div class="grid pes">
-    <a href="salario.html"><b>Salário</b><span>Danrlei e Cristiane</span></a>
-    <a href="oracao.html"><b>Oração</b><span>Noite e consagração</span></a>
-    <a href="receitas.html"><b>Receitas</b><span>Caderno de receitas</span></a>
-    <a href="limpeza.html"><b>Limpeza de peças</b><span>Lotes, quantidade e valor</span></a>
   </div>
 </div>
+<script>
+(function(){
+  const tabs=[...document.querySelectorAll(".side button")], secs=[...document.querySelectorAll("[data-sec]")];
+  function abrir(t){tabs.forEach(b=>{const on=b.dataset.tab===t;b.classList.toggle("on",on);b.setAttribute("aria-selected",on)});secs.forEach(s=>s.hidden=s.dataset.sec!==t);try{localStorage.setItem("index.tab",t)}catch(e){}}
+  tabs.forEach(b=>b.addEventListener("click",()=>abrir(b.dataset.tab)));
+  let t="ob";try{t=localStorage.getItem("index.tab")||"ob"}catch(e){}
+  abrir(tabs.some(b=>b.dataset.tab===t)?t:"ob");
+  // conversas do Claude salvas nas páginas de análise
+  document.querySelectorAll("[data-claude]").forEach(a=>{let u="";try{u=localStorage.getItem(a.dataset.claude)||""}catch(e){}
+    if(u){a.href=u;a.target="_blank";a.rel="noopener"}else{a.querySelector("span").textContent="Configure na Análise de entrada"}});
+})();
+</script>
 </body></html>

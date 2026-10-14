@@ -1,0 +1,542 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="analise-b3"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Análise de Entrada B3</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: placar no topo; nova análise em passos (print → seta na vela → operacional e direção → critérios do manual → resultado); lista de análises salvas. */
+:root{
+  --bg:#EEF3FC; --surface:#FFFFFF; --line:#DDE4F2; --fg:#13203B; --muted:#58668A;
+  --accent:#2563EB; --accent-soft:#DCE7FF; --win:#15803D; --win-soft:#DCFCE7; --loss:#E11D48; --loss-soft:#FFE4EA; --warn:#B45309; --warn-soft:#FEF3C7;
+  --f-display:"Archivo",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7; --accent:#60A5FA; --accent-soft:#1E3A8A; --win:#4ADE80; --win-soft:#123D26; --loss:#FB7185; --loss-soft:#4A1A28; --warn:#FBBF24; --warn-soft:#3F2A06; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7; --accent:#60A5FA; --accent-soft:#1E3A8A; --win:#4ADE80; --win-soft:#123D26; --loss:#FB7185; --loss-soft:#4A1A28; --warn:#FBBF24; --warn-soft:#3F2A06; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
+.wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
+.wrap>*{min-width:0}
+h1{font-family:var(--f-display);font-weight:800;font-size:1.6rem;margin:0}
+h2{font-family:var(--f-display);font-weight:700;font-size:1.05rem;margin:0}
+.sub,.status,.hint{color:var(--muted);font-size:.84rem}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:12px;min-width:0;grid-template-columns:minmax(0,1fr)}
+.panel>*{min-width:0;max-width:100%}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.kpis>*{min-width:0}.kpis .lbl{letter-spacing:.03em}
+.step{box-shadow:none!important}
+.big{font-family:var(--f-num);font-weight:600;font-size:1.3rem}
+.pos{color:var(--win)} .neg{color:var(--loss)}
+.step{display:flex;gap:8px;align-items:center;font-family:var(--f-display);font-weight:700}
+.step i{font-style:normal;display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--surface);font-size:.8rem;flex:none}
+.drop{border:2px dashed var(--line);border-radius:10px;padding:18px;text-align:center;display:grid;gap:8px;place-items:center;color:var(--muted);grid-template-columns:minmax(0,1fr)}
+.drop>*{max-width:100%;min-width:0}
+.drop input{width:100%;font-size:.85rem}
+.drop.on{border-color:var(--accent);background:var(--accent-soft)}
+input[type=file]{font:inherit;font-size:.9rem;max-width:100%}
+.shot{position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--line);touch-action:manipulation;cursor:crosshair;background:#000}
+.shot img{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
+.shot svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{appearance:none;font:inherit;font-weight:600;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:7px;padding:9px 14px;cursor:pointer;flex:1;min-width:0}
+.seg button.on{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.seg button.call.on{background:var(--win);border-color:var(--win)}
+.seg button.put.on{background:var(--loss);border-color:var(--loss)}
+.q{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.q:last-child{border-bottom:0}
+.q p{margin:0;font-size:.92rem}
+.q .yn{display:flex;gap:4px}
+.q .yn button{appearance:none;font:inherit;font-size:.85rem;font-weight:600;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:6px;padding:6px 12px;cursor:pointer}
+.q .yn button.on.ok{background:var(--win);border-color:var(--win);color:var(--surface)}
+.q .yn button.on.bad{background:var(--loss);border-color:var(--loss);color:var(--surface)}
+.grp{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-top:6px}
+.grp.f{color:var(--warn)}
+.ver{border-radius:10px;padding:14px;display:grid;gap:4px;background:var(--bg)}
+.ver>b{font-family:var(--f-display);font-size:1.25rem}
+.ver.ok{background:var(--win-soft)} .ver.ok>b{color:var(--win)}
+.ver.no{background:var(--loss-soft)} .ver.no>b{color:var(--loss)}
+.ver ul{margin:4px 0 0;padding-left:18px;font-size:.88rem}
+textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;width:100%;min-height:64px;resize:vertical}
+.btn{appearance:none;font:inherit;font-weight:600;border-radius:7px;padding:10px 16px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--surface)}
+.btn.ghost{background:var(--surface);color:var(--fg);border-color:var(--line)}
+.btn.danger{background:var(--surface);color:var(--loss);border-color:var(--loss)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.list{display:grid;gap:8px}
+.it{display:grid;grid-template-columns:72px 1fr;gap:10px;align-items:center;border:1px solid var(--line);border-radius:9px;padding:8px;cursor:pointer;background:var(--surface);text-align:left;font:inherit;color:var(--fg);width:100%}
+.it img{width:72px;height:54px;object-fit:cover;border-radius:6px;background:#000}
+.it b{font-family:var(--f-display)}
+.tag{display:inline-block;font-size:.7rem;font-weight:700;border-radius:999px;padding:2px 8px;margin-right:4px}
+.tag.ok{background:var(--win-soft);color:var(--win)} .tag.no{background:var(--loss-soft);color:var(--loss)}
+.tag.w{background:var(--win);color:var(--surface)} .tag.l{background:var(--loss);color:var(--surface)}
+.empty{color:var(--muted);font-size:.9rem;margin:0}
+.note{background:var(--accent-soft);border-radius:8px;padding:10px 12px;font-size:.86rem}
+details.panel summary{cursor:pointer;list-style-position:inside}
+.crit2{display:grid;gap:6px}
+.ci{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start;font-size:.9rem}
+.ci>b{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;font-size:.75rem;color:var(--surface)}
+.ci .y{background:var(--win)} .ci .n{background:var(--loss)} .ci .qq{background:var(--muted)}
+.ci small{display:block;color:var(--muted)}
+.ver.mid{background:var(--warn-soft)} .ver.mid>b{color:var(--warn)}
+.tag.mid{background:var(--warn-soft);color:var(--warn)}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;vertical-align:-2px;margin-right:6px;animation:spn .7s linear infinite}
+@keyframes spn{to{transform:rotate(360deg)}}
+.msgs{display:grid;gap:8px}
+.msg{border-radius:12px;padding:10px 12px;max-width:92%;white-space:pre-wrap;overflow-wrap:anywhere;font-size:.93rem}
+.msg.u{justify-self:end;background:var(--accent);color:var(--surface);border-bottom-right-radius:4px}
+.msg.a{justify-self:start;background:var(--bg);border:1px solid var(--line);border-bottom-left-radius:4px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{appearance:none;font:inherit;font-size:.82rem;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:6px 12px;cursor:pointer}
+textarea#ctx,textarea#q,textarea#resp{min-height:52px}
+.guia{background:var(--accent-soft);border-radius:9px;padding:10px 12px;display:grid;gap:8px;font-size:.9rem}
+.guia ol{margin:0;padding-left:18px;display:grid;gap:3px}
+#vSeg button[data-v=certo].on{background:var(--win);border-color:var(--win)}#vSeg button[data-v=errado].on{background:var(--loss);border-color:var(--loss)}
+</style>
+<div class="wrap">
+  <div class="top">
+    <div><h1>Análise de Entrada B3</h1><div class="sub">WIN e WDO · M2 · print da entrada · seta na vela · o Claude confere com o Manual B3</div></div>
+    <div class="status" id="status">Carregando…</div>
+  </div>
+
+  <div class="kpis">
+    <div class="panel"><div class="lbl">Dentro da regra</div><div class="big" id="kOk">–</div><div class="hint" id="kOkW"></div></div>
+    <div class="panel"><div class="lbl">Fora da regra</div><div class="big" id="kNo">–</div><div class="hint" id="kNoW"></div></div>
+    <div class="panel"><div class="lbl">Total</div><div class="big" id="kTot">0</div></div>
+  </div>
+
+
+  <div class="panel" id="nova">
+    <h2>Nova análise</h2>
+    <div class="step"><i>1</i>Print da entrada</div>
+    <label class="drop" id="drop">
+      <span>Toque para escolher o print (ou cole com Ctrl+V no PC)</span>
+      <input id="file" type="file" accept="image/*">
+    </label>
+    <div id="shotBox" hidden style="display:grid;gap:8px">
+      <div class="step"><i>2</i>Toque na vela em que você entrou</div>
+      <div class="shot" id="shot"><img id="img" alt="Print da entrada"><svg id="ov" viewBox="0 0 100 100" preserveAspectRatio="none"></svg></div>
+      <div class="hint" id="setaTxt">A seta aparece onde você tocar. Toque de novo para mudar.</div>
+    </div>
+    <div class="step"><i>3</i>O que você operou</div>
+    <div class="seg" id="opSeg"><button type="button" data-op="respiro">Respiro</button><button type="button" data-op="virada">Virada</button><button type="button" data-op="muralha">Muralha</button><button type="button" data-op="giro">Giro</button></div>
+    <div class="seg" id="dirSeg"><button type="button" class="call" data-dir="call">Compra ▲</button><button type="button" class="put" data-dir="put">Venda ▼</button></div>
+    <div class="seg" id="atSeg"><button type="button" data-at="WIN">WIN</button><button type="button" data-at="WDO">WDO</button></div>
+    <textarea id="ctx" placeholder="Algo a mais para o Claude saber (opcional): stop e alvo em pontos, cores das médias, horário…"></textarea>
+    <div class="step"><i>4</i>Mandar para o Claude</div>
+    <div class="hint">O print vai com uma faixa em cima dizendo o operacional, a direção e a sua observação. É só colar na sua conversa de análise.</div>
+    <img id="prev" alt="Print que vai para o Claude" hidden style="width:100%;border-radius:8px;border:1px solid var(--line)">
+    <div class="row"><button type="button" class="btn" id="aiGo">Copiar print e abrir conversa ↗</button><button type="button" class="btn ghost" id="aiSave">Salvar print</button></div>
+    <div class="guia" id="guia" hidden></div>
+    <div id="aiRes"></div>
+    <div id="vBox" style="display:grid;gap:8px">
+      <span class="hint">O que o Claude disse da entrada?</span>
+      <div class="seg" id="vSeg"><button type="button" data-v="certo">✓ Certa</button><button type="button" data-v="errado">✕ Errada</button><button type="button" data-v="incerto">? Incerta</button></div>
+      <textarea id="resp" placeholder="Cole aqui a resposta do Claude (opcional), para guardar junto com a análise"></textarea>
+    </div>
+    <details id="critDet"><summary class="hint" style="cursor:pointer">Conferir eu mesmo, item por item (opcional)</summary>
+    <div id="critBox" hidden style="display:grid;gap:4px;margin-top:8px">
+      <div id="crit"></div>
+    </div>
+    <div class="ver" id="ver" hidden style="margin-top:8px"></div>
+    </details>
+    <div class="step"><i>5</i>Resultado e observação</div>
+    <div class="seg" id="resSeg"><button type="button" data-res="win">Win</button><button type="button" data-res="loss">Loss</button><button type="button" data-res="">Ainda não sei</button></div>
+    <textarea id="obs" placeholder="Observação (opcional): o que viu, o que sentiu, o que faria diferente"></textarea>
+    <div class="row"><button type="button" class="btn" id="salvar">Salvar análise</button><button type="button" class="btn ghost" id="limpar">Limpar</button></div>
+    <div class="note">O Claude confere o print com as regras do seu manual. Ele pode errar em print pequeno ou com médias de cores parecidas: use o parecer como segunda opinião.</div>
+  </div>
+
+  <div class="panel" id="chatBox">
+    <h2>Tire suas dúvidas</h2>
+    <div class="hint">Escreva a dúvida: ela é copiada e a sua conversa de análise abre. Cole e envie.</div>
+    <div class="chips" id="chips"><button type="button">Qual a diferença entre Respiro e Muralha?</button><button type="button">Quando entro no Giro?</button><button type="button">Posso entrar na Virada se a vela de sinal for grande?</button></div>
+    <form id="chatForm" style="display:grid;gap:8px"><textarea id="q" rows="2" placeholder="Escreva sua dúvida…"></textarea><div class="row"><button type="submit" class="btn" id="send">Copiar e abrir conversa ↗</button></div></form>
+    <div class="guia" id="guiaQ" hidden></div>
+  </div>
+
+  <details class="panel" id="cfgBox">
+    <summary><b>Minha conversa de análise no Claude</b> <span class="hint" id="cfgState">não configurada</span></summary>
+    <ol class="hint" style="margin:0;padding-left:18px;display:grid;gap:4px">
+      <li>No Claude, abra uma conversa nova (ou um projeto) só para isso.</li>
+      <li>Toque em <b>Copiar mensagem de configuração</b> e cole como primeira mensagem. Ela leva o seu manual e explica como analisar os prints.</li>
+      <li>Copie o link dessa conversa (no app: compartilhar ▸ copiar link, ou a barra de endereço no PC) e cole aqui embaixo.</li>
+    </ol>
+    <textarea id="cfgTxt" readonly rows="6" style="font:inherit;font-size:.8rem;width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--muted)"></textarea>
+    <div class="row"><button type="button" class="btn ghost" id="cfgCopy">Copiar mensagem de configuração</button></div>
+    <p class="hint" style="margin:0">Abra o link no aparelho/navegador em que você está logado na sua conta <b>pessoal</b> do Claude. Se abrir em outra conta, a conversa não aparece.</p>
+    <label class="hint" for="cfgUrl">Link da conversa<input id="cfgUrl" type="url" inputmode="url" placeholder="https://claude.ai/chat/…" style="font:inherit;width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)"></label>
+    <div class="row"><button type="button" class="btn" id="cfgSave">Salvar link</button><button type="button" class="btn ghost" id="cfgDel">Tirar link</button></div>
+  </details>
+
+  <div class="panel">
+    <h2>Análises salvas</h2>
+    <div class="list" id="lista"><p class="empty">Nenhuma análise ainda.</p></div>
+  </div>
+</div>
+<script>
+const LS="analiseB3.v1";
+const $=id=>document.getElementById(id);
+const ui_=window.ui||{toast(){},done(){}};
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const NOME={respiro:"Respiro",virada:"Virada",muralha:"Muralha",giro:"Giro"};
+
+/* ---------- regras do manual ---------- */
+// cada critério: texto para compra / para venda. "c" = precisa ser Sim; "f" = filtro, precisa ser Não.
+const BASE_F=[
+  ["As três médias estavam emboladas, sem espaço entre elas?"],
+  ["Era 5 min antes ou até 15 min depois de notícia forte?"],
+  ["O volume da vela de sinal estava abaixo da média das últimas 10 velas?"],
+  ["O stop técnico passava do limite (WIN 150 pts · WDO 5 pts)?"],
+  ["Eram os primeiros 15 minutos do pregão?"],
+  ["A vela de sinal era maior que 2x a média das últimas 10 velas?"],
+];
+const R={
+  respiro:{c:[
+    ["Médias alinhadas: 9 acima da 21, 21 acima da 50, com a 50 subindo?","Médias alinhadas: 9 abaixo da 21, 21 abaixo da 50, com a 50 caindo?"],
+    ["O preço recuou até a zona 9–21 e encostou ou furou pouco a 21?","O preço subiu até a zona 9–21 e encostou ou furou pouco a 21?"],
+    ["A vela de sinal fechou acima da 9, com pavio inferior?","A vela de sinal fechou abaixo da 9, com pavio superior?"],
+    ["Entrei na abertura da vela seguinte ao sinal?"],
+    ["Stop 1–2 ticks abaixo da mínima do sinal ou da 21 (o mais baixo) e alvo 2x?", "Stop 1–2 ticks acima da máxima do sinal ou da 21 (o mais alto) e alvo 2x?"]],
+   f:[["No recuo, o preço furou a média de 50?"],["A 50 estava deitada (sem inclinação)?"],["Já era o 3º recuo seguido na mesma tendência?"]]},
+  virada:{c:[
+    ["O preço estava acima da 50?","O preço estava abaixo da 50?"],
+    ["A 9 cruzou a 21 para cima?","A 9 cruzou a 21 para baixo?"],
+    ["Entrei depois da primeira vela verde que fechou após o cruzamento?","Entrei depois da primeira vela vermelha que fechou após o cruzamento?"],
+    ["Entrei na abertura da vela seguinte?"],
+    ["Stop 1–2 ticks abaixo da menor mínima das últimas 3 velas e alvo 2x?", "Stop 1–2 ticks acima da maior máxima das últimas 3 velas e alvo 2x?"]],
+   f:[["A 9 e a 21 cruzaram mais de 2 vezes nas últimas 15 velas?"],["A 50 estava deitada ou o preço cruzou a 50 nas últimas 10 velas?"],["A vela de confirmação fechou colada na 50?"]]},
+  muralha:{c:[
+    ["Tendência de alta: 21 acima da 50 e a 50 subindo?","Tendência de baixa: 21 abaixo da 50 e a 50 caindo?"],
+    ["O preço caiu até tocar a 50?","O preço subiu até tocar a 50?"],
+    ["A vela tinha pavio inferior maior ou igual ao corpo e fechou acima da 50?","A vela tinha pavio superior maior ou igual ao corpo e fechou abaixo da 50?"],
+    ["Entrei na abertura da vela seguinte?"],
+    ["Stop 1–2 ticks abaixo do pavio da vela de sinal e alvo 2x?", "Stop 1–2 ticks acima do pavio da vela de sinal e alvo 2x?"]],
+   f:[["Era o 3º toque seguido na 50?"],["A vela de sinal fechou do outro lado da 50?"],["A 50 estava deitada?"]]},
+  giro:{c:[
+    ["Antes, o mercado vinha caindo (9 abaixo da 21 e 21 abaixo da 50)?","Antes, o mercado vinha subindo (9 acima da 21 e 21 acima da 50)?"],
+    ["Uma vela de corpo cheio fechou acima da 50?","Uma vela de corpo cheio fechou abaixo da 50?"],
+    ["A 9 cruzou a 21 para cima?","A 9 cruzou a 21 para baixo?"],
+    ["O preço recuou até a 9 ou a 50 sem fechar abaixo da 50?","O preço subiu até a 9 ou a 50 sem fechar acima da 50?"],
+    ["A vela de sinal fechou verde acima da 50?","A vela de sinal fechou vermelha abaixo da 50?"],
+    ["Entrei na abertura da vela seguinte (e não no rompimento)?"],
+    ["Stop 1–2 ticks abaixo da 50 ou da mínima do recuo (o mais baixo) e alvo 2x?", "Stop 1–2 ticks acima da 50 ou da máxima do recuo (o mais alto) e alvo 2x?"]],
+   f:[["A 50 ainda estava bem inclinada contra a entrada?"],["A vela do rompimento era maior que 2x a média das últimas 10 velas?"],["No recuo, alguma vela fechou de volta do outro lado da 50?"],["Passaram mais de 10 velas desde o rompimento sem o recuo?"],["O preço já tinha rompido e voltado pela 50 nas últimas 20 velas?"]]}
+};
+const txt=(t,dir)=>dir==="put"&&t[1]?t[1]:t[0];
+function perguntas(op,dir){
+  if(!op||!dir)return [];
+  const r=R[op];
+  return [...r.c.map((t,i)=>({id:"c"+i,t:txt(t,dir),tipo:"c"})),...r.f.map((t,i)=>({id:"f"+i,t:txt(t,dir),tipo:"f"})),...BASE_F.map((t,i)=>({id:"b"+i,t:t[0],tipo:"f"}))];
+}
+function veredito(op,dir,resp){
+  const qs=perguntas(op,dir); if(!qs.length)return null;
+  const faltam=qs.filter(q=>resp[q.id]==null).length;
+  const erros=qs.filter(q=>resp[q.id]!=null&&(q.tipo==="c"?resp[q.id]!==true:resp[q.id]!==false));
+  return {faltam,erros,ok:!faltam&&!erros.length};
+}
+
+/* ---------- estado da nova análise ---------- */
+let cur=null, items=[], db=null, openId=null, delArm=null;
+function novo(){cur={id:Math.random().toString(36).slice(2,10),img:null,seta:null,op:null,dir:null,ativo:"WIN",resp:{},res:null,obs:"",ia:null}}
+novo();
+
+/* imagem: reduz para caber no salvamento (até ~1000 px, JPEG) */
+function carregar(file){
+  if(!file||!/^image\//.test(file.type)){ui_.toast("Escolha uma imagem",1);return}
+  const fr=new FileReader();
+  fr.onload=()=>{const im=new Image();im.onload=()=>{
+    const max=1100, k=Math.min(1,max/Math.max(im.width,im.height)), c=document.createElement("canvas");
+    c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+    let q=.8, url=c.toDataURL("image/jpeg",q); while(url.length>650000&&q>.35){q-=.1;url=c.toDataURL("image/jpeg",q)}
+    cur.img=url;cur.w=c.width;cur.h=c.height;cur.seta=null;drawShot();ui_.toast("✓ Print carregado");
+  };im.src=fr.result};
+  fr.readAsDataURL(file);
+}
+$("file").addEventListener("change",e=>carregar(e.target.files[0]));
+document.addEventListener("paste",e=>{const f=[...(e.clipboardData||{}).files||[]].find(x=>/^image\//.test(x.type));if(f)carregar(f)});
+["dragover","dragenter"].forEach(t=>$("drop").addEventListener(t,e=>{e.preventDefault();$("drop").classList.add("on")}));
+["dragleave","drop"].forEach(t=>$("drop").addEventListener(t,e=>{e.preventDefault();$("drop").classList.remove("on");if(t==="drop"&&e.dataTransfer.files[0])carregar(e.dataTransfer.files[0])}));
+
+function setaSVG(seta,dir){
+  if(!seta)return "";
+  const col=dir==="put"?"#E11D48":"#16A34A", x=seta.x*100, y=seta.y*100;
+  // compra: seta embaixo apontando para cima; venda: seta em cima apontando para baixo
+  const up=dir!=="put", y0=up?y+16:y-16, y1=up?y+3:y-3;
+  return "<circle cx='"+x+"' cy='"+y+"' r='2.2' fill='none' stroke='"+col+"' stroke-width='.6' vector-effect='non-scaling-stroke'/>"+
+    "<line x1='"+x+"' y1='"+y0+"' x2='"+x+"' y2='"+(up?y1+2:y1-2)+"' stroke='"+col+"' stroke-width='4' vector-effect='non-scaling-stroke' stroke-linecap='round'/>"+
+    "<polygon points='"+(x-2.4)+","+(up?y1+3.5:y1-3.5)+" "+(x+2.4)+","+(up?y1+3.5:y1-3.5)+" "+x+","+y1+"' fill='"+col+"'/>";
+}
+function drawShot(){
+  prepararPrint();
+  $("shotBox").hidden=!cur.img; if(!cur.img)return;
+  if($("img").src!==cur.img)$("img").src=cur.img;
+  $("ov").innerHTML=setaSVG(cur.seta,cur.dir);
+  $("setaTxt").textContent=cur.seta?"Seta marcada. Toque em outro lugar para mudar.":"A seta aparece onde você tocar. Toque de novo para mudar.";
+}
+$("shot").addEventListener("click",e=>{const r=$("shot").getBoundingClientRect();cur.seta={x:(e.clientX-r.left)/r.width,y:(e.clientY-r.top)/r.height};drawShot()});
+
+$("opSeg").addEventListener("click",e=>{const b=e.target.closest("[data-op]");if(!b)return;if(cur.op!==b.dataset.op){cur.op=b.dataset.op;cur.resp={};cur.ia=null;$("aiRes").innerHTML="";$("guia").hidden=true;$("resp").value=""}drawForm()});
+$("atSeg").addEventListener("click",e=>{const b=e.target.closest("[data-at]");if(!b)return;cur.ativo=b.dataset.at;drawForm()});
+$("dirSeg").addEventListener("click",e=>{const b=e.target.closest("[data-dir]");if(!b)return;cur.dir=b.dataset.dir;drawForm();drawShot()});
+$("resSeg").addEventListener("click",e=>{const b=e.target.closest("[data-res]");if(!b)return;cur.res=b.dataset.res||null;drawForm()});
+$("obs").addEventListener("input",e=>{cur.obs=e.target.value});
+
+function drawForm(){
+  prepararPrint();
+  [...$("opSeg").children].forEach(b=>b.classList.toggle("on",b.dataset.op===cur.op));
+  [...$("dirSeg").children].forEach(b=>b.classList.toggle("on",b.dataset.dir===cur.dir));
+  [...$("atSeg").children].forEach(b=>b.classList.toggle("on",b.dataset.at===cur.ativo));
+  [...$("resSeg").children].forEach(b=>b.classList.toggle("on",(b.dataset.res||null)===cur.res));
+  [...$("vSeg").children].forEach(b=>b.classList.toggle("on",!!cur.ia&&cur.ia.veredito===b.dataset.v));
+  const qs=perguntas(cur.op,cur.dir);
+  $("critBox").hidden=!qs.length;
+  if(qs.length){
+    let h="",grp="";
+    qs.forEach(q=>{
+      const g=q.tipo==="c"?"Gatilho do "+NOME[cur.op]+" (precisa ser Sim)":q.id[0]==="f"?"Filtros do "+NOME[cur.op]+" (precisa ser Não)":"Filtros de todos os setups (precisa ser Não)";
+      if(g!==grp){h+="<div class='grp"+(q.tipo==="f"?" f":"")+"'>"+g+"</div>";grp=g}
+      const v=cur.resp[q.id], bom=q.tipo==="c"?true:false;
+      h+="<div class='q'><p>"+esc(q.t)+"</p><div class='yn'>"+
+        "<button type='button' data-q='"+q.id+"' data-v='1' class='"+(v===true?"on "+(bom===true?"ok":"bad"):"")+"'>Sim</button>"+
+        "<button type='button' data-q='"+q.id+"' data-v='0' class='"+(v===false?"on "+(bom===false?"ok":"bad"):"")+"'>Não</button></div></div>";
+    });
+    $("crit").innerHTML=h;
+  }
+  const V=veredito(cur.op,cur.dir,cur.resp), ve=$("ver");
+  if(!V){ve.hidden=true;return}
+  ve.hidden=false;
+  if(V.ok){ve.className="ver ok";ve.innerHTML="<b>✓ Entrada dentro do "+NOME[cur.op]+"</b><span>Todos os critérios do manual batem"+(cur.dir==="put"?" para venda.":" para compra.")+"</span>"}
+  else if(V.erros.length){ve.className="ver no";ve.innerHTML="<b>✕ Entrada fora do "+NOME[cur.op]+"</b><span>"+V.erros.length+(V.erros.length===1?" item não bate":" itens não batem")+" com o manual:</span><ul>"+V.erros.map(q=>"<li>"+esc(q.t)+" → "+(cur.resp[q.id]?"Sim":"Não")+"</li>").join("")+"</ul>"+(V.faltam?"<span class='hint'>Faltam "+V.faltam+" respostas.</span>":"")}
+  else{ve.className="ver";ve.innerHTML="<b>Responda os critérios</b><span>Faltam "+V.faltam+" respostas.</span>"}
+}
+$("crit").addEventListener("click",e=>{const b=e.target.closest("[data-q]");if(!b)return;cur.resp[b.dataset.q]=b.dataset.v==="1";drawForm()});
+
+/* imagem final com a seta desenhada (para a lista e o histórico) */
+function imagemComSeta(){
+  return new Promise(ok=>{
+    if(!cur.img)return ok(null);
+    const im=new Image();im.onload=()=>{
+      const c=document.createElement("canvas");c.width=im.width;c.height=im.height;const g=c.getContext("2d");g.drawImage(im,0,0);
+      if(cur.seta){const x=cur.seta.x*c.width,y=cur.seta.y*c.height,s=Math.max(c.width,c.height)/60,up=cur.dir!=="put",col=cur.dir==="put"?"#E11D48":"#16A34A";
+        g.strokeStyle=col;g.fillStyle=col;g.lineWidth=s*.45;g.lineCap="round";
+        g.beginPath();g.arc(x,y,s*.9,0,7);g.stroke();
+        const y1=up?y+s*1.3:y-s*1.3,y0=up?y+s*5:y-s*5;
+        g.beginPath();g.moveTo(x,y0);g.lineTo(x,up?y1+s:y1-s);g.stroke();
+        g.beginPath();g.moveTo(x,y1);g.lineTo(x-s,up?y1+s*1.4:y1-s*1.4);g.lineTo(x+s,up?y1+s*1.4:y1-s*1.4);g.closePath();g.fill()}
+      let q=.75,url=c.toDataURL("image/jpeg",q);while(url.length>700000&&q>.3){q-=.1;url=c.toDataURL("image/jpeg",q)}
+      ok(url);
+    };im.src=cur.img;
+  });
+}
+
+/* ---------- salvar ---------- */
+function lsSave(){try{localStorage.setItem(LS,JSON.stringify(items))}catch(e){try{localStorage.setItem(LS,JSON.stringify(items.slice(-15)))}catch(_){}}}
+$("salvar").onclick=async()=>{
+  if(!cur.img){ui_.toast("Coloque o print primeiro",1);return}
+  if(!cur.op||!cur.dir){ui_.toast("Escolha o operacional e a direção",1);return}
+  const V=veredito(cur.op,cur.dir,cur.resp);
+  const manual=!V.faltam;
+  if(cur.ia)cur.ia.texto=$("resp").value.trim();
+  if(!cur.ia&&!manual){ui_.toast("Marque o que o Claude disse (Certa/Errada/Incerta) ou responda os itens",1);$("vBox").scrollIntoView({behavior:"smooth",block:"center"});return}
+  const fim=window.ui?ui.busy($("salvar"),"Salvando…"):()=>{};
+  const img=await imagemComSeta();
+  const iaV=cur.ia&&cur.ia.veredito;
+  const a={id:cur.id,data:new Date().toISOString(),op:cur.op,dir:cur.dir,ativo:cur.ativo||"WIN",resp:manual?cur.resp:{},ok:manual?V.ok:iaV==="certo",incerto:!manual&&iaV!=="certo"&&iaV!=="errado",erros:manual?V.erros.map(q=>q.t):[],ia:cur.ia||null,res:cur.res||"",obs:cur.obs||"",img};
+  items=items.filter(x=>x.id!==a.id).concat([a]);lsSave();draw();
+  if(db){try{await db.doc("analises/"+a.id).set(a);$("status").textContent="Salvo"}catch(e){$("status").textContent="Não salvou na conta (imagem grande?). Ficou neste aparelho.";ui_.toast("Não salvou na conta",1)}}
+  else $("status").textContent="Salvo neste aparelho";
+  fim();ui_.done($("salvar"),"Análise salva");
+  novo();$("file").value="";$("obs").value="";$("ctx").value="";$("resp").value="";$("guia").hidden=true;$("aiRes").innerHTML="";drawShot();drawForm();
+  window.scrollTo({top:$("lista").getBoundingClientRect().top+scrollY-80,behavior:"smooth"});
+};
+$("limpar").onclick=()=>{novo();$("file").value="";$("obs").value="";$("ctx").value="";$("resp").value="";$("guia").hidden=true;$("aiRes").innerHTML="";drawShot();drawForm();ui_.toast("Limpo")};
+
+/* ---------- lista ---------- */
+function draw(){
+  const L=items.slice().sort((a,b)=>(b.data||"").localeCompare(a.data||""));
+  // placar
+  const ok=L.filter(a=>a.ok),no=L.filter(a=>!a.ok&&!a.incerto),wr=arr=>{const c=arr.filter(a=>a.res==="win"||a.res==="loss");return c.length?Math.round(c.filter(a=>a.res==="win").length/c.length*100)+"% de win ("+c.length+")":"sem resultado"};
+  $("kTot").textContent=L.length;
+  $("kOk").textContent=L.length?Math.round(ok.length/L.length*100)+"%":"–";$("kOk").className="big pos";$("kOkW").textContent=wr(ok);
+  $("kNo").textContent=L.length?Math.round(no.length/L.length*100)+"%":"–";$("kNo").className="big neg";$("kNoW").textContent=wr(no);
+  if(!L.length){$("lista").innerHTML="<p class='empty'>Nenhuma análise ainda.</p>";return}
+  $("lista").innerHTML=L.map(a=>{
+    const d=new Date(a.data), on=openId===a.id;
+    let h="<button type='button' class='it' data-open='"+a.id+"'>"+(a.img?"<img src='"+a.img+"' alt=''>":"<span></span>")+"<span><b>"+NOME[a.op]+" · "+(a.dir==="put"?"Venda ▼":"Compra ▲")+" · "+(a.ativo||"WIN")+"</b><br><span class='tag "+(a.incerto?"mid":a.ok?"ok":"no")+"'>"+(a.incerto?"incerta":a.ok?"dentro da regra":"fora da regra")+"</span>"+(a.ia?"<span class='tag mid' style='background:var(--accent-soft);color:var(--accent)'>"+(a.ia.fonte==="claude"?"Claude":"IA")+"</span>":"")+(a.res?"<span class='tag "+(a.res==="win"?"w":"l")+"'>"+(a.res==="win"?"Win":"Loss")+"</span>":"")+"<br><span class='hint'>"+d.toLocaleDateString("pt-BR")+" "+d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})+"</span></span></button>";
+    if(on){h+="<div class='panel' style='gap:8px'>"+(a.img?"<img src='"+a.img+"' alt='Print com a seta' style='width:100%;border-radius:8px'>":"")+
+      (a.ia?respostaHTML(a.ia,a.op,a.dir):"<div class='ver "+(a.ok?"ok":"no")+"'><b>"+(a.ok?"✓ Dentro do "+NOME[a.op]:"✕ Fora do "+NOME[a.op])+"</b>"+(a.erros&&a.erros.length?"<ul>"+a.erros.map(t=>"<li>"+esc(t)+"</li>").join("")+"</ul>":"")+"</div>")+
+      (a.obs?"<p style='margin:0'>"+esc(a.obs)+"</p>":"")+
+      "<div class='row'><button type='button' class='btn ghost' data-close>Fechar</button><button type='button' class='btn "+(delArm===a.id?"danger":"ghost")+"' data-del='"+a.id+"'>"+(delArm===a.id?"Confirmar exclusão":"Excluir")+"</button></div></div>"}
+    return h;
+  }).join("");
+}
+$("lista").addEventListener("click",async e=>{
+  const o=e.target.closest("[data-open]");if(o){openId=openId===o.dataset.open?null:o.dataset.open;delArm=null;draw();return}
+  if(e.target.closest("[data-close]")){openId=null;draw();return}
+  const d=e.target.closest("[data-del]");if(!d)return;
+  const id=d.dataset.del;if(delArm!==id){delArm=id;draw();return}
+  items=items.filter(x=>x.id!==id);delArm=null;openId=null;lsSave();draw();ui_.toast("Análise excluída");
+  if(db){try{await db.doc("analises/"+id).delete()}catch(err){}}
+});
+
+
+/* ---------- Claude: o print vai com a legenda desenhada; você cola na SUA conversa ----------
+   Sem chave e sem custo extra. A conversa escolhida fica salva na sua conta. */
+const MANUAL=`MANUAL B3 (mini índice WIN e mini dólar WDO)
+Base: gráfico M2, médias exponenciais 9, 21 e 50. Entrada na abertura da vela seguinte à vela de sinal. Toda entrada já vai com ordem de stop e de alvo (OCO). Alvo = 2x a distância do stop. Máximo 2 operações por dia; para no 1º loss. Valor do ponto: WIN R$ 0,20, WDO R$ 10 por contrato.
+Não opera em nenhum setup quando: as três médias estão emboladas sem espaço entre elas (lateral); faltam 5 min ou menos para notícia de impacto ou ela saiu há menos de 15 min; a vela de sinal é maior que 2x o tamanho médio das últimas 10 velas; o volume da vela de sinal está abaixo da média das últimas 10 velas; o stop técnico passa de WIN 150 pontos ou WDO 5 pontos; são os primeiros 15 minutos do pregão.
+RESPIRO (pullback na zona 9–21). COMPRA: 9 acima da 21, 21 acima da 50, 50 subindo; o preço recua até a zona 9–21 e encosta ou fura um pouco a 21; gatilho: vela fecha acima da 9 com pavio inferior; entrada na abertura da vela seguinte; stop 1–2 ticks abaixo da mínima da vela de sinal ou da 21 (o mais baixo). VENDA: espelho (9 abaixo da 21, 21 abaixo da 50, 50 caindo; vela fecha abaixo da 9 com pavio superior; stop acima da máxima do sinal ou da 21, o mais alto). Não entra se: no recuo o preço furou a 50; a 50 está deitada; já é o 3º recuo seguido.
+VIRADA (cruzamento 9 x 21 a favor da 50). COMPRA: preço acima da 50; a 9 cruza a 21 para cima; gatilho: primeira vela verde que fecha depois do cruzamento; entrada na vela seguinte; stop 1–2 ticks abaixo da menor mínima das últimas 3 velas. VENDA: espelho (abaixo da 50, cruza para baixo, primeira vela vermelha, stop acima da maior máxima das últimas 3 velas). Não entra se: 9 e 21 cruzaram mais de 2 vezes nas últimas 15 velas; a 50 está deitada ou o preço cruzou a 50 nas últimas 10 velas; a vela de confirmação fecha colada na 50.
+MURALHA (rejeição na 50). COMPRA: 21 acima da 50 e 50 subindo; o preço cai até tocar a 50; gatilho: vela com pavio inferior maior ou igual ao corpo que fecha acima da 50; entrada na vela seguinte; stop 1–2 ticks abaixo do pavio da vela de sinal. VENDA: espelho (pavio superior, fecha abaixo da 50, stop acima do pavio). Não entra se: 3º toque seguido na 50; a vela de sinal fecha do outro lado da 50; a 50 está deitada.
+GIRO (reversão: o preço rompe a 50 e as médias viram). COMPRA: antes o mercado vinha caindo (9 abaixo da 21, 21 abaixo da 50); uma vela de corpo cheio fecha acima da 50; a 9 cruza a 21 para cima; o preço recua até a 9 ou a 50 sem fechar abaixo da 50; gatilho: vela verde fecha acima da 50; entrada na vela seguinte (nunca no rompimento); stop 1–2 ticks abaixo da 50 ou da mínima do recuo (o mais baixo). VENDA: espelho. Não entra se: a 50 ainda está bem inclinada contra a entrada; a vela do rompimento é maior que 2x a média das últimas 10 velas; no recuo uma vela fechou de volta do outro lado da 50; passaram mais de 10 velas desde o rompimento sem o recuo; o preço já rompeu e voltou pela 50 nas últimas 20 velas. Reversão costuma acertar menos.
+Horários: manhã 09:15–11:30 e tarde 14:00–16:30. Evitar primeiros 15 min, notícias dos EUA (09:30 até 01/11, 10:30 depois) e abertura de Nova York (10:30 até 01/11, 11:30 depois), IPCA/Copom/FOMC e almoço.`;
+const CONFIG_MSG=MANUAL+`
+
+Esta conversa é só para analisar minhas entradas na B3 (WIN e WDO). Vou mandar prints do gráfico M2. Cada print tem uma faixa escura no topo dizendo o operacional, a direção (compra ou venda), o ativo e às vezes uma observação. Se o stop e o alvo aparecerem no print, confira também se estão no lugar do manual e se o alvo é 2x o stop. No gráfico há um círculo e uma seta (verde para cima = compra, vermelha para baixo = venda) marcando a vela em que ENTREI; a vela de sinal é a anterior.
+Para cada print, compare só pelo que dá para ver com as regras do operacional informado e com os filtros da Base. Se algo não dá para confirmar no print, diga em vez de chutar. Responda em português, curto, neste formato:
+VEREDITO: CERTA, ERRADA ou INCERTA (confiança alta/média/baixa)
+Critérios: um por linha com ✓, ✕ ou ?
+Outro setup que combina mais (se houver)
+Para a próxima: 1 frase
+Quando eu mandar só texto, é uma dúvida: responda com base no manual, direto e prático, dizendo o que é opinião quando sair do manual.
+Se entendeu, responda só: Pronto.`;
+const CFG="analiseB3.claudeUrl";
+const celular=()=>matchMedia("(pointer:coarse)").matches||/Android|iPhone|iPad/i.test(navigator.userAgent);
+const getUrl=()=>{try{return localStorage.getItem(CFG)||""}catch(e){return ""}};
+function cfgState(){const u=getUrl();$("cfgState").textContent=u?"✓ configurada":"não configurada — toque aqui";$("cfgState").style.color=u?"var(--win)":"var(--warn)";if(document.activeElement!==$("cfgUrl"))$("cfgUrl").value=u}
+async function copiarTexto(t){try{await navigator.clipboard.writeText(t);return true}catch(e){
+  try{const a=document.createElement("textarea");a.value=t;a.style.position="fixed";a.style.opacity="0";document.body.appendChild(a);a.select();const ok=document.execCommand("copy");a.remove();return ok}catch(_){return false}}}
+function abrirConversa(fallbackTexto){
+  const u=getUrl();
+  if(u){window.open(u,"_blank");return true}
+  const q=fallbackTexto?"https://claude.ai/new?q="+encodeURIComponent(fallbackTexto):"https://claude.ai/new";
+  window.open(q.length<7500?q:"https://claude.ai/new","_blank");return false;
+}
+/* print final: faixa com a legenda + gráfico + seta */
+let PNG=null, PNGkey="";
+function chavePrint(){return [cur.ativo,cur.img&&cur.img.length,cur.seta&&cur.seta.x,cur.seta&&cur.seta.y,cur.op,cur.dir,$("ctx").value].join("|")}
+function linhas(g,txt,max){const out=[];txt.split("\n").forEach(par=>{let l="";par.split(" ").forEach(w=>{const t=l?l+" "+w:w;if(g.measureText(t).width>max&&l){out.push(l);l=w}else l=t});out.push(l)});return out}
+function gerarPrint(){return new Promise(ok=>{
+  if(!cur.img)return ok(null);
+  const im=new Image();im.onload=()=>{
+    const k=Math.min(1,1400/im.width),W=Math.round(im.width*k),H=Math.round(im.height*k);
+    const fs=Math.max(15,Math.round(W/38)),pad=Math.round(fs*.8);
+    const tmp=document.createElement("canvas").getContext("2d");
+    const lado=(cur.dir==="put"?"VENDA ▼":"COMPRA ▲")+" · "+(cur.ativo||"WIN"), ctx=$("ctx").value.trim();
+    tmp.font="700 "+fs+"px system-ui,sans-serif";
+    const l1="ENTRADA: "+(NOME[cur.op]||"?").toUpperCase()+" · "+lado;
+    tmp.font=Math.round(fs*.78)+"px system-ui,sans-serif";
+    const ls=linhas(tmp,"Seta = vela em que entrei (o sinal é a vela anterior)"+(ctx?"\nObs.: "+ctx:""),W-pad*2);
+    const band=pad*2+fs+ls.length*Math.round(fs*1.05);
+    const c=document.createElement("canvas");c.width=W;c.height=H+band;const g=c.getContext("2d");
+    g.fillStyle="#0B1220";g.fillRect(0,0,W,band);
+    g.fillStyle=cur.dir==="put"?"#FB7185":"#4ADE80";g.font="700 "+fs+"px system-ui,sans-serif";g.textBaseline="top";g.fillText(l1,pad,pad);
+    g.fillStyle="#E6EDFA";g.font=Math.round(fs*.78)+"px system-ui,sans-serif";ls.forEach((t,i)=>g.fillText(t,pad,pad+fs+Math.round(fs*.35)+i*Math.round(fs*1.05)));
+    g.drawImage(im,0,band,W,H);
+    if(cur.seta){const x=cur.seta.x*W,y=band+cur.seta.y*H,s=Math.max(W,H)/55,up=cur.dir!=="put",col=up?"#00E676":"#FF1744";
+      g.strokeStyle=col;g.fillStyle=col;g.lineWidth=s*.45;g.lineCap="round";g.beginPath();g.arc(x,y,s*.9,0,7);g.stroke();
+      const y1=up?y+s*1.3:y-s*1.3,y0=up?y+s*5:y-s*5;g.beginPath();g.moveTo(x,y0);g.lineTo(x,up?y1+s:y1-s);g.stroke();
+      g.beginPath();g.moveTo(x,y1);g.lineTo(x-s,up?y1+s*1.4:y1-s*1.4);g.lineTo(x+s,up?y1+s*1.4:y1-s*1.4);g.closePath();g.fill()}
+    c.toBlob(b=>ok(b),"image/png");
+  };im.src=cur.img})}
+/* deixa o print pronto antes do toque (copiar imagem precisa ser imediato no clique) */
+let prepT=null;
+function prepararPrint(){clearTimeout(prepT);prepT=setTimeout(async()=>{
+  const ready=cur.img&&cur.seta&&cur.op&&cur.dir;$("prev").hidden=!ready;if(!ready){PNG=null;return}
+  const key=chavePrint();if(key===PNGkey&&PNG)return;
+  const b=await gerarPrint();PNG=b;PNGkey=key;
+  if($("prev").dataset.url)URL.revokeObjectURL($("prev").dataset.url);
+  const u=URL.createObjectURL(b);$("prev").src=u;$("prev").dataset.url=u;
+},150)}
+function faltando(){
+  if(!cur.img){ui_.toast("Coloque o print primeiro",1);return true}
+  if(!cur.seta){ui_.toast("Toque na vela em que entrou",1);return true}
+  if(!cur.op||!cur.dir){ui_.toast("Escolha o operacional e a direção",1);return true}
+  if(!PNG||PNGkey!==chavePrint()){prepararPrint();ui_.toast("Preparando o print, toque de novo",1);return true}
+  return false;
+}
+function baixarPrint(){const a=document.createElement("a");a.href=URL.createObjectURL(PNG);a.download="entrada-"+cur.op+"-"+cur.dir+".png";document.body.appendChild(a);a.click();a.remove()}
+function guia(id,passos){$(id).innerHTML="<b>Na conversa:</b><ol>"+passos.map(p=>"<li>"+p+"</li>").join("")+"</ol>";$(id).hidden=false}
+const semConv="<b>Dica:</b> configure a sua conversa de análise (quadro <i>Minha conversa de análise</i>, lá embaixo) para cair sempre nela.";
+$("aiGo").onclick=async()=>{
+  if(faltando())return;
+  let copiou=false;
+  try{if(window.ClipboardItem&&navigator.clipboard&&navigator.clipboard.write){await navigator.clipboard.write([new ClipboardItem({"image/png":PNG})]);copiou=true}}catch(e){copiou=false}
+  const tem=abrirConversa();
+  const p=copiou
+    ?[celular()?"Toque e segure na caixa de mensagem e escolha <b>Colar</b> (o print vai com a legenda).":"Clique na caixa de mensagem e aperte <b>Ctrl+V</b> (o print vai com a legenda).","Envie, leia o parecer e volte aqui para marcar Certa/Errada."]
+    :["Este navegador não deixou copiar a imagem. "+(celular()?"Toque em <b>Salvar print</b> e anexe pelo 📎 na conversa, ou segure o dedo na imagem acima ▸ <b>Copiar imagem</b>.":"Clique com o botão direito na imagem acima ▸ <b>Copiar imagem</b>, e cole na conversa com Ctrl+V."),"Envie, leia o parecer e volte aqui para marcar Certa/Errada."];
+  if(!tem)p.push(semConv);
+  guia("guia",p);
+  $("guia").insertAdjacentHTML("beforeend","<a class='btn ghost' href='"+(getUrl()||"https://claude.ai/new")+"' target='_blank' rel='noopener' style='text-decoration:none;justify-self:start'>Abrir a conversa ↗</a>");
+  ui_.done($("aiGo"),copiou?"Print copiado":"Conversa aberta");
+};
+$("aiSave").onclick=async()=>{
+  if(faltando())return;
+  const file=new File([PNG],"entrada-"+cur.op+"-"+cur.dir+".png",{type:"image/png"});
+  if(celular()&&navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file]})}catch(e){if(e.name!=="AbortError")baixarPrint()}
+  }else baixarPrint();
+  guia("guia",["Abra a sua conversa de análise e anexe o print pelo 📎 (ou arraste para a conversa no PC).","Envie, leia o parecer e volte aqui para marcar Certa/Errada."]);
+  ui_.done($("aiSave"),"Print salvo");
+};
+$("vSeg").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(!b)return;
+  cur.ia=cur.ia&&cur.ia.veredito===b.dataset.v?null:{veredito:b.dataset.v,fonte:"claude",texto:$("resp").value.trim()};drawForm()});
+$("resp").addEventListener("input",e=>{if(cur.ia)cur.ia.texto=e.target.value.trim()});
+$("ctx").addEventListener("input",prepararPrint);
+/* configuração da conversa */
+$("cfgCopy").onclick=async()=>{const ok=await copiarTexto(CONFIG_MSG);ui_.toast(ok?"✓ Mensagem copiada: cole na conversa nova":"Não consegui copiar",!ok)};
+$("cfgSave").onclick=async()=>{
+  const u=$("cfgUrl").value.trim();
+  if(!/^https:\/\/claude\.ai\//.test(u)){ui_.toast("Cole um link que comece com https://claude.ai/",1);return}
+  try{localStorage.setItem(CFG,u)}catch(e){}
+  if(db){try{await db.doc("config/claude").set({url:u})}catch(e){}}
+  cfgState();ui_.done($("cfgSave"),"Link salvo");setTimeout(()=>{$("cfgBox").open=false},900);
+};
+$("cfgDel").onclick=async()=>{try{localStorage.removeItem(CFG)}catch(e){}if(db){try{await db.doc("config/claude").delete()}catch(e){}}cfgState();ui_.toast("Link removido")};
+
+function parecerHTML(r,op,dir){
+  r=r||{};const v=r.veredito==="certo"?"ok":r.veredito==="errado"?"no":"mid";
+  const t=v==="ok"?"✓ Entrada certa no "+NOME[op]:v==="no"?"✕ Entrada fora do "+NOME[op]:"? Não deu para confirmar";
+  return "<div class='ver "+v+"'><b>"+t+"</b><span class='hint'>"+(dir==="put"?"Venda ▼":"Compra ▲")+" · confiança "+esc(r.confianca||"–")+"</span><div>"+esc(r.resumo)+"</div>"+
+    "<div class='crit2'>"+(r.criterios||[]).map(c=>"<div class='ci'><b class='"+(c.ok===true?"y":c.ok===false?"n":"qq")+"'>"+(c.ok===true?"✓":c.ok===false?"✕":"?")+"</b><span>"+esc(c.item)+"<small>"+esc(c.obs)+"</small></span></div>").join("")+"</div>"+
+    (r.melhor_setup?"<div><b>Outro setup:</b> "+esc(r.melhor_setup)+"</div>":"")+(r.conselho?"<div><b>Para a próxima:</b> "+esc(r.conselho)+"</div>":"")+"</div>";
+}
+function respostaHTML(r,op,dir){
+  if(!r)return "";if(r.criterios||r.resumo)return parecerHTML(r,op,dir);
+  const v=r.veredito==="certo"?"ok":r.veredito==="errado"?"no":"mid";
+  const t=v==="ok"?"✓ Claude: entrada certa no "+NOME[op]:v==="no"?"✕ Claude: entrada fora do "+NOME[op]:"? Claude: não deu para confirmar";
+  return "<div class='ver "+v+"'><b>"+t+"</b>"+(r.texto?"<div style='white-space:pre-wrap'>"+esc(r.texto)+"</div>":"")+"</div>";
+}
+
+/* dúvidas: copia a pergunta e abre a sua conversa (que já tem o manual) */
+async function perguntar(txt){
+  txt=txt.trim();if(!txt){ui_.toast("Escreva a dúvida",1);return}
+  const u=getUrl();
+  const t=u?txt:MANUAL+"\n\nEsse é o meu manual de day trade na B3. Responda com base nele, em português, direto e prático.\n\nMinha dúvida: "+txt;
+  await copiarTexto(t);
+  abrirConversa(t);
+  guia("guiaQ",u?[celular()?"Toque e segure na caixa de mensagem e escolha <b>Colar</b>.":"Clique na caixa de mensagem e aperte <b>Ctrl+V</b>.","Envie e o Claude responde com base no seu manual."]:["Abriu uma conversa nova já com a pergunta e o seu manual (se vier vazia, cole: está copiado).",semConv]);
+  ui_.done($("send"),"Copiado");
+}
+$("chatForm").addEventListener("submit",e=>{e.preventDefault();perguntar($("q").value)});
+$("chips").addEventListener("click",e=>{const b=e.target.closest("button");if(b){$("q").value=b.textContent;perguntar(b.textContent)}});
+try{items=JSON.parse(localStorage.getItem(LS)||"[]")}catch(e){items=[]}
+$("cfgTxt").value=CONFIG_MSG;
+cfgState();if(!getUrl()||location.hash==="#cfgBox"){$("cfgBox").open=true;if(location.hash==="#cfgBox")setTimeout(()=>$("cfgBox").scrollIntoView({block:"start"}),300)}
+draw();drawForm();$("status").textContent="Conectando…";
+(async()=>{
+  try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
+  if(!db){$("status").textContent="Salvando neste aparelho";return}
+  db.doc("config/claude").onSnapshot(d=>{const u=d.exists&&d.data().url;
+    if(u&&u!==getUrl()){try{localStorage.setItem(CFG,u)}catch(e){}cfgState()}
+    else if(!u&&getUrl())db.doc("config/claude").set({url:getUrl()}).catch(()=>{});
+  },()=>{});
+  let first=true;
+  db.collection("analises").onSnapshot(q=>{
+    const remote=q.docs.map(d=>d.data()), ids=new Set(remote.map(x=>x.id));
+    if(first){first=false;items.filter(a=>!ids.has(a.id)).forEach(a=>{remote.push(a);db.doc("analises/"+a.id).set(a).catch(()=>{})})}
+    items=remote;lsSave();draw();$("status").textContent="Sincronizado";
+  },()=>{$("status").textContent="Sem conexão com o salvamento"});
+})();
+</script>
+</body></html>

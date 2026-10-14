@@ -1,7 +1,7 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="checklist-b3"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Check-list B3</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="checklist-b3m"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Check-list B3</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: 4 perguntas do dia, veredito, calendário seg–sex de 13/10 a 17/12. */
+/* Layout: abas manhã/tarde com a janela da sessão, 4 perguntas, veredito, calendário seg–sex 13/10–17/12. */
 :root{
   --bg:#EEF3FC; --surface:#FFFFFF; --line:#DDE4F2; --fg:#13203B; --muted:#58668A;
   --accent:#2563EB; --accent-soft:#DCE7FF; --win:#15803D; --win-soft:#DCFCE7; --loss:#E11D48; --loss-soft:#FFE4EA; --part:#D97706; --part-soft:#FEF3C7;
@@ -69,13 +69,13 @@ img,svg{max-width:100%}
 </style>
 <div class="wrap">
   <div class="top">
-    <div><h1>Check-list B3</h1><div class="sub">Responda antes de operar, das 09:45 às 14:00. Quatro "sim" liberam o dia.</div></div>
+    <div><h1>Check-list B3</h1><div class="sub">WIN e WDO · M2 · responda antes de cada sessão. Quatro "sim" liberam a sessão.</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
   <div class="panel">
     <h2 id="dTitle">Hoje</h2>
+    <div class="tabs" id="tabs"></div>
     <div class="jan" id="jan"></div>
-    <div class="tabs" id="tabs" hidden></div>
     <div id="qs"></div>
     <div class="verdict" id="verdict"></div>
     <div class="lock" id="lock" hidden></div>
@@ -83,19 +83,23 @@ img,svg{max-width:100%}
   </div>
   <div class="panel">
     <div id="cal" style="display:grid;gap:18px"></div>
-    <div class="legend"><span><i style="background:var(--win)"></i>liberado</span><span><i style="background:var(--loss-soft)"></i>não liberado</span></div>
+    <div class="legend"><span><i style="background:var(--win)"></i>2 sessões liberadas</span><span><i style="background:var(--part-soft)"></i>1 sessão liberada</span><span><i style="background:var(--loss-soft)"></i>não liberado</span></div>
   </div>
 </div>
 <script>
-const START="2026-10-13", END="2026-12-17", LS="checklistB3.v1";
-const SESS=[{id:"sessao",nome:"Janela",h:"09:45–14:00"}];
+const START="2026-10-14", END="2026-12-17", LS="checklistB3m.v1";
+// horários de Brasília do manual: mudam em 02/11 (Europa e EUA trocam o relógio)
+function janelas(ds){return {manha:["09:15","11:30"],tarde:["14:00","16:30"]}}
+const noticiaEUA=ds=>ds>="2026-11-02"?"10:30":"09:30", aberturaNY=ds=>ds>="2026-11-02"?"11:30":"10:30";
+const SESS=[{id:"manha",nome:"Manhã"},{id:"tarde",nome:"Tarde"}];
+const hj=(ds,id)=>janelas(ds)[id].join("–");
 const QS=[
-  {id:"hor",k:"Janela de horário",t:"Estou dentro do meu horário de operar, das 09:45 às 14:00?"},
-  {id:"op",k:"Operacional",t:"Vou entrar só num operacional do Além da Previsão, com todos os critérios dele confirmados?"},
-  {id:"ger",k:"Gerenciamento",t:"Vou usar só os contratos do meu degrau no Progresso, fazer no máximo 2 operações e parar no primeiro loss?"},
+  {id:"hor",k:"Janela de horário",t:ds=>{const [a,b]=janelas(ds)[sess];return "Estou dentro da janela da "+(sess==="manha"?"manhã":"tarde")+", das "+a+" às "+b+", fora dos 15 min depois da notícia dos EUA ("+noticiaEUA(ds)+") e da abertura de Nova York ("+aberturaNY(ds)+"), e conferi o calendário (IPCA, Copom, FOMC)?"}},
+  {id:"op",k:"Operacional",t:"Vou entrar só em Respiro, Virada, Muralha ou Giro no M2, com médias 9, 21 e 50 espaçadas, volume da vela de sinal acima da média, stop técnico dentro do limite (WIN 150 pts · WDO 5 pts) e todos os filtros do manual conferidos?"},
+  {id:"ger",k:"Gerenciamento",t:"Contratos do meu degrau no Progresso, ordem com stop e alvo de 2x o stop junto (OCO), no máximo 2 operações no dia e paro no 1º loss?"},
   {id:"men",k:"Mentalidade",t:"Estou calmo, sem vontade de recuperar nada, e aceito o stop se ele vier?"}
 ];
-let data={}, db=null, sel=null, sess="sessao", draft=null;
+let data={}, db=null, sel=null, sess="manha", draft=null;
 const $=id=>document.getElementById(id);
 function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
 const fmt=ds=>new Date(ds+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit"});
@@ -107,12 +111,12 @@ function pick(ds){sel=ds;draft=JSON.parse(JSON.stringify(data[ds]||{}));render()
 function render(){
   $("dTitle").textContent=fmt(sel);
   const t=$("tabs");t.innerHTML="";
-  SESS.forEach(s=>{const b=document.createElement("button");b.type="button";b.className=s.id===sess?"on":"";b.innerHTML=s.nome+"<span class='h'>"+s.h+"</span>";b.onclick=()=>{sess=s.id;render()};t.appendChild(b)});
+  SESS.forEach(s=>{const b=document.createElement("button");b.type="button";b.className=s.id===sess?"on":"";b.innerHTML=s.nome+"<span class='h'>"+hj(sel,s.id)+"</span>";b.onclick=()=>{sess=s.id;render()};t.appendChild(b)});
   const can=editable(sel), cur=(draft[sess]||{});
   const box=$("qs");box.innerHTML="";
   QS.forEach(q=>{
     const d=document.createElement("div");d.className="q";
-    d.innerHTML="<span class='k'>"+q.k+"</span><p>"+q.t+"</p>";
+    d.innerHTML="<span class='k'>"+q.k+"</span><p>"+(typeof q.t==="function"?q.t(sel):q.t)+"</p>";
     const yn=document.createElement("div");yn.className="yn";
     [["s","Sim",true],["n","Não",false]].forEach(([c,l,v])=>{
       const b=document.createElement("button");b.type="button";b.textContent=l;b.className=c+(cur[q.id]===v?" on":"");b.disabled=!can;
@@ -122,16 +126,18 @@ function render(){
     d.appendChild(yn);box.appendChild(d);
   });
   const v=$("verdict"), answered=QS.every(q=>typeof cur[q.id]==="boolean");
-  if(ok(cur)){v.className="verdict ok";v.innerHTML="<b>Liberado para operar</b><span>Até 14:00, no máximo 2 operações. Deu loss, encerra o dia.</span>"}
-  else if(answered){v.className="verdict no";v.innerHTML="<b>Não operar hoje</b><span>Algum item ficou em não. Fecha a plataforma e volta amanhã.</span>"}
-  else{v.className="verdict";v.innerHTML="<b>Responda as 4 perguntas</b><span>Quatro sim liberam o dia.</span>"}
+  if(ok(cur)){v.className="verdict ok";v.innerHTML="<b>Liberado para operar</b><span>Sessão da "+(sess==="manha"?"manhã":"tarde")+" até "+janelas(sel)[sess][1]+". No máximo 2 operações no dia, sempre com stop e alvo 2x; deu loss, encerra o dia.</span>"}
+  else if(answered){v.className="verdict no";v.innerHTML="<b>Não operar nesta sessão</b><span>Algum item ficou em não. Fecha a plataforma e volta na próxima sessão.</span>"}
+  else{v.className="verdict";v.innerHTML="<b>Responda as 4 perguntas</b><span>Quatro sim liberam a sessão.</span>"}
   $("acts").hidden=!can; $("lock").hidden=can;
   $("lock").textContent= sel<today()?"Dia encerrado. Só visualização.":"Esse dia ainda não chegou. O check-in abre no próprio dia.";
   drawJan();drawCal();
 }
 function drawJan(){
-  const d=new Date(), m=d.getHours()*60+d.getMinutes(), dentro=m>=9*60+45&&m<14*60&&!isWE(today());
-  $("jan").innerHTML="<span>Janela de operação: <b>09:45 às 14:00</b></span>"+(sel===today()?"<span class='ag "+(dentro?"in":"out")+"'>"+(dentro?"agora: dentro do horário":"agora: fora do horário")+"</span>":"");
+  const J=janelas(sel), mm=t=>{const [h,m]=t.split(":").map(Number);return h*60+m};
+  const d=new Date(), m=d.getHours()*60+d.getMinutes(), [a,b]=J[sess], dentro=m>=mm(a)&&m<mm(b)&&!isWE(today());
+  $("jan").innerHTML="<span>Estou no horário de operar da "+(sess==="manha"?"manhã":"tarde")+": <b>"+a+" às "+b+"</b></span>"+(sel===today()?"<span class='ag "+(dentro?"in":"out")+"'>"+(dentro?"agora: dentro do horário":"agora: fora do horário")+"</span>":"")+
+    "<span class='hint' style='flex-basis:100%;color:var(--muted);font-size:.78rem'>Manhã "+J.manha.join("–")+" · Tarde "+J.tarde.join("–")+" · notícia EUA "+noticiaEUA(sel)+" · abertura NY "+aberturaNY(sel)+"</span>";
 }
 setInterval(()=>{if($("jan"))drawJan()},60000);
 function drawCal(){
@@ -149,10 +155,10 @@ function drawCal(){
       const b=document.createElement("button");b.type="button";b.textContent=d;
       if(ds>END)break;
       if(ds<START){b.className="day blank";g.appendChild(b);continue}
-      const rec=data[ds], n=rec&&ok(rec.sessao)?1:0;
+      const rec=data[ds], n=rec?SESS.filter(s=>ok(rec[s.id])).length:0;
       let cls="day";
       if(isWE(ds)){cls+=" we";b.disabled=true}
-      else if(rec&&Object.keys(rec).length) cls+= n===1?" full":" none";
+      else if(rec&&Object.keys(rec).length) cls+= n===2?" full":n===1?" half":" none";
       if(ds===t)cls+=" today"; if(ds===sel)cls+=" sel";
       b.className=cls; b.setAttribute("aria-label",fmt(ds));
       if(!isWE(ds)) b.onclick=()=>pick(ds);
@@ -170,7 +176,7 @@ $("bSave").onclick=async()=>{
   else{try{localStorage.setItem(LS,JSON.stringify(data))}catch(e){}$("status").textContent="Salvo neste aparelho";window.ui&&ui.done($("bSave"),"Salvo")}
 };
 load();
-{const t=today();sel=t<START?START:t>END?END:t}
+{const t=today();sel=t<START?START:t>END?END:t;const J=janelas(sel),h=new Date().getHours()*60+new Date().getMinutes(),[th,tm]=J.manha[1].split(":").map(Number);if(h>=th*60+tm)sess="tarde"}
 draft=JSON.parse(JSON.stringify(data[sel]||{}));render();$("status").textContent="Conectando…";
 (async()=>{
   try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}

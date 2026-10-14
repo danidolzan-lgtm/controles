@@ -159,7 +159,9 @@ textarea#ctx,textarea#q,textarea#resp{min-height:52px}
       <li>Toque em <b>Copiar mensagem de configuração</b> e cole como primeira mensagem. Ela leva o seu manual e explica como analisar os prints.</li>
       <li>Copie o link dessa conversa (no app: compartilhar ▸ copiar link, ou a barra de endereço no PC) e cole aqui embaixo.</li>
     </ol>
+    <textarea id="cfgTxt" readonly rows="6" style="font:inherit;font-size:.8rem;width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--muted)"></textarea>
     <div class="row"><button type="button" class="btn ghost" id="cfgCopy">Copiar mensagem de configuração</button></div>
+    <p class="hint" style="margin:0">Abra o link no aparelho/navegador em que você está logado na sua conta <b>pessoal</b> do Claude. Se abrir em outra conta, a conversa não aparece.</p>
     <label class="hint" for="cfgUrl">Link da conversa<input id="cfgUrl" type="url" inputmode="url" placeholder="https://claude.ai/chat/…" style="font:inherit;width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)"></label>
     <div class="row"><button type="button" class="btn" id="cfgSave">Salvar link</button><button type="button" class="btn ghost" id="cfgDel">Tirar link</button></div>
   </details>
@@ -512,7 +514,8 @@ $("chips").addEventListener("click",e=>{const b=e.target.closest("button");if(b)
 // a chave do Gemini não é mais usada: apaga deste aparelho
 try{localStorage.removeItem("analiseOB.geminiKey");localStorage.removeItem("analiseOB.geminiModel")}catch(e){}
 try{items=JSON.parse(localStorage.getItem(LS)||"[]")}catch(e){items=[]}
-cfgState();if(!getUrl())$("cfgBox").open=true;
+$("cfgTxt").value=CONFIG_MSG;
+cfgState();if(!getUrl()||location.hash==="#cfgBox"){$("cfgBox").open=true;if(location.hash==="#cfgBox")setTimeout(()=>$("cfgBox").scrollIntoView({block:"start"}),300)}
 draw();drawForm();$("status").textContent="Conectando…";
 (async()=>{
   try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}

@@ -1,0 +1,438 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="manual-b3"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Manual B3</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<style>
+:root{
+  --bg:#EEF3FC; --surface:#FFFFFF; --line:#DDE4F2; --fg:#13203B; --muted:#58668A;
+  --accent:#2563EB; --accent-soft:#DCE7FF; --warm:#EA580C; --win:#15803D; --loss:#E11D48; --warn:#B45309; --warn-soft:#FEF3C7;
+  --m50:#7C3AED;
+  --f-display:"Archivo",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7; --accent:#60A5FA; --accent-soft:#1E3A8A; --warm:#FB923C; --win:#4ADE80; --loss:#FB7185; --warn:#FBBF24; --warn-soft:#3F2A06; --m50:#A78BFA; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7; --accent:#60A5FA; --accent-soft:#1E3A8A; --warm:#FB923C; --win:#4ADE80; --loss:#FB7185; --warn:#FBBF24; --warn-soft:#3F2A06; --m50:#A78BFA; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15.5px;line-height:1.55}
+.wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:20px 56px;display:grid;gap:16px}
+.wrap>*{min-width:0}
+h1{font-family:var(--f-display);font-weight:800;font-size:1.6rem;margin:0}
+h2{font-family:var(--f-display);font-weight:800;font-size:1.3rem;margin:0}
+h3{font-family:var(--f-display);font-size:1rem;margin:0}
+p{margin:0}
+.sub,.hint{color:var(--muted);font-size:.85rem}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.back{color:var(--accent);text-decoration:none;font-weight:600;font-size:.9rem}
+.panel{scroll-margin-top:150px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:12px;min-width:0}
+.lbl{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px}
+.kpi{border:1px solid var(--line);border-radius:8px;padding:10px}
+.kpi b{display:block;font-family:var(--f-num);font-weight:600;font-size:1.05rem}
+nav.tabs{display:flex;gap:6px;flex-wrap:wrap;position:sticky;top:48px;z-index:2;background:var(--bg);padding-block:8px}
+nav.tabs a{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:6px;padding:6px 12px;text-decoration:none;font-weight:600;font-size:.88rem}
+nav.tabs a:hover{border-color:var(--accent);color:var(--accent)}
+ul,ol{margin:0;padding-left:20px;display:grid;gap:4px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:12px}
+.box{border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;gap:8px;min-width:0}
+.box.call{border-left:4px solid var(--win)}
+.box.put{border-left:4px solid var(--loss)}
+.box.no{border-left:4px solid var(--warn);background:var(--warn-soft)}
+.tag{display:inline-block;font-family:var(--f-num);font-size:.75rem;font-weight:600;padding:2px 8px;border-radius:5px;color:var(--surface)}
+.tag.call{background:var(--win)} .tag.put{background:var(--loss)}
+.name{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.name small{color:var(--muted)}
+figure{margin:0;display:grid;gap:6px}
+figure svg{width:100%;height:auto;display:block;background:var(--bg);border-radius:8px}
+figcaption{font-size:.84rem;color:var(--muted)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}
+.legend i{display:inline-block;width:16px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+td.t{font-family:var(--f-num);white-space:nowrap}
+.scroll{overflow-x:auto}
+.calc{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+label{display:grid;gap:4px;font-size:.75rem;color:var(--muted)}
+input,select{font:inherit;font-family:var(--f-num);border:1px solid var(--line);border-radius:7px;padding:8px 10px;background:var(--surface);color:var(--fg);width:120px}
+select:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.out{font-family:var(--f-num);font-weight:600;font-size:1.1rem}
+.pos{color:var(--win)} .neg{color:var(--loss)}
+.fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:5;display:flex;gap:8px;opacity:0;transform:translateY(12px);pointer-events:none;transition:opacity .2s,transform .2s}
+.fab.on{opacity:1;transform:none;pointer-events:auto}
+.fab a,.fab button{appearance:none;font:inherit;font-weight:600;font-size:.9rem;border-radius:999px;padding:10px 16px;text-decoration:none;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.18);border:1px solid var(--accent)}
+.fab a{background:var(--accent);color:var(--surface)}
+.fab button{background:var(--surface);color:var(--accent);padding:10px 14px}
+.fab a:active,.fab button:active{transform:scale(.96)}
+.wrap{padding-bottom:96px}
+.note{background:var(--accent-soft);border-radius:8px;padding:10px 12px;font-size:.9rem}
+</style>
+<div class="wrap">
+
+  <div class="top">
+    <div>
+      <h1>Manual B3</h1>
+      <div class="sub">Mini índice (WIN) e mini dólar (WDO) · M2 · EMAs 9, 21 e 50 · stop e alvo</div>
+    </div>
+  </div>
+
+  <nav class="tabs" aria-label="Seções">
+    <a href="#base">Base</a>
+    <a href="#respiro">Respiro</a>
+    <a href="#virada">Virada</a>
+    <a href="#muralha">Muralha</a>
+    <a href="#giro">Giro</a>
+    <a href="#horarios">Horários</a>
+    <a href="#risco">Risco</a>
+    <a href="#validar">Validar</a>
+  </nav>
+
+  <!-- BASE -->
+  <section class="panel" id="base">
+    <h2>Base de tudo</h2>
+    <div class="kpis">
+      <div class="kpi"><span class="lbl">Tempo gráfico</span><b>M2</b></div>
+      <div class="kpi"><span class="lbl">Ativos</span><b>WIN · WDO</b></div>
+      <div class="kpi"><span class="lbl">Médias (exponenciais)</span><b>9 · 21 · 50</b></div>
+      <div class="kpi"><span class="lbl">Entrada</span><b>Abertura da vela seguinte</b></div>
+      <div class="kpi"><span class="lbl">Alvo</span><b>2x o stop</b></div>
+      <div class="kpi"><span class="lbl">Por dia</span><b>Máx. 2 · para no 1º loss</b></div>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--warm)"></i>EMA 9</span>
+      <span><i style="background:var(--accent)"></i>EMA 21</span>
+      <span><i style="background:var(--m50)"></i>EMA 50</span>
+      <span><i style="background:var(--loss)"></i>Stop</span>
+      <span><i style="background:var(--win)"></i>Alvo</span>
+    </div>
+    <div class="note">A lógica dos setups é a mesma da OB. O que muda é a saída: em vez de expiração, toda entrada já vai com <b>ordem de stop e de alvo</b> junto (OCO). Nunca entre sem stop.</div>
+    <div class="box no">
+      <h3>Não opera em nenhum setup quando</h3>
+      <ul>
+        <li>As três médias estão emboladas, sem espaço entre elas (mercado lateral).</li>
+        <li>Faltam 5 minutos ou menos para uma notícia de impacto, ou ela saiu há menos de 15 minutos.</li>
+        <li>A vela de sinal é maior que 2x o tamanho médio das últimas 10 velas.</li>
+        <li>O <b>volume</b> da vela de sinal está abaixo da média das últimas 10 velas.</li>
+        <li>O stop técnico passa do limite: <b>WIN 150 pontos</b> ou <b>WDO 5 pontos</b>.</li>
+        <li>São os primeiros 15 minutos do pregão.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- RESPIRO -->
+  <section class="panel" id="respiro">
+    <div class="name"><h2>Respiro</h2><small>pullback na zona 9–21</small></div>
+    <p>O mercado está em tendência, dá uma "respirada" até a média de 21 e volta a andar. Você entra na volta.</p>
+    <div class="two">
+      <div class="box call">
+        <span><span class="tag call">COMPRA</span></span>
+        <ol>
+          <li>Médias alinhadas: 9 acima da 21, 21 acima da 50, com a 50 subindo.</li>
+          <li>O preço recua até a zona entre a 9 e a 21 e encosta ou fura um pouco a 21.</li>
+          <li>Gatilho: uma vela fecha <b>acima da 9</b>, com pavio inferior.</li>
+          <li>Entrada na abertura da vela seguinte.</li>
+          <li><b>Stop:</b> 1–2 ticks abaixo da mínima da vela de sinal ou da 21, o que estiver mais baixo.</li>
+          <li><b>Alvo:</b> 2x a distância do stop.</li>
+        </ol>
+      </div>
+      <div class="box put">
+        <span><span class="tag put">VENDA</span></span>
+        <ol>
+          <li>Médias alinhadas: 9 abaixo da 21, 21 abaixo da 50, com a 50 caindo.</li>
+          <li>O preço sobe até a zona entre a 9 e a 21 e encosta ou fura um pouco a 21.</li>
+          <li>Gatilho: uma vela fecha <b>abaixo da 9</b>, com pavio superior.</li>
+          <li>Entrada na abertura da vela seguinte.</li>
+          <li><b>Stop:</b> 1–2 ticks acima da máxima da vela de sinal ou da 21, o que estiver mais alto.</li>
+          <li><b>Alvo:</b> 2x a distância do stop.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="box no">
+      <h3>Filtros: não entra se</h3>
+      <ul>
+        <li>No recuo, o preço furou a média de 50.</li>
+        <li>A 50 está deitada (sem inclinação).</li>
+        <li>Já é o 3º recuo seguido na mesma tendência (ela está cansando).</li>
+      </ul>
+    </div>
+    <div class="two">
+      <figure><div data-chart="respiro" data-side="call"></div><figcaption>Compra: o preço recua até a 21, a vela de sinal fecha de volta acima da 9 e a entrada é na vela seguinte, com stop abaixo da 21.</figcaption></figure>
+      <figure><div data-chart="respiro" data-side="put"></div><figcaption>Venda: o preço sobe até a 21, a vela de sinal fecha de volta abaixo da 9 e a entrada é na vela seguinte, com stop acima da 21.</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- VIRADA -->
+  <section class="panel" id="virada">
+    <div class="name"><h2>Virada</h2><small>cruzamento 9 × 21 a favor da 50</small></div>
+    <p>A média rápida cruza a de 21 no mesmo lado em que o preço está em relação à 50. Você espera uma vela confirmar e entra.</p>
+    <div class="two">
+      <div class="box call">
+        <span><span class="tag call">COMPRA</span></span>
+        <ol>
+          <li>O preço está acima da 50.</li>
+          <li>A 9 cruza a 21 para cima.</li>
+          <li>Gatilho: a primeira vela verde que fecha depois do cruzamento.</li>
+          <li>Entrada na abertura da vela seguinte.</li>
+          <li><b>Stop:</b> 1–2 ticks abaixo da menor mínima das últimas 3 velas.</li>
+          <li><b>Alvo:</b> 2x a distância do stop.</li>
+        </ol>
+      </div>
+      <div class="box put">
+        <span><span class="tag put">VENDA</span></span>
+        <ol>
+          <li>O preço está abaixo da 50.</li>
+          <li>A 9 cruza a 21 para baixo.</li>
+          <li>Gatilho: a primeira vela vermelha que fecha depois do cruzamento.</li>
+          <li>Entrada na abertura da vela seguinte.</li>
+          <li><b>Stop:</b> 1–2 ticks acima da maior máxima das últimas 3 velas.</li>
+          <li><b>Alvo:</b> 2x a distância do stop.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="box no">
+      <h3>Filtros: não entra se</h3>
+      <ul>
+        <li>A 9 e a 21 cruzaram mais de 2 vezes nas últimas 15 velas.</li>
+        <li>A 50 está deitada ou o preço cruzou a 50 nas últimas 10 velas.</li>
+        <li>A vela de confirmação fecha colada na 50 (sem espaço para andar).</li>
+      </ul>
+    </div>
+    <div class="two">
+      <figure><div data-chart="virada" data-side="call"></div><figcaption>Compra: acima da 50, a 9 cruza a 21 para cima, a primeira vela verde confirma e a entrada é na vela seguinte, com stop abaixo das últimas 3 velas.</figcaption></figure>
+      <figure><div data-chart="virada" data-side="put"></div><figcaption>Venda: abaixo da 50, a 9 cruza a 21 para baixo, a primeira vela vermelha confirma e a entrada é na vela seguinte, com stop acima das últimas 3 velas.</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- MURALHA -->
+  <section class="panel" id="muralha">
+    <div class="name"><h2>Muralha</h2><small>rejeição na média de 50</small></div>
+    <p>O preço volta até a 50, bate nela como numa parede e é rejeitado. Você entra a favor da tendência maior.</p>
+    <div class="two">
+      <div class="box call">
+        <span><span class="tag call">COMPRA</span></span>
+        <ol>
+          <li>Tendência de alta: a 21 acima da 50 e a 50 subindo.</li>
+          <li>O preço cai até tocar a 50.</li>
+          <li>Gatilho: a vela tem <b>pavio inferior maior ou igual ao corpo</b> e fecha <b>acima da 50</b>.</li>
+          <li>Entrada na abertura da vela seguinte.</li>
+          <li><b>Stop:</b> 1–2 ticks abaixo da mínima do pavio da vela de sinal.</li>
+          <li><b>Alvo:</b> 2x a distância do stop.</li>
+        </ol>
+      </div>
+      <div class="box put">
+        <span><span class="tag put">VENDA</span></span>
+        <ol>
+          <li>Tendência de baixa: a 21 abaixo da 50 e a 50 caindo.</li>
+          <li>O preço sobe até tocar a 50.</li>
+          <li>Gatilho: a vela tem <b>pavio superior maior ou igual ao corpo</b> e fecha <b>abaixo da 50</b>.</li>
+          <li>Entrada na abertura da vela seguinte.</li>
+          <li><b>Stop:</b> 1–2 ticks acima da máxima do pavio da vela de sinal.</li>
+          <li><b>Alvo:</b> 2x a distância do stop.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="box no">
+      <h3>Filtros: não entra se</h3>
+      <ul>
+        <li>É o 3º toque seguido na 50 (ela tende a romper).</li>
+        <li>A vela de sinal fecha do outro lado da 50.</li>
+        <li>A 50 está deitada.</li>
+      </ul>
+    </div>
+    <div class="two">
+      <figure><div data-chart="muralha" data-side="call"></div><figcaption>Compra: na tendência de alta, o preço cai até a 50, a vela deixa pavio embaixo e fecha acima dela; o stop fica abaixo do pavio.</figcaption></figure>
+      <figure><div data-chart="muralha" data-side="put"></div><figcaption>Venda: na tendência de baixa, o preço sobe até a 50, a vela deixa pavio em cima e fecha abaixo dela; o stop fica acima do pavio.</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- GIRO -->
+  <section class="panel" id="giro">
+    <div class="name"><h2>Giro</h2><small>reversão: o preço rompe a 50 e as médias viram</small></div>
+    <p>O mercado vinha numa direção, o preço rompe a 50 e as médias se cruzam para o outro lado. Você <b>não</b> entra no rompimento. Espera o preço voltar e mostrar que a 50 virou apoio, e entra na confirmação.</p>
+    <div class="two">
+      <div class="box call">
+        <span><span class="tag call">COMPRA</span></span>
+        <ol>
+          <li>Antes: o mercado vinha caindo, com 9 abaixo da 21 e 21 abaixo da 50.</li>
+          <li>Uma vela de corpo cheio fecha <b>acima da 50</b>.</li>
+          <li>A 9 cruza a 21 para cima.</li>
+          <li>O preço recua até a 9 ou a 50 sem fechar abaixo da 50.</li>
+          <li>Gatilho: uma vela verde fecha acima da 50.</li>
+          <li>Entrada na abertura da vela seguinte.</li>
+          <li><b>Stop:</b> 1–2 ticks abaixo da 50 ou da mínima do recuo, o que estiver mais baixo.</li>
+          <li><b>Alvo:</b> 2x a distância do stop.</li>
+        </ol>
+      </div>
+      <div class="box put">
+        <span><span class="tag put">VENDA</span></span>
+        <ol>
+          <li>Antes: o mercado vinha subindo, com 9 acima da 21 e 21 acima da 50.</li>
+          <li>Uma vela de corpo cheio fecha <b>abaixo da 50</b>.</li>
+          <li>A 9 cruza a 21 para baixo.</li>
+          <li>O preço sobe até a 9 ou a 50 sem fechar acima da 50.</li>
+          <li>Gatilho: uma vela vermelha fecha abaixo da 50.</li>
+          <li>Entrada na abertura da vela seguinte.</li>
+          <li><b>Stop:</b> 1–2 ticks acima da 50 ou da máxima do recuo, o que estiver mais alto.</li>
+          <li><b>Alvo:</b> 2x a distância do stop.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="box no">
+      <h3>Filtros: não entra se</h3>
+      <ul>
+        <li>A 50 ainda está bem inclinada contra você. Ela precisa estar perdendo inclinação, ficando deitada.</li>
+        <li>A vela do rompimento é maior que 2x a média das últimas 10 velas (esticou demais).</li>
+        <li>No recuo, uma vela fechou de volta do outro lado da 50: o rompimento falhou.</li>
+        <li>Passaram mais de 10 velas desde o rompimento sem o recuo aparecer.</li>
+        <li>O preço já rompeu e voltou pela 50 nas últimas 20 velas (mercado lateral).</li>
+      </ul>
+    </div>
+    <div class="two">
+      <figure><div data-chart="giro" data-side="call"></div><figcaption>Compra: o mercado vinha caindo, o preço rompe a 50, recua até perto dela, a vela de sinal fecha verde acima e a entrada é na vela seguinte, com stop abaixo da 50.</figcaption></figure>
+      <figure><div data-chart="giro" data-side="put"></div><figcaption>Venda: o mercado vinha subindo, o preço perde a 50, sobe até perto dela, a vela de sinal fecha vermelha abaixo e a entrada é na vela seguinte, com stop acima da 50.</figcaption></figure>
+    </div>
+    <p class="hint">Reversão costuma acertar menos que entrada a favor da tendência. Teste o Giro no backtest separado dos outros antes de colocar dinheiro.</p>
+  </section>
+
+  <!-- HORÁRIOS -->
+  <section class="panel" id="horarios">
+    <h2>Horários (Brasília)</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Sessão</th><th>Horário</th><th>Por quê</th></tr></thead>
+        <tbody>
+          <tr><td><b>Manhã</b></td><td class="t">09:15–11:30</td><td>Mais volume do dia, já passada a bagunça da abertura.</td></tr>
+          <tr><td><b>Tarde</b></td><td class="t">14:00–16:30</td><td>Volta do volume depois do almoço, com Nova York aberta.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="box no">
+      <h3>Evite</h3>
+      <ul>
+        <li>Os primeiros 15 minutos do pregão (09:00–09:15).</li>
+        <li>As notícias dos EUA: 09:30 até 01/11 e 10:30 a partir de 02/11. Espere 15 minutos.</li>
+        <li>A abertura da bolsa de Nova York: 10:30 até 01/11 e 11:30 a partir de 02/11.</li>
+        <li>As notícias do Brasil (IPCA, Copom, ata) e a decisão de juros dos EUA (FOMC).</li>
+        <li>O horário de almoço (11:30–14:00), quando o volume cai e o mercado fica lateral.</li>
+      </ul>
+    </div>
+    <p class="hint">Antes de cada sessão, confira o calendário econômico do dia.</p>
+  </section>
+
+  <!-- RISCO -->
+  <section class="panel" id="risco">
+    <h2>Risco por operação</h2>
+    <p>Coloque o tamanho do stop em pontos e veja quanto você arrisca e quanto ganha no alvo. Os valores ficam salvos na sua conta.</p>
+    <div class="calc">
+      <label>Ativo<select id="rAtivo"><option value="WIN">WIN (R$ 0,20/ponto)</option><option value="WDO">WDO (R$ 10/ponto)</option></select></label>
+      <label>Contratos<input id="rCt" type="number" inputmode="numeric" value="1" min="1" step="1"></label>
+      <label>Stop (pontos)<input id="rStop" type="number" inputmode="decimal" value="150" min="0" step="0.5"></label>
+      <label>Alvo (x o stop)<input id="rMult" type="number" inputmode="decimal" value="2" min="0.5" step="0.1"></label>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><span class="lbl">Risco no stop</span><b id="rRisco" class="neg">—</b></div>
+      <div class="kpi"><span class="lbl">Ganho no alvo</span><b id="rGanho" class="pos">—</b></div>
+      <div class="kpi"><span class="lbl">Alvo em pontos</span><b id="rAlvo">—</b></div>
+      <div class="kpi"><span class="lbl">Acerto mínimo p/ empatar</span><b id="rBe">—</b></div>
+    </div>
+    <p class="hint" id="rAviso"></p>
+    <div class="box no">
+      <h3>Regras do dia</h3>
+      <ul>
+        <li>No máximo <b>2 operações</b> por dia. Parou no <b>1º loss</b>.</li>
+        <li>Contratos pela sua tabela de progresso da banca. Nunca aumente para recuperar um loss.</li>
+        <li>Stop e alvo entram junto com a ordem. Nunca afaste o stop depois de entrar.</li>
+        <li>Os custos (corretagem e emolumentos) não estão na conta acima. Eles pesam mais com stop curto.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- VALIDAR -->
+  <section class="panel" id="validar">
+    <h2>Como validar</h2>
+    <ol>
+      <li>Volte no gráfico M2 e anote <b>50 a 100 sinais de cada setup</b> nos horários das sessões, sem pular nenhum.</li>
+      <li>Para cada sinal, veja se o preço bateu primeiro o <b>alvo</b> ou o <b>stop</b>.</li>
+      <li>Com alvo de 2x, o empate é em <b>33%</b> de acerto. Fique com os setups que passarem de <b>40%</b> no papel.</li>
+      <li>Depois, opere 2 semanas com 1 contrato antes de subir.</li>
+    </ol>
+    <div class="note">Anote o WIN e o WDO separados. O mesmo setup pode funcionar num e não no outro.</div>
+  </section>
+
+</div>
+
+
+<script>
+// ---- exemplos de gráfico (valores ilustrativos) ----
+const EX={
+  respiro:{signal:10,entry:11,stop:51,
+    e50:[30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45],
+    e21:[40,42,44,46,48,49.5,51,52,52.5,53,53.3,54,55.3,57,58.8,60.7],
+    e9:[46,49,52,55,58,60,60.5,59.5,58,56.5,55.8,57,59.5,62.5,65.5,68.5],
+    c:[[44,48,43,47],[47,52,46,51],[51,55,50,54],[54,59,53,58],[58,63,57,62],[62,65,60,64],[64,65,60,61],[61,62,57.5,58],[58,58.5,55,55.5],[55.5,56,52.5,53],[53,57,51.5,56.5],[56.5,60,56,59.5],[59.5,63,59,62.5],[62.5,66.5,62,66],[66,69,65.5,68.5],[68.5,72,68,71.5]]},
+  virada:{signal:9,entry:10,stop:53.5,
+    e50:[38,38.5,39,39.5,40,40.5,41,41.5,42,42.5,43,43.5,44,44.5,45,45.5],
+    e21:[56,55.5,55,54.5,54,53.8,53.6,53.6,53.8,54.2,54.8,55.5,56.3,57.2,58,59],
+    e9:[55,53.5,52,51,50.5,50.5,51.5,53,54.5,56,58,60,62,63.5,65,66],
+    c:[[56,57,53,54],[54,55,51,52],[52,53,49,50],[50,51,48,49],[49,51,47.5,50.5],[50.5,53,50,52.5],[52.5,55,52,54.5],[54.5,57,54,56.5],[56.5,57,55,55.5],[55.5,59,55,58.5],[58.5,62,58,61.5],[61.5,64,61,63.5],[63.5,65,62.5,64.5],[64.5,67,64,66.5],[66.5,68,65.5,67.5],[67.5,70,67,69.5]]},
+  muralha:{signal:8,entry:9,stop:35.5,
+    e50:[30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45],
+    e21:[45,46.5,48,49,49.5,49.5,49,48.5,48,48,48.5,49.5,51,52.5,54,55.5],
+    e9:[55,57,58,57,55,52,49,46.5,44.5,44,45.5,48,51,54,57,59],
+    c:[[52,58,51,57],[57,61,56,60],[60,62,57,58],[58,59,54,55],[55,56,51,52],[52,53,47,48],[48,49,43,44],[44,45,40,40.5],[40,43,36,42],[42,46,41.5,45.5],[45.5,49,45,48.5],[48.5,52,48,51],[51,54,50.5,53.5],[53.5,57,53,56],[56,59,55.5,58],[58,61,57.5,60]]},
+  giro:{signal:11,entry:12,stop:54.5,
+    e50:[62,61,60,59,58,57.2,56.5,56,55.6,55.3,55.1,55,55,55.1,55.3,55.6,56],
+    e21:[56,54.5,53,51.5,50,49,48.3,48,48.2,49,50,51,52,53,54,55,56],
+    e9:[52,50,48,46,44.5,44,44.5,46,48.5,52,54.5,56,57,58.5,60,61.5,63],
+    c:[[53,54,50,51],[51,52,48,49],[49,50,46,47],[47,48,44,45],[45,46,42,43],[43,45,41.5,44.5],[44.5,48,44,47.5],[47.5,51,47,50.5],[50.5,54,50,53.5],[53.5,59,53,58.5],[58.5,59,56,56.5],[56.5,58.5,55.2,58],[58,61,57.5,60.5],[60.5,63,60,62.5],[62.5,64,61.5,63],[63,66,62.5,65.5],[65.5,67,64.5,66.5]]}
+};
+const MULT=2;
+function mirror(d){const f=v=>100-v;return {...d,stop:f(d.stop),e50:d.e50.map(f),e21:d.e21.map(f),e9:d.e9.map(f),c:d.c.map(([o,h,l,c])=>[f(o),f(l),f(h),f(c)])}}
+function draw(el){
+  const side=el.dataset.side, base=EX[el.dataset.chart], d=side==="put"?mirror(base):base;
+  const ent=d.c[d.entry][0], alvo=ent+MULT*(ent-d.stop);
+  const W=340,H=210,pl=8,pr=34,pt=30,pb=12,n=d.c.length,step=(W-pl-pr)/n,cw=step*.58;
+  const all=[...d.e50,...d.e21,...d.e9,...d.c.flat(),d.stop,alvo],mn=Math.min(...all)-2,mx=Math.max(...all)+2;
+  const y=v=>pt+(mx-v)/(mx-mn)*(H-pt-pb), x=i=>pl+step*i+step/2;
+  const line=(a,col,w)=>`<polyline fill="none" stroke="${col}" stroke-width="${w}" stroke-linejoin="round" points="${a.map((v,i)=>x(i).toFixed(1)+","+y(v).toFixed(1)).join(" ")}"/>`;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Exemplo de ${side==="put"?"venda":"compra"} no ${el.dataset.chart}, com stop e alvo">`;
+  // faixas de stop e alvo
+  const x0=x(d.entry)-step/2, x1=W-pr;
+  const zone=(a,b,col)=>`<rect x="${x0}" y="${Math.min(y(a),y(b))}" width="${x1-x0}" height="${Math.abs(y(a)-y(b))}" fill="${col}" opacity=".12"/>`;
+  s+=zone(ent,d.stop,"var(--loss)")+zone(ent,alvo,"var(--win)");
+  const hl=(v,col,txt)=>`<line x1="${x0}" x2="${x1}" y1="${y(v)}" y2="${y(v)}" stroke="${col}" stroke-width="1.4" stroke-dasharray="4 3"/><text x="${x1+3}" y="${y(v)+3.5}" font-size="10" font-weight="600" fill="${col}" font-family="IBM Plex Sans,sans-serif">${txt}</text>`;
+  s+=line(d.e50,"var(--m50)",2)+line(d.e21,"var(--accent)",2)+line(d.e9,"var(--warm)",2);
+  d.c.forEach(([o,h,l,c],i)=>{const up=c>=o,col=up?"var(--win)":"var(--loss)",top=y(Math.max(o,c)),bh=Math.max(1.5,Math.abs(y(o)-y(c)));
+    s+=`<line x1="${x(i)}" x2="${x(i)}" y1="${y(h)}" y2="${y(l)}" stroke="${col}" stroke-width="1.3"/><rect x="${x(i)-cw/2}" y="${top}" width="${cw}" height="${bh}" fill="${col}" rx="1"/>`});
+  s+=hl(d.stop,"var(--loss)","stop")+hl(alvo,"var(--win)","alvo");
+  const sg=d.c[d.signal], markY=y(sg[1])-9;
+  s+=`<text x="${x(d.signal)}" y="${Math.max(12,markY)}" text-anchor="middle" font-size="10" font-weight="600" fill="var(--fg)" font-family="IBM Plex Sans,sans-serif">sinal</text>`;
+  const tag=side==="put"?"VENDA":"COMPRA",col=side==="put"?"var(--loss)":"var(--win)";
+  s+=`<g><rect x="${x(d.entry)-25}" y="6" width="50" height="15" rx="4" fill="${col}"/><text x="${x(d.entry)}" y="17" text-anchor="middle" font-size="10" font-weight="600" fill="var(--surface)" font-family="IBM Plex Mono,monospace">${tag}</text><line x1="${x(d.entry)}" x2="${x(d.entry)}" y1="21" y2="${y(ent)}" stroke="${col}" stroke-dasharray="3 3"/></g>`;
+  s+=`</svg>`; el.innerHTML=s;
+}
+document.querySelectorAll("[data-chart]").forEach(draw);
+
+// ---- calculadora de risco ----
+const PV={WIN:0.2,WDO:10}, LIM={WIN:150,WDO:5}, DEF={WIN:150,WDO:5};
+const brl=v=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const num=v=>v.toLocaleString("pt-BR",{maximumFractionDigits:1});
+const $=id=>document.getElementById(id), LS="manualB3.risco.v2";
+try{const sv=JSON.parse(localStorage.getItem(LS)||"{}");["rAtivo","rCt","rStop","rMult"].forEach(k=>{if(sv[k]!=null)$(k).value=sv[k]})}catch(e){}
+function risco(){
+  const a=$("rAtivo").value, ct=Math.max(0,parseFloat($("rCt").value)||0), st=Math.max(0,parseFloat($("rStop").value)||0), m=Math.max(0,parseFloat($("rMult").value)||0);
+  const r=st*PV[a]*ct;
+  $("rRisco").textContent="−"+brl(r);
+  $("rGanho").textContent="+"+brl(r*m);
+  $("rAlvo").textContent=num(st*m)+" pts";
+  $("rBe").textContent=m>0?(100/(1+m)).toFixed(1).replace(".",",")+"%":"—";
+  $("rAviso").textContent=st>LIM[a]?`Stop acima do limite do manual (${a}: ${LIM[a]} pontos). Pela regra, fique de fora.`:"";
+  try{localStorage.setItem(LS,JSON.stringify({rAtivo:a,rCt:$("rCt").value,rStop:$("rStop").value,rMult:$("rMult").value}))}catch(e){}
+}
+let rDb=null,rT=null;
+function rSalvar(){clearTimeout(rT);rT=setTimeout(async()=>{if(rDb){try{await rDb.doc("config/risco2").set({rAtivo:$("rAtivo").value,rCt:$("rCt").value,rStop:$("rStop").value,rMult:$("rMult").value});window.ui&&ui.toast("✓ Salvo")}catch(e){}}},600)}
+["rAtivo","rCt","rStop","rMult"].forEach(id=>$(id).addEventListener("change",rSalvar));
+(async()=>{try{rDb=window.claude?await window.claude.use("db"):null}catch(e){}if(rDb)rDb.doc("config/risco2").onSnapshot(d=>{if(!d.exists)return;const v=d.data();["rAtivo","rCt","rStop","rMult"].forEach(k=>{if(v[k]!=null&&document.activeElement!==$(k))$(k).value=v[k]});risco()},()=>{})})();
+$("rAtivo").addEventListener("change",()=>{$("rStop").value=DEF[$("rAtivo").value];risco()});
+["rCt","rStop","rMult"].forEach(id=>$(id).addEventListener("input",risco)); risco();
+
+</script>
+</body></html>
