@@ -102,8 +102,18 @@ const n=v=>{const x=parseFloat(v);return isFinite(x)?x:0};
 const uid=()=>Math.random().toString(36).slice(2,10);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
-const SEED={id:"rodobens-imovel",nome:"Rodobens Imóvel",adm:"Rodobens",tipo:"Imóvel",status:"Contratado",credito:300000,prazo:216,taxaAdm:0.10556,seguro:0.03245,fr:0,indice:"INCC",reaj:6,inicio:"",pagas:0,parcAdm:1825.10,kCont:0,lanceEmb:0,lanceProp:0,abater:"prazo",obs:"Parcela integral linear · atualização anual pelo INCC",criado:1};
-const NOVO=()=>({id:uid(),nome:"Novo consórcio",adm:"",tipo:"Imóvel",status:"Simulação",credito:100000,prazo:180,taxaAdm:0.1,seguro:0.03,fr:0,indice:"INCC",reaj:6,inicio:"",pagas:0,parcAdm:0,kCont:0,lanceEmb:0,lanceProp:0,abater:"prazo",obs:"",criado:Date.now()});
+const B={tipo:"Imóvel",status:"Simulação",taxaTipo:"mes",seguro:0,fr:0,indice:"INCC",reaj:6,inicio:"",pagas:0,reducao:0,cashback:0,kCont:0,lanceEmb:0,lanceProp:0,abater:"prazo"};
+const SEEDS=[
+  {...B,id:"rodobens-imovel",nome:"Rodobens Imóvel",adm:"Rodobens",status:"Contratado",credito:300000,prazo:216,taxaAdm:0.10556,seguro:0.03245,parcAdm:1825.10,obs:"Parcela integral linear · atualização anual pelo INCC",criado:1},
+  {...B,id:"ademicon-318",nome:"Ademicon Imóvel",adm:"Ademicon",credito:318690,prazo:199,taxaTipo:"total",taxaAdm:24.2,parcAdm:1988.93,obs:"Parcela válida até a contemplação; depois é recalculada · crédito corrigido pelo INCC",criado:2},
+  {...B,id:"embracon-300",nome:"Embracon Imóvel",adm:"Embracon",credito:300000,prazo:150,taxaAdm:0.11,fr:2,parcAdm:1850,obs:"Simulação sem seguro · 1ª e 2ª parcela R$ 4.850 (taxa antecipada de 2%), demais R$ 1.850 · a parcela não fecha com crédito + taxa: confirmar com a Embracon",criado:3},
+  {...B,id:"sicredi-300",nome:"Sicredi Imóvel",adm:"Sicredi",credito:300000,prazo:180,taxaTipo:"total",taxaAdm:14,fr:2,parcAdm:1933.20,obs:"Fundo de reserva não informado: 2% é o que fecha com a parcela",criado:4},
+  {...B,id:"quintoandar-300",nome:"QuintoAndar Imóvel",adm:"QuintoAndar",credito:300000,prazo:200,taxaTipo:"total",taxaAdm:25,reducao:50,cashback:30000,parcAdm:1875,obs:"Taxa não informada: 25% total fecha com a parcela integral de R$ 1.875 · reduzida R$ 937,50 até a contemplação · R$ 30 mil de cashback",criado:5},
+  {...B,id:"servopa-300",nome:"Servopa Imóvel",adm:"Servopa",credito:300000,prazo:240,taxaTipo:"total",taxaAdm:25.5,reducao:50,parcAdm:1568.75,obs:"Taxa não informada: 25,5% total fecha com a integral de R$ 1.568,75 · reduzida R$ 784,38 até a contemplação · grupo com fidelidade de 6, 12 ou 18 meses",criado:6},
+  {...B,id:"sicoob-300",nome:"Sicoob Imóvel",adm:"Sicoob",credito:300000,prazo:200,taxaTipo:"total",taxaAdm:9,fr:1,seguro:0.05968,parcAdm:1846.95,obs:"Parcelas 1 a 195 R$ 1.846,95 e 196 a 200 R$ 1.861,35 · seguro estimado pela parcela",criado:7}
+];
+const LSV="consorcio.seeds";
+const NOVO=()=>({...B,id:uid(),nome:"Novo consórcio",adm:"",credito:100000,prazo:180,taxaAdm:0.1,seguro:0.03,fr:0,indice:"INCC",reaj:6,inicio:"",pagas:0,parcAdm:0,kCont:0,lanceEmb:0,lanceProp:0,abater:"prazo",obs:"",criado:Date.now()});
 
 /* ---------- contas ---------- */
 // taxa interna de retorno mensal de um fluxo (bisseção); null se não tiver troca de sinal
@@ -118,20 +128,24 @@ function tir(fluxo){
 }
 function calc(c){
   const C=n(c.credito), N=Math.max(1,Math.round(n(c.prazo))), ta=n(c.taxaAdm)/100, sg=n(c.seguro)/100, fr=n(c.fr)/100;
-  const taxaTot=ta*N, base=C*(1+taxaTot+fr), amort=base/N, segM=base*sg, parc=amort+segM;
-  const total=parc*N, custo=total-C;
+  const taxaTot=c.taxaTipo==="total"?ta:ta*N, base=C*(1+taxaTot+fr), amort=base/N, segM=base*sg, parc=amort+segM;
+  const red=Math.min(0.9,Math.max(0,n(c.reducao)/100)), parcRed=parc*(1-red), cb=Math.max(0,n(c.cashback));
+  const total=parc*N, custo=total-C-cb;
   const pagas=Math.min(N,Math.max(0,Math.round(n(c.pagas))));
-  const r={C,N,taxaTot,base,amort,segM,parc,total,custo,custoPct:C?custo/C:0,pagas,falta:parc*(N-pagas)};
+  const r={C,N,taxaTot,base,amort,segM,parc,red,parcRed,parcAtual:red?parcRed:parc,cb,total,custo,custoPct:C?custo/C:0,pagas,falta:parc*(N-pagas)};
   // contemplação + lance
   const k=Math.min(N,Math.max(0,Math.round(n(c.kCont))));
   r.k=k;
   if(k>0){
     const emb=Math.min(C,C*n(c.lanceEmb)/100), prop=Math.max(0,n(c.lanceProp)), L=emb+prop;
-    const saldo=Math.max(0,base-amort*k), novoSaldo=Math.max(0,saldo-L);
-    const fluxo=[0]; for(let t=1;t<=k;t++)fluxo.push(-parc);
-    fluxo[k]+=C-emb-prop;
-    let resto=0, novaParc=parc, novoPrazo=N;
-    if(c.abater==="parcela"&&N>k){
+    const parcAntes=red?parcRed:parc;
+    const saldo=Math.max(0,base-amort*k*(1-red)), novoSaldo=Math.max(0,saldo-L);
+    const fluxo=[0]; for(let t=1;t<=k;t++)fluxo.push(-parcAntes);
+    fluxo[k]+=C-emb-prop+cb;
+    let resto=0, novaParc=parc, novoPrazo=N, modo=c.abater==="parcela"?"parcela":"prazo";
+    if(modo==="prazo"&&N>k&&novoSaldo/amort>N-k+1e-6)modo="parcela";
+    r.modo=modo;
+    if(modo==="parcela"&&N>k){
       novaParc=novoSaldo/(N-k)+segM; for(let t=k+1;t<=N;t++)fluxo.push(-novaParc); resto=novaParc*(N-k);
     }else{
       const m=novoSaldo/amort, cheias=Math.floor(m+1e-9), frac=m-cheias;
@@ -139,9 +153,9 @@ function calc(c){
       if(frac>1e-6)fluxo.push(-(amort*frac+segM));
       novoPrazo=k+cheias+(frac>1e-6?1:0); resto=fluxo.slice(k+1).reduce((s,f)=>s-f,0);
     }
-    const pago=parc*k+prop+resto, naMao=C-emb;
+    const pago=parcAntes*k+prop+resto, naMao=C-emb;
     const i=tir(fluxo);
-    Object.assign(r,{emb,prop,L,lancePct:C?L/C:0,naMao,novaParc,novoPrazo,pagoLance:pago,custoLance:pago-naMao,tirM:i,tirA:i==null?null:Math.pow(1+i,12)-1});
+    Object.assign(r,{emb,prop,L,lancePct:C?L/C:0,naMao,novaParc,novoPrazo,pagoLance:pago,custoLance:pago-naMao-cb,tirM:i,tirA:i==null?null:Math.pow(1+i,12)-1});
   }
   // financiamento de referência (Price)
   const fa=n(localFin())/100;
@@ -170,10 +184,13 @@ function cardHTML(c){
       ${S(c,"status","Situação",["Simulação","Contratado","Contemplado","Encerrado"])}
       ${F(c,"credito","Valor do crédito (R$)")}
       ${F(c,"prazo","Prazo (meses)")}
-      ${F(c,"taxaAdm","Taxa de adm. (% ao mês)")}
+      ${F(c,"taxaAdm","Taxa de adm. (%)")}
+      <label>Taxa informada<select data-f="taxaTipo"><option value="mes"${c.taxaTipo!=="total"?" selected":""}>% ao mês</option><option value="total"${c.taxaTipo==="total"?" selected":""}>% total do plano</option></select></label>
       ${F(c,"seguro","Seguro prestamista (% ao mês)")}
       ${F(c,"fr","Fundo de reserva (% total)")}
-      ${F(c,"parcAdm","Parcela da administradora (R$)")}
+      ${F(c,"parcAdm","Parcela integral da administradora (R$)")}
+      ${F(c,"reducao","Parcela reduzida até a contemplação (% de redução)")}
+      ${F(c,"cashback","Cashback / bônus (R$)")}
       ${S(c,"indice","Reajuste anual pelo",["INCC","IPCA","IGP-M","Tabela do bem","Outro"])}
       ${F(c,"reaj","Reajuste estimado (% a.a.)")}
       ${F(c,"inicio","1ª parcela","month")}
@@ -202,17 +219,19 @@ function fillCard(el,c){
   if(n(c.parcAdm)>0){const d=r.parc-n(c.parcAdm);bate=Math.abs(d)<=Math.max(1,n(c.parcAdm)*0.002)?`<small class="ok">Bate com a administradora (${brl(n(c.parcAdm))})</small>`:`<small class="warn">Administradora: ${brl(n(c.parcAdm))} (diferença ${brl(Math.abs(d))})</small>`}
   const finTxt=r.finParc?`<div class="r"><span class="lbl">Financiamento de referência</span><b>${brl(r.finParc)}</b><small>total ${brl0(r.finTot)} · ${brl0(r.finTot-r.C)} de juros</small></div>`:"";
   el.querySelector("[data-res]").innerHTML=
-    `<div class="r main"><span class="lbl">Parcela</span><b>${brl(r.parc)}</b>${bate||`<small>${brl(r.amort)} + ${brl(r.segM)} de seguro</small>`}</div>
+    (r.red?`<div class="r main"><span class="lbl">Parcela reduzida</span><b>${brl(r.parcRed)}</b><small>até a contemplação (${pct(r.red,0)} menor)</small></div><div class="r"><span class="lbl">Parcela integral</span><b>${brl(r.parc)}</b>${bate||"<small>depois da contemplação ela sobe para cobrir a diferença</small>"}</div>`:
+     `<div class="r main"><span class="lbl">Parcela</span><b>${brl(r.parc)}</b>${bate||`<small>${brl(r.amort)} + ${brl(r.segM)} de seguro</small>`}</div>`)+`
      <div class="r"><span class="lbl">Taxa de adm. total</span><b>${pct(r.taxaTot)}</b><small>${brl0(r.C*r.taxaTot)}</small></div>
      <div class="r"><span class="lbl">Seguro no total</span><b>${brl0(r.segM*r.N)}</b><small>${brl(r.segM)} por mês</small></div>
      <div class="r"><span class="lbl">Total pago</span><b>${brl0(r.total)}</b><small>${r.N} parcelas</small></div>
-     <div class="r"><span class="lbl">Custo (a mais que o crédito)</span><b>${brl0(r.custo)}</b><small>${pct(r.custoPct,1)} do crédito</small></div>
+     <div class="r"><span class="lbl">Custo (a mais que o crédito)</span><b>${brl0(r.custo)}</b><small>${pct(r.custoPct,1)} do crédito${r.cb?" · já descontado o cashback de "+brl0(r.cb):""}</small></div>
      <div class="r"><span class="lbl">Andamento</span><b>${r.pagas} de ${r.N}</b><small>falta ${brl0(r.falta)}${fimTxt(c,r)}</small></div>${finTxt}`;
   const lr=el.querySelector("[data-lres]");
   if(r.k>0){
     lr.innerHTML=`<div class="r"><span class="lbl">Lance total</span><b>${brl0(r.L)}</b><small>${pct(r.lancePct,1)} do crédito</small></div>
       <div class="r main"><span class="lbl">Crédito na mão</span><b>${brl0(r.naMao)}</b><small>${r.emb?brl0(r.emb)+" foram de lance embutido":"sem lance embutido"}</small></div>
-      <div class="r"><span class="lbl">${c.abater==="parcela"?"Nova parcela":"Novo prazo"}</span><b>${c.abater==="parcela"?brl(r.novaParc):r.novoPrazo+" meses"}</b><small>${c.abater==="parcela"?"até o mês "+r.N:"parcela de "+brl(r.parc)}</small></div>
+      <div class="r"><span class="lbl">Parcela depois da contemplação</span><b>${brl(r.novaParc)}</b><small>${r.modo!==(c.abater==="parcela"?"parcela":"prazo")?"o lance não cobre a diferença: a parcela foi recalculada":r.modo==="prazo"?"parcela integral; o lance encurta o prazo":r.red?"recalculada com o que ficou faltando":"do mês "+(r.k+1)+" em diante"}</small></div>
+      <div class="r"><span class="lbl">Termina no mês</span><b>${r.novoPrazo}</b><small>${r.novoPrazo<r.N?(r.N-r.novoPrazo)+" meses antes do prazo":"no prazo do plano"}</small></div>
       <div class="r"><span class="lbl">Total pago</span><b>${brl0(r.pagoLance)}</b><small>custo ${brl0(r.custoLance)} sobre o que recebeu</small></div>
       <div class="r"><span class="lbl">Custo efetivo</span><b class="${r.tirA==null?"":r.tirA>0?"":"ok"}">${r.tirA==null?"—":pct(r.tirA,1)+" a.a."}</b><small>${r.tirM==null?"sem como calcular":pct(r.tirM,2)+" ao mês"}</small></div>`;
   }else lr.innerHTML=`<p class="hint" style="margin:0;grid-column:1/-1">Coloque o mês da contemplação (real ou que você imagina) para ver o crédito na mão, o efeito do lance e o custo efetivo.</p>`;
@@ -230,7 +249,7 @@ function fimTxt(c,r){
 function kpis(){
   const at=lista.filter(c=>c.status==="Contratado"||c.status==="Contemplado").map(c=>[c,calc(c)]);
   $("kCred").textContent=brl0(at.reduce((s,[,r])=>s+r.C,0));
-  $("kParc").textContent=brl(at.reduce((s,[c,r])=>s+(r.pagas<r.N?r.parc:0),0));
+  $("kParc").textContent=brl(at.reduce((s,[c,r])=>s+(r.pagas<r.N?(c.status==="Contemplado"&&r.k?r.novaParc:r.parcAtual):0),0));
   $("kFalta").textContent=brl0(at.reduce((s,[,r])=>s+r.falta,0));
   $("kCusto").textContent=brl0(at.reduce((s,[,r])=>s+r.custo,0));
   // tabela de comparação
@@ -239,7 +258,7 @@ function kpis(){
   const best=rows.reduce((b,x)=>x[1].custoPct<b[1].custoPct?x:b,rows[0])[0].id;
   const temFin=rows.some(([,r])=>r.finParc), temK=rows.some(([,r])=>r.k>0);
   $("cmp").innerHTML="<tr><th>Consórcio</th><th>Crédito</th><th>Prazo</th><th>Parcela</th><th>Adm. total</th><th>Custo</th>"+(temK?"<th>Custo efetivo</th>":"")+(temFin?"<th>Financ.</th>":"")+"</tr>"+
-    rows.map(([c,r])=>`<tr class="${rows.length>1&&c.id===best?"best":""}"><td>${esc(c.nome)}<br><span class="hint" style="font-weight:400">${esc(c.status)}</span></td><td>${brl0(r.C)}</td><td>${r.N}</td><td>${brl(r.parc)}</td><td>${pct(r.taxaTot,1)}</td><td>${pct(r.custoPct,1)}</td>`+
+    rows.map(([c,r])=>`<tr class="${rows.length>1&&c.id===best?"best":""}"><td>${esc(c.nome)}<br><span class="hint" style="font-weight:400">${esc(c.status)}</span></td><td>${brl0(r.C)}</td><td>${r.N}</td><td>${brl(r.parcAtual)}${r.red?`<br><span class="hint">integral ${brl(r.parc)}</span>`:""}</td><td>${pct(r.taxaTot,1)}</td><td>${pct(r.custoPct,1)}</td>`+
       (temK?`<td>${r.k>0&&r.tirA!=null?pct(r.tirA,1)+" a.a.":"—"}</td>`:"")+(temFin?`<td>${r.finParc?brl(r.finParc):"—"}</td>`:"")+"</tr>").join("");
 }
 function render(){
@@ -289,22 +308,34 @@ $("novo").onclick=()=>{const c=NOVO();lista.push(c);render();save(c,true);
   setTimeout(()=>{const x=document.querySelector("article[data-c='"+c.id+"'] input.nome");if(x){x.scrollIntoView({behavior:"smooth",block:"center"});x.select()}},50)};
 $("fin").addEventListener("input",()=>{try{localStorage.setItem(LSF,$("fin").value)}catch(e){}
   document.querySelectorAll("article[data-c]").forEach(el=>fillCard(el,lista.find(x=>x.id===el.dataset.c)));kpis();
-  if(db){clearTimeout(tmr._fin);tmr._fin=setTimeout(()=>db.doc("config/geral").set({fin:$("fin").value}).catch(()=>{}),700)}});
+  if(db){clearTimeout(tmr._fin);tmr._fin=setTimeout(()=>db.doc("config/geral").set({fin:$("fin").value},{merge:true}).catch(()=>{}),700)}});
 
 /* ---------- início ---------- */
 try{$("fin").value=localStorage.getItem(LSF)??"12"}catch(e){$("fin").value="12"}
+// modelos que eu cadastrei: entram uma vez só (se você excluir, não voltam)
+function lerVistos(){try{return JSON.parse(localStorage.getItem(LSV)||"[]")}catch(e){return []}}
+function semear(vistos){
+  const novos=SEEDS.filter(x=>!vistos.includes(x.id)&&!lista.some(c=>c.id===x.id)).map(x=>({...x}));
+  lista.push(...novos);
+  try{localStorage.setItem(LSV,JSON.stringify([...new Set([...vistos,...SEEDS.map(x=>x.id)])]))}catch(e){}
+  return novos;
+}
 let semNada=false;
 try{const raw=localStorage.getItem(LS);lista=raw?JSON.parse(raw):[];semNada=raw==null}catch(e){lista=[]}
 render();$("status").textContent="Conectando…";
 (async()=>{
   try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
-  if(!db){if(semNada){lista=[{...SEED}];lsSave();render()}$("status").textContent="Salvando neste aparelho";return}
+  if(!db){const nv=semear(lerVistos());if(nv.length){lsSave();render()}$("status").textContent="Salvando neste aparelho";return}
+  let vistosRemoto=[];try{const g=await db.doc("config/geral").get();vistosRemoto=(g.exists&&g.data().seeds)||[]}catch(e){}
   db.doc("config/geral").onSnapshot(d=>{if(d.exists&&d.data().fin!=null&&document.activeElement!==$("fin")){$("fin").value=d.data().fin;try{localStorage.setItem(LSF,$("fin").value)}catch(e){}render()}},()=>{});
   let first=true;
   db.collection("itens").onSnapshot(q=>{
     const remote=q.docs.map(d=>d.data()), ids=new Set(remote.map(x=>x.id));
     if(first){first=false;
-      if(!remote.length&&semNada&&!lista.length){lista=[{...SEED}];}
+      const vistos=[...new Set([...lerVistos(),...vistosRemoto])];
+      lista=[...remote.filter(r=>!lista.some(x=>x.id===r.id)),...lista];
+      semear(vistos);
+      db.doc("config/geral").set({seeds:SEEDS.map(x=>x.id).concat(vistos.filter(v=>!SEEDS.some(x=>x.id===v)))},{merge:true}).catch(()=>{});
       lista.filter(c=>!ids.has(c.id)).forEach(c=>{pend.add(c.id);push(c.id)});
     }
     const merged=remote.map(r=>pend.has(r.id)?(lista.find(x=>x.id===r.id)||r):r);
