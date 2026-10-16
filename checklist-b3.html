@@ -1,7 +1,7 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="checklist-b3m"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Check-list B3</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: abas manhã/tarde com a janela da sessão, 4 perguntas, veredito, calendário seg–sex 13/10–17/12. */
+/* Layout: check-list único do dia (feito de manhã), janelas das sessões, 4 perguntas, veredito, calendário seg–sex 13/10–17/12. */
 :root{
   --bg:#EEF3FC; --surface:#FFFFFF; --line:#DDE4F2; --fg:#13203B; --muted:#58668A;
   --accent:#2563EB; --accent-soft:#DCE7FF; --win:#15803D; --win-soft:#DCFCE7; --loss:#E11D48; --loss-soft:#FFE4EA; --part:#D97706; --part-soft:#FEF3C7;
@@ -63,18 +63,18 @@ button[disabled]{cursor:default}
 .jan{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.88rem;border-radius:8px;padding:8px 12px;background:var(--accent-soft)}
 .jan b{font-family:var(--f-num)}
 .jan .ag{font-weight:600;border-radius:999px;padding:2px 10px;font-size:.78rem}
+.jan .ag{border:1px solid var(--line)}
 .jan .ag.in{background:var(--win);color:var(--surface)} .jan .ag.out{background:var(--loss-soft);color:var(--loss)}
 .wrap>*{min-width:0}
 img,svg{max-width:100%}
 </style>
 <div class="wrap">
   <div class="top">
-    <div><h1>Check-list B3</h1><div class="sub">WIN e WDO · M2 · responda antes de cada sessão. Quatro "sim" liberam a sessão.</div></div>
+    <div><h1>Check-list B3</h1><div class="sub">WIN e WDO · M2 · uma vez por dia, de manhã, antes da 1ª sessão. Quatro "sim" liberam o dia.</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
   <div class="panel">
     <h2 id="dTitle">Hoje</h2>
-    <div class="tabs" id="tabs"></div>
     <div class="jan" id="jan"></div>
     <div id="qs"></div>
     <div class="verdict" id="verdict"></div>
@@ -83,38 +83,48 @@ img,svg{max-width:100%}
   </div>
   <div class="panel">
     <div id="cal" style="display:grid;gap:18px"></div>
-    <div class="legend"><span><i style="background:var(--win)"></i>2 sessões liberadas</span><span><i style="background:var(--part-soft)"></i>1 sessão liberada</span><span><i style="background:var(--loss-soft)"></i>não liberado</span></div>
+    <div class="legend"><span><i style="background:var(--win)"></i>dia liberado</span><span><i style="background:var(--loss-soft)"></i>não liberado</span></div>
   </div>
 </div>
 <script>
 const START="2026-10-14", END="2026-12-17", LS="checklistB3m.v1";
-function janelas(ds){return {manha:["09:15","11:30"],tarde:["14:00","16:30"]}}
-// horários das sessões são FIXOS. Só as pausas mudam em 02/11 (EUA troca o relógio em 01/11; o Brasil não muda)
-// pausa = 5 min antes até 15 min depois do evento: não operar nem com sinal perfeito
-function pausas(ds){const d=ds>="2026-11-02";return d?[{n:"notícia dos EUA",h:"10:30",de:"10:25",ate:"10:45"},{n:"abertura de Nova York",h:"11:30",de:"11:25",ate:"11:45"}]:[{n:"notícia dos EUA",h:"09:30",de:"09:25",ate:"09:45"},{n:"abertura de Nova York",h:"10:30",de:"10:25",ate:"10:45"}]}
-const pausasTxt=ds=>pausas(ds).map(p=>p.de+"–"+p.ate+" ("+p.n+")").join(" e ");
+// check-list feito UMA vez por dia, de manhã, antes da 1ª sessão. Horários fixos (não mudam em 02/11).
 const SESS=[{id:"manha",nome:"Manhã"},{id:"tarde",nome:"Tarde"}];
-const hj=(ds,id)=>janelas(ds)[id].join("–");
+const JAN={manha:["09:45","11:15"],tarde:["14:00","15:30"]};
+// Manhã: começa depois dos dados dos EUA das 09:30 (até 01/11). Às 10:25–10:45 tem pausa TODO dia:
+// até 01/11 é a abertura de Nova York; a partir de 02/11 são os dados dos EUA. Tarde: longe de tudo, menos FOMC.
+const EVT={
+  "2026-10-28":[{n:"FOMC, juros dos EUA",de:"14:55",ate:"15:45",pula:{tarde:"FOMC 15:00"}}],
+  "2026-11-02":[{n:"Finados, B3 fechada",de:"00:00",ate:"23:59",pula:{manha:"B3 fechada",tarde:"B3 fechada"}}],
+  "2026-11-20":[{n:"Consciência Negra, B3 fechada",de:"00:00",ate:"23:59",pula:{manha:"B3 fechada",tarde:"B3 fechada"}}],
+  "2026-11-26":[{n:"feriado nos EUA",de:"00:00",ate:"23:59",pula:{tarde:"EUA fechado, volume fraco"}}],
+  "2026-12-09":[{n:"FOMC, juros dos EUA",de:"15:00",ate:"16:00",pula:{tarde:"FOMC 16:00"}}]
+};
+function pausas(ds){const p=[{n:ds>="2026-11-02"?"dados dos EUA":"abertura de Nova York",de:"10:25",ate:"10:45"}];if(ds<"2026-11-02")p.push({n:"dados dos EUA das 11:00, só se houver notícia forte",de:"10:55",ate:"11:15"});return p.concat((EVT[ds]||[]).filter(e=>e.de!=="00:00"))}
+function pulos(ds){const o={};(EVT[ds]||[]).forEach(e=>Object.assign(o,e.pula||{}));return o}
+const pausasTxt=ds=>pausas(ds).map(p=>p.de+"–"+p.ate+" ("+p.n+")").join(" e ");
+const sessTxt=()=>SESS.map(s=>s.nome+" "+JAN[s.id].join("–")).join(" · ");
 const QS=[
-  {id:"hor",k:"Janela de horário",t:ds=>{const [a,b]=janelas(ds)[sess];return "Estou dentro da janela da "+(sess==="manha"?"manhã":"tarde")+", das "+a+" às "+b+", FORA das pausas de hoje: "+pausasTxt(ds)+", e conferi o calendário (IPCA, Copom, FOMC)?"}},
+  {id:"hor",k:"Horários e notícias",t:ds=>{const pl=pulos(ds),k=Object.keys(pl);return "Abri o calendário (alto impacto · USD e BRL: IPCA, Copom, Payroll, CPI, FOMC), vou operar só nas sessões ("+sessTxt()+"), respeitando a pausa das "+pausasTxt(ds)+(k.length?", vou PULAR "+k.map(x=>SESS.find(s=>s.id===x).nome+" ("+pl[x]+")").join(", "):"")+" e, em dia de Payroll ou CPI, só começo 30 min depois da notícia?"}},
   {id:"op",k:"Operacional",t:"Vou entrar só em Respiro, Virada, Muralha (pavio ou engolfo), Giro ou Armadilha no M2, com médias 9, 21 e 50 espaçadas, volume da vela de sinal acima da média, stop técnico dentro do limite (WIN 150 pts · WDO 5 pts), o outro ativo não indo forte no mesmo sentido (WIN × WDO) e todos os filtros do manual conferidos?"},
-  {id:"ger",k:"Gerenciamento",t:"Contratos do meu degrau no Progresso, ordem com stop e alvo de 2x o stop junto (OCO), no máximo 2 operações no dia, uma aberta por vez (nunca WIN e WDO juntos), e paro no 1º loss?"},
+  {id:"ger",k:"Gerenciamento",t:"Contratos do meu degrau no Progresso, ordem com stop e alvo de 2x o stop junto (OCO), no máximo 2 operações em cada sessão (manhã e tarde), uma aberta por vez (nunca WIN e WDO juntos), e encerro a sessão no 1º loss?"},
   {id:"men",k:"Mentalidade",t:"Estou calmo, sem vontade de recuperar nada, e aceito o stop se ele vier?"}
 ];
-let data={}, db=null, sel=null, sess="manha", draft=null;
+let data={}, db=null, sel=null, draft=null;
 const $=id=>document.getElementById(id);
 function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
 const fmt=ds=>new Date(ds+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit"});
 const isWE=ds=>{const g=new Date(ds+"T12:00:00").getDay();return g===0||g===6};
-const ok=s=>s&&QS.every(q=>s[q.id]===true);
+const ok1=s=>s&&QS.every(q=>s[q.id]===true);
+// dias antigos tinham um check-list por sessão: conta como liberado se alguma sessão foi liberada
+const ok=r=>!!r&&(ok1(r)||SESS.some(s=>ok1(r[s.id]))||["manha","tarde"].some(k=>ok1(r[k])));
+const respondido=r=>!!r&&QS.some(q=>typeof r[q.id]==="boolean"||["manha","tarde"].some(k=>r[k]&&typeof r[k][q.id]==="boolean"));
 const editable=ds=>ds===today();
 function load(){try{const r=JSON.parse(localStorage.getItem(LS)||"null");if(r)data=r}catch(e){}}
 function pick(ds){sel=ds;draft=JSON.parse(JSON.stringify(data[ds]||{}));render()}
 function render(){
   $("dTitle").textContent=fmt(sel);
-  const t=$("tabs");t.innerHTML="";
-  SESS.forEach(s=>{const b=document.createElement("button");b.type="button";b.className=s.id===sess?"on":"";b.innerHTML=s.nome+"<span class='h'>"+hj(sel,s.id)+"</span>";b.onclick=()=>{sess=s.id;render()};t.appendChild(b)});
-  const can=editable(sel), cur=(draft[sess]||{});
+  const can=editable(sel), cur=draft;
   const box=$("qs");box.innerHTML="";
   QS.forEach(q=>{
     const d=document.createElement("div");d.className="q";
@@ -123,26 +133,29 @@ function render(){
     [["s","Sim",true],["n","Não",false]].forEach(([c,l,v])=>{
       const b=document.createElement("button");b.type="button";b.textContent=l;b.className=c+(cur[q.id]===v?" on":"");b.disabled=!can;
       b.setAttribute("aria-pressed",cur[q.id]===v);
-      b.onclick=()=>{draft[sess]=Object.assign({},draft[sess]||{},{[q.id]:v});render()};
+      b.onclick=()=>{draft[q.id]=v;render()};
       yn.appendChild(b)});
     d.appendChild(yn);box.appendChild(d);
   });
   const v=$("verdict"), answered=QS.every(q=>typeof cur[q.id]==="boolean");
-  if(ok(cur)){v.className="verdict ok";v.innerHTML="<b>Liberado para operar</b><span>Sessão da "+(sess==="manha"?"manhã":"tarde")+" até "+janelas(sel)[sess][1]+". No máximo 2 operações no dia, sempre com stop e alvo 2x; deu loss, encerra o dia.</span>"}
-  else if(answered){v.className="verdict no";v.innerHTML="<b>Não operar nesta sessão</b><span>Algum item ficou em não. Fecha a plataforma e volta na próxima sessão.</span>"}
-  else{v.className="verdict";v.innerHTML="<b>Responda as 4 perguntas</b><span>Quatro sim liberam a sessão.</span>"}
+  if(ok1(cur)||(!answered&&ok(cur))){v.className="verdict ok";v.innerHTML="<b>Liberado para operar hoje</b><span>Manhã 09:45–11:15 (pausa 10:25–10:45) e tarde 14:00–15:30. No máximo 2 operações por sessão, sempre com stop e alvo 2x; deu loss, encerra a sessão.</span>"}
+  else if(answered){v.className="verdict no";v.innerHTML="<b>Não operar hoje</b><span>Algum item ficou em não. Fecha a plataforma e volta amanhã.</span>"}
+  else{v.className="verdict";v.innerHTML="<b>Responda as 4 perguntas</b><span>Faça uma vez, de manhã, antes da 1ª sessão. Quatro sim liberam o dia.</span>"}
   $("acts").hidden=!can; $("lock").hidden=can;
-  $("lock").textContent= sel<today()?"Dia encerrado. Só visualização.":"Esse dia ainda não chegou. O check-in abre no próprio dia.";
+  $("lock").textContent= sel<today()?"Dia encerrado. Só visualização.":"Esse dia ainda não chegou. O check-list abre no próprio dia.";
   drawJan();drawCal();
 }
 function drawJan(){
-  const J=janelas(sel), mm=t=>{const [h,m]=t.split(":").map(Number);return h*60+m};
-  const d=new Date(), m=d.getHours()*60+d.getMinutes(), [a,b]=J[sess], dentro=m>=mm(a)&&m<mm(b)&&!isWE(today());
-  const pz=pausas(sel).find(p=>m>=mm(p.de)&&m<mm(p.ate)&&!isWE(today()));
-  const tag=!dentro?["out","agora: fora do horário"]:pz?["out","⛔ agora: PAUSA, "+pz.n+" até "+pz.ate]:["in","agora: dentro do horário"];
-  $("jan").innerHTML="<span>Estou no horário de operar da "+(sess==="manha"?"manhã":"tarde")+": <b>"+a+" às "+b+"</b></span>"+(sel===today()?"<span class='ag "+tag[0]+"'>"+tag[1]+"</span>":"")+
-    "<span style='flex-basis:100%;color:var(--loss);font-weight:600;font-size:.82rem'>⛔ Não operar perto: "+pausasTxt(sel)+"</span>"+
-    "<span class='hint' style='flex-basis:100%;color:var(--muted);font-size:.78rem'>Horário fixo: manhã "+J.manha.join("–")+" · tarde "+J.tarde.join("–")+(sel<"2026-11-02"?" · a partir de 02/11 as pausas passam para 10:25–10:45 e 11:25–11:45":"")+"</span>";
+  const mm=t=>{const [h,m]=t.split(":").map(Number);return h*60+m};
+  const d=new Date(), m=d.getHours()*60+d.getMinutes(), hoje=sel===today()&&!isWE(today());
+  const pz=pausas(sel).find(p=>m>=mm(p.de)&&m<mm(p.ate)), pl=pulos(sel);
+  let h="<span style='flex-basis:100%'>Sessões de hoje (horário fixo):</span>";
+  SESS.forEach(s=>{const [a,b]=JAN[s.id],dentro=hoje&&m>=mm(a)&&m<mm(b),pu=pl[s.id];
+    h+="<span class='ag "+(pu?"out":dentro?(pz?"out":"in"):"")+"' style='"+(pu||dentro?"":"background:var(--surface);color:var(--fg)")+"'>"+s.nome+" <b>"+a+"–"+b+"</b>"+(pu?" · PULAR ("+pu+")":dentro?(pz?" · ⛔ PAUSA até "+pz.ate:" · agora"):"")+"</span>"});
+  const pt=pausasTxt(sel);
+  if(pt)h+="<span style='flex-basis:100%;color:var(--loss);font-weight:600;font-size:.82rem'>⛔ Pausa dentro das sessões hoje: "+pt+"</span>";
+  h+="<span class='hint' style='flex-basis:100%;color:var(--muted);font-size:.78rem'>Fixo: manhã 09:45–11:15 e tarde 14:00–15:30, com pausa todo dia às 10:25–10:45. Payroll e CPI: manhã só 30 min depois da notícia.</span>";
+  $("jan").innerHTML=h;
 }
 setInterval(()=>{if($("jan"))drawJan()},60000);
 function drawCal(){
@@ -160,10 +173,10 @@ function drawCal(){
       const b=document.createElement("button");b.type="button";b.textContent=d;
       if(ds>END)break;
       if(ds<START){b.className="day blank";g.appendChild(b);continue}
-      const rec=data[ds], n=rec?SESS.filter(s=>ok(rec[s.id])).length:0;
+      const rec=data[ds];
       let cls="day";
       if(isWE(ds)){cls+=" we";b.disabled=true}
-      else if(rec&&Object.keys(rec).length) cls+= n===2?" full":n===1?" half":" none";
+      else if(respondido(rec)) cls+= ok(rec)?" full":" none";
       if(ds===t)cls+=" today"; if(ds===sel)cls+=" sel";
       b.className=cls; b.setAttribute("aria-label",fmt(ds));
       if(!isWE(ds)) b.onclick=()=>pick(ds);
@@ -181,7 +194,7 @@ $("bSave").onclick=async()=>{
   else{try{localStorage.setItem(LS,JSON.stringify(data))}catch(e){}$("status").textContent="Salvo neste aparelho";window.ui&&ui.done($("bSave"),"Salvo")}
 };
 load();
-{const t=today();sel=t<START?START:t>END?END:t;const J=janelas(sel),h=new Date().getHours()*60+new Date().getMinutes(),[th,tm]=J.manha[1].split(":").map(Number);if(h>=th*60+tm)sess="tarde"}
+{const t=today();sel=t<START?START:t>END?END:t}
 draft=JSON.parse(JSON.stringify(data[sel]||{}));render();$("status").textContent="Conectando…";
 (async()=>{
   try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}

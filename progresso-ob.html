@@ -179,9 +179,11 @@ function render(){
 $("banca").addEventListener("change",e=>{const v=parseFloat(e.target.value),n=isNaN(v)?null:v;if(n===st.banca)return;st.banca=n;render();save();window.ui&&ui.toast("✓ Banca salva")});
 load(); if(st.banca!=null) $("banca").value=st.banca; render(); $("status").textContent="Conectando…";
 /* ---------- Simulador ---------- */
-const SLS="simuladorOB.v1", DEF={banca:null,pct:20,pay:87,dias:5,ses:2,meta:6,stop:4,parc:0,modo:"fixo"};
+const SLS="simuladorOB.v1", DEF={banca:null,pct:20,pay:87,dias:5,ses:4,meta:12,stop:8,parc:0,modo:"fixo",v4:1};
+// 16/10/2026: passou a 4 sessões por dia. Quem tinha 2 salvo vai para 4 uma vez.
+const mig4=o=>{if(!o.v4){o.v4=1;if(+o.ses===2)o.ses=4;return true}return false};
 let sim=Object.assign({},DEF), sref=null;
-try{const r=JSON.parse(localStorage.getItem(SLS)||"null");if(r)sim=Object.assign({},DEF,r)}catch(e){}
+try{const r=JSON.parse(localStorage.getItem(SLS)||"null");if(r){sim=Object.assign({},DEF,{v4:0},r);mig4(sim)}}catch(e){}
 try{if(sim.pay===DEF.pay){const p=parseFloat(localStorage.getItem("sPay"));if(p>0)sim.pay=p}}catch(e){}
 const F={sBanca:"banca",sPct:"pct",sPay:"pay",sDias:"dias",sSes:"ses",sMeta:"meta",sStop:"stop",sParc:"parc"};
 const brl2=v=>"R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}), r2=v=>Math.round(v*100)/100, pc=v=>(v*100).toLocaleString("pt-BR",{maximumFractionDigits:1})+"%";
@@ -243,7 +245,7 @@ fillSim();calcSim();
   if(!db){$("status").textContent="Salvando neste aparelho";return}
   ref=db.doc("estado/progresso");
   sref=db.doc("estado/simulador");
-  sref.onSnapshot(s=>{if(s.exists){sim=Object.assign({},DEF,s.data());fillSim();calcSim()}else if(localStorage.getItem(SLS)){sref.set(sim).catch(()=>{})}},()=>{});
+  sref.onSnapshot(s=>{if(s.exists){sim=Object.assign({},DEF,{v4:0},s.data());if(mig4(sim))sref.set(sim).catch(()=>{});fillSim();calcSim()}else if(localStorage.getItem(SLS)){sref.set(sim).catch(()=>{})}},()=>{});
   ref.onSnapshot(s=>{
     if(s.exists){const d=s.data(); st={conquistados:[...(d.conquistados||[])],banca:d.banca??null};
       if(document.activeElement!==$("banca")) $("banca").value=st.banca??"";}

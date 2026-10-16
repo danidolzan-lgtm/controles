@@ -96,7 +96,7 @@ select:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(-
       <div class="kpi"><span class="lbl">Médias (exponenciais)</span><b>9 · 21 · 50</b></div>
       <div class="kpi"><span class="lbl">Entrada</span><b>Abertura da vela seguinte</b></div>
       <div class="kpi"><span class="lbl">Alvo</span><b>2x o stop</b></div>
-      <div class="kpi"><span class="lbl">Por dia</span><b>Máx. 2 · para no 1º loss</b></div>
+      <div class="kpi"><span class="lbl">Por sessão</span><b>Máx. 2 · loss na 1ª encerra a sessão</b></div>
     </div>
     <div class="legend">
       <span><i style="background:var(--warm)"></i>EMA 9</span>
@@ -392,38 +392,45 @@ select:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(-
   <!-- HORÁRIOS -->
   <section class="panel" id="horarios">
     <h2>Horários (Brasília)</h2>
-    <p><b>Horário fixo:</b> as sessões não mudam. Em 01/11 os EUA trocam o relógio e o que muda é só o horário das pausas abaixo.</p>
+    <p><b>2 sessões, horário fixo</b>, manhã e tarde, com no máximo 2 operações em cada. Foram escolhidas para ficar longe das notícias, antes e depois de 01/11 (quando os EUA trocam o relógio). O check-list é feito <b>uma vez por dia</b>, de manhã, e já avisa se alguma sessão deve ser pulada.</p>
     <div class="scroll">
       <table>
         <thead><tr><th>Sessão</th><th>Horário (fixo)</th><th>Por quê</th></tr></thead>
         <tbody>
-          <tr><td><b>Manhã</b></td><td class="t">09:15–11:30</td><td>Mais volume do dia, já passada a bagunça da abertura.</td></tr>
-          <tr><td><b>Tarde</b></td><td class="t">14:00–16:30</td><td>Volta do volume depois do almoço, com Nova York aberta.</td></tr>
+          <tr><td><b>Manhã</b></td><td class="t">09:45–11:15</td><td>Maior volume do dia, já passada a bagunça da abertura e os dados dos EUA das 09:30. <b>Pausa todo dia às 10:25–10:45</b> (até 01/11 é a abertura de Nova York; a partir de 02/11, os dados dos EUA). Termina antes da abertura de Nova York das 11:30 que passa a valer em 02/11.</td></tr>
+          <tr><td><b>Tarde</b></td><td class="t">14:00–15:30</td><td>Volume volta depois do almoço, Nova York aberta e sem notícia fixa.</td></tr>
         </tbody>
       </table>
     </div>
     <div class="box no">
-      <h3>⛔ Não operar perto (5 min antes até 15 min depois)</h3>
+      <h3>⛔ Notícias relevantes (alto impacto)</h3>
+      <p>Notícia relevante é a que mexe no índice e no dólar: as do Brasil e as dos EUA com <b>3 touros</b> (alto impacto) no calendário do Investing.com. Filtre: alto impacto · Brasil e EUA. Regra: <b>não abrir ordem de 5 min antes até 15 min depois</b>. Se cair dentro de uma sessão, pula a sessão.</p>
       <div class="scroll">
         <table>
-          <thead><tr><th>Evento</th><th>Até 01/11</th><th>A partir de 02/11</th></tr></thead>
+          <thead><tr><th>Notícia</th><th>Até 01/11</th><th>A partir de 02/11</th><th>O que fazer</th></tr></thead>
           <tbody>
-            <tr><td><b>Notícia dos EUA</b></td><td class="t">09:25–09:45</td><td class="t">10:25–10:45</td></tr>
-            <tr><td><b>Abertura de Nova York</b></td><td class="t">10:25–10:45</td><td class="t">11:25–11:45</td></tr>
+            <tr><td><b>Brasil:</b> IPCA, IPCA-15, PIB, varejo, produção industrial</td><td class="t" colspan="2">09:00</td><td>Antes da manhã. Nada.</td></tr>
+            <tr><td><b>Brasil:</b> ata do Copom (terça depois da reunião)</td><td class="t" colspan="2">08:00</td><td>Antes da manhã. Nada.</td></tr>
+            <tr><td><b>Brasil:</b> decisão do Copom</td><td class="t" colspan="2">18:30, depois do pregão</td><td>No dia seguinte pode abrir com gap. Atenção redobrada na manhã.</td></tr>
+            <tr><td><b>EUA:</b> Payroll (1ª sexta do mês) e CPI (inflação)</td><td class="t">09:30</td><td class="t">10:30</td><td><b>Manhã só 30 min depois</b> (até 01/11 a partir de 10:00; depois, a partir de 11:00)</td></tr>
+            <tr><td><b>EUA:</b> PPI, varejo, PIB, PCE, seguro-desemprego</td><td class="t">09:30</td><td class="t">10:30</td><td>Antes da manhã ou dentro da pausa fixa</td></tr>
+            <tr><td><b>Abertura da bolsa de Nova York</b></td><td class="t">10:30</td><td class="t">11:30</td><td>Pausa fixa 10:25–10:45 / depois da manhã</td></tr>
+            <tr><td><b>EUA:</b> ISM, JOLTS, confiança do consumidor</td><td class="t">11:00</td><td class="t">12:00</td><td>Até 01/11, quando tiver, pausa 10:55–11:15</td></tr>
+            <tr><td><b>FOMC</b>, juros dos EUA</td><td class="t">28/10 às 15:00</td><td class="t">09/12 às 16:00</td><td><b>Pula a tarde</b></td></tr>
+            <tr><td><b>Feriados</b></td><td class="t" colspan="2">02/11 e 20/11: B3 fechada · 26/11: EUA fechado</td><td>26/11 só de manhã</td></tr>
           </tbody>
         </table>
       </div>
-      <p>Na pausa não abre ordem nem com sinal perfeito.</p>
+      <p>Também conta como notícia relevante: fala do presidente do Fed ou do Banco Central, e qualquer notícia que faça o WIN ou o WDO disparar do nada. Vela gigante sem motivo? Para 15 minutos.</p>
     </div>
     <div class="box no">
       <h3>Evite também</h3>
       <ul>
         <li>Os primeiros 15 minutos do pregão (09:00–09:15).</li>
-        <li>As notícias do Brasil (IPCA, Copom, ata) e a decisão de juros dos EUA (FOMC).</li>
-        <li>O horário de almoço (11:30–14:00), quando o volume cai e o mercado fica lateral.</li>
+        <li>O horário de almoço (11:15–14:00), quando o volume cai e o mercado fica lateral.</li>
       </ul>
     </div>
-    <p class="hint">Antes de cada sessão, confira o calendário econômico do dia.</p>
+    <p class="hint">De manhã, no check-list, confira o calendário econômico do dia.</p>
   </section>
 
   <!-- RISCO -->
@@ -444,9 +451,10 @@ select:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(-
     </div>
     <p class="hint" id="rAviso"></p>
     <div class="box no">
-      <h3>Regras do dia</h3>
+      <h3>Regras de cada sessão</h3>
       <ul>
-        <li>No máximo <b>2 operações</b> por dia. Parou no <b>1º loss</b>.</li>
+        <li>Duas sessões por dia (manhã e tarde). Em cada uma, no máximo <b>2 operações</b>; loss na 1ª, <b>sessão encerrada</b>.</li>
+        <li>A tarde começa do zero, com os mesmos contratos. Stop de manhã não se recupera à tarde com mão maior.</li>
         <li>Contratos pela sua tabela de progresso da banca. Nunca aumente para recuperar um loss.</li>
         <li>Stop e alvo entram junto com a ordem. Nunca afaste o stop depois de entrar.</li>
         <li><b>Uma operação aberta por vez.</b> Nunca WIN e WDO juntos: comprar WIN e vender WDO é a mesma aposta duas vezes e, se virar, são dois stops de uma vez.</li>

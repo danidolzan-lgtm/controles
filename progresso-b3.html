@@ -211,8 +211,8 @@ function calcSim(){
   $("oL").textContent=sg(-w.l); $("oL1").textContent=pc(w.l/banca)+" da banca"+(+sim.custo?" · com o custo":"");
   const be=w.l/(w.g+w.l);
   $("oPaga").textContent="Um gain paga "+(w.l>0?(w.g/w.l).toLocaleString("pt-BR",{maximumFractionDigits:2}):"–")+" losses. Para empatar, precisa acertar "+pc(be)+" das operações.";
-  const ops=(+sim.dias||0)*2, usadas=(+sim.gain||0)+(+sim.loss||0);
-  $("oWarn").hidden=usadas<=ops; $("oWarn").textContent="Você colocou "+usadas+" operações, mas o manual permite no máximo "+ops+" na semana (2 por dia × "+sim.dias+" dias).";
+  const ops=(+sim.dias||0)*4, usadas=(+sim.gain||0)+(+sim.loss||0);
+  $("oWarn").hidden=usadas<=ops; $("oWarn").textContent="Você colocou "+usadas+" operações, mas o manual permite no máximo "+ops+" na semana (2 por sessão × 2 sessões × "+sim.dias+" dias).";
   $("oSem").textContent=sg(w.res); $("oSem1").textContent=pc(w.res/banca)+" da banca";
   $("cSem").className="card "+(w.res>0?"g":w.res<0?"r":"");
   $("oAss").textContent=usadas?pc((+sim.gain||0)/usadas):"–"; $("oAss1").textContent=(+sim.gain||0)+" gains em "+usadas+" operações (empate em "+pc(be)+")";

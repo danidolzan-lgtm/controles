@@ -80,12 +80,16 @@ td:first-child{font-family:var(--f-body);white-space:normal}
 .big2 button{flex:1;padding:11px;font-weight:700}
 .seg button.meta.on{background:var(--win);border-color:var(--win);color:var(--surface)}
 .seg button.stop.on{background:var(--loss);border-color:var(--loss);color:var(--surface)}
-.ro button[data-a]:not([data-a=close]),.ro input,.ro select{pointer-events:none}
+.ro button[data-a]:not([data-a=close]):not([data-a=sess]),.ro input,.ro select{pointer-events:none}
+.stabs{display:flex;gap:6px}
+.stabs button{flex:1;appearance:none;font:inherit;font-weight:600;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:8px;padding:8px 10px;cursor:pointer;display:grid;gap:1px}
+.stabs button small{font-family:var(--f-num);font-weight:400;font-size:.75rem;opacity:.85}
+.stabs button.on{background:var(--accent);border-color:var(--accent);color:var(--surface)}
 </style>
 
 <div class="wrap">
   <div class="top">
-    <div><h1>Diário B3</h1><div class="sub">WIN e WDO · M2 · Respiro, Virada, Muralha, Giro e Armadilha · alvo 2x o stop · máx. 2 operações no dia · parou no 1º loss</div></div>
+    <div><h1>Diário B3</h1><div class="sub">WIN e WDO · M2 · Respiro, Virada, Muralha, Giro e Armadilha · alvo 2x o stop · manhã e tarde · máx. 2 operações por sessão · stop na 1ª encerra a sessão</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
 
@@ -110,7 +114,7 @@ td:first-child{font-family:var(--f-body);white-space:normal}
 
   <div class="two">
     <div class="panel"><h2 style="margin-bottom:8px">Por operacional</h2><div class="tbl-wrap"><table id="tOp"></table></div></div>
-    <div class="panel"><h2 style="margin-bottom:8px">Por ativo e ordem</h2><div class="tbl-wrap"><table id="tAt"></table></div></div>
+    <div class="panel"><h2 style="margin-bottom:8px">Por ativo, sessão e ordem</h2><div class="tbl-wrap"><table id="tAt"></table></div></div>
   </div>
 </div>
 
@@ -133,7 +137,11 @@ function setStatus(t){$("status").textContent=t}
 function calcRes(o){const v=parseFloat(o.valor);if(!o.tipo||isNaN(v))return null;return o.tipo==="meta"?Math.abs(v):-Math.abs(v)}
 function opVal(op){return +op.resultado||0}
 function dayNet(d){return (d.ops||[]).reduce((s,o)=>s+opVal(o),0)}
-function dayOk(d){const o=d.ops||[];if(o.length>2)return false;if(o.length===2&&opVal(o[0])<0)return false;return true}
+// 2 sessões por dia (manhã e tarde), até 2 operações em cada. Operação antiga sem sessão conta como manhã.
+const SESS=[{id:"manha",nome:"Manhã",h:"09:45–11:15"},{id:"tarde",nome:"Tarde",h:"14:00–15:30"}];
+const sessOf=o=>o.sess||"manha";
+const sOps=(d,id)=>(d.ops||[]).filter(o=>sessOf(o)===id);
+function dayOk(d){return SESS.every(x=>{const o=sOps(d,x.id);if(o.length>2)return false;if(o.length===2&&opVal(o[0])<0)return false;return true})}
 
 /* ---------- salvar ---------- */
 function lsLoad(){try{const r=JSON.parse(localStorage.getItem(LS)||"null");if(r){days=r.days||{};cfg=Object.assign(cfg,r.cfg||{})}}catch(e){}}
@@ -147,7 +155,7 @@ let cfgT=null;
 function saveCfg(){lsSave();clearTimeout(cfgT);cfgT=setTimeout(async()=>{if(db){try{await db.doc("config/geral").set(cfg)}catch(e){}}},500)}
 
 /* ---------- tela ---------- */
-function allOps(){const out=[];Object.values(days).forEach(d=>(d.ops||[]).forEach((o,i)=>out.push({...o,idx:i,date:d.date})));return out}
+function allOps(){const out=[];Object.values(days).forEach(d=>SESS.forEach(x=>sOps(d,x.id).forEach((o,i)=>out.push({...o,idx:i,date:d.date}))));return out}
 function render(){renderKpis();renderCal();renderTables();renderList()}
 function renderKpis(){
   const ops=allOps(), g=ops.filter(o=>opVal(o)>0).length, l=ops.filter(o=>opVal(o)<0).length, tot=ops.reduce((s,o)=>s+opVal(o),0);
@@ -191,17 +199,19 @@ function statRow(nome,ops){const g=ops.filter(o=>opVal(o)>0).length,v=ops.reduce
 function renderTables(){
   const ops=allOps(), head="<thead><tr><th></th><th>Ops</th><th>Acerto</th><th>R$</th></tr></thead><tbody>";
   $("tOp").innerHTML=head+OPS.map(x=>statRow(x.nome,ops.filter(o=>(o.operacional==="muralhaEng"?"muralha":o.operacional)===x.id))).join("")+"</tbody>";
-  $("tAt").innerHTML=head+Object.keys(ATIVOS).map(k=>statRow(ATIVOS[k].nome,ops.filter(o=>o.ativo===k))).join("")+statRow("1ª operação",ops.filter(o=>o.idx===0))+statRow("2ª operação",ops.filter(o=>o.idx===1))+"</tbody>";
+  $("tAt").innerHTML=head+Object.keys(ATIVOS).map(k=>statRow(ATIVOS[k].nome,ops.filter(o=>o.ativo===k))).join("")+SESS.map(x=>statRow(x.nome,ops.filter(o=>sessOf(o)===x.id))).join("")+statRow("1ª da sessão",ops.filter(o=>o.idx===0))+statRow("2ª da sessão",ops.filter(o=>o.idx===1))+"</tbody>";
 }
 function renderList(){}
 
 /* ---------- janela do dia ---------- */
-let draft=null, ro=false, lastFocus=null;
-function newOp(){const prev=draft.ops[draft.ops.length-1];return {ativo:prev?prev.ativo:"WIN",direcao:"",operacional:"",contratos:+cfg.ct||1,tipo:"",valor:null,resultado:null}}
+let draft=null, ro=false, lastFocus=null, cs="manha";
+function newOp(){const prev=draft.ops[draft.ops.length-1];return {sess:cs,ativo:prev?prev.ativo:"WIN",direcao:"",operacional:"",contratos:+cfg.ct||1,tipo:"",valor:null,resultado:null}}
+const curOps=()=>draft.ops.filter(o=>sessOf(o)===cs);
+const pareiK=()=>"parei_"+cs;
 function openDay(ds){
   lastFocus=document.activeElement;
-  draft=JSON.parse(JSON.stringify(days[ds]||{date:ds,status:"",ops:[]}));draft.date=ds;draft.ops=draft.ops||[];
-  ro=ds<todayStr();drawModal();$("ov").hidden=false;
+  draft=JSON.parse(JSON.stringify(days[ds]||{date:ds,status:"",ops:[]}));draft.date=ds;draft.ops=draft.ops||[];if(draft.parei){draft.parei_manha=true;delete draft.parei}
+  ro=ds<todayStr();cs=ds===todayStr()&&new Date().getHours()>=13?"tarde":"manha";drawModal();$("ov").hidden=false;
   setTimeout(()=>{const f=$("modal").querySelector("button,input");f&&f.focus()},0);
 }
 function closeModal(){$("ov").hidden=true;draft=null;lastFocus&&lastFocus.focus&&lastFocus.focus()}
@@ -212,8 +222,11 @@ function drawModal(){
   if(ro)h+="<div class='lock'>Dia encerrado. Só visualização.</div>";
   h+="<div class='seg'><button type='button' data-a='status' data-v='op' class='"+(draft.status==="op"?"on":"")+"'>Operei</button><button type='button' data-a='status' data-v='nao' class='"+(draft.status==="nao"?"on":"")+"'>Não operei</button></div>";
   if(draft.status==="op"){
+    h+="<div class='stabs'>"+SESS.map(x=>{const o=sOps(draft,x.id),n=o.reduce((a,b)=>a+opVal(b),0);return "<button type='button' data-a='sess' data-v='"+x.id+"' class='"+(cs===x.id?"on":"")+"'>"+x.nome+"<small>"+x.h+(o.length?" · "+n2(n):"")+"</small></button>"}).join("")+"</div>";
     draft.ops.forEach((o,i)=>{
-      h+="<div class='op'><div class='t'><span>"+(i+1)+"ª operação</span><span id='rv"+i+"' class='num "+(opVal(o)>0?"pos":opVal(o)<0?"neg":"")+"'>"+(o.resultado==null?"":n2(opVal(o)))+"</span></div>";
+      if(sessOf(o)!==cs)return;
+      const k=curOps().indexOf(o);
+      h+="<div class='op'><div class='t'><span>"+(k+1)+"ª operação da "+(cs==="manha"?"manhã":"tarde")+"</span><span id='rv"+i+"' class='num "+(opVal(o)>0?"pos":opVal(o)<0?"neg":"")+"'>"+(o.resultado==null?"":n2(opVal(o)))+"</span></div>";
       h+="<div class='lbl'>Operacional</div><div class='seg'>"+OPS.map(x=>"<button type='button' data-a='opr' data-i='"+i+"' data-v='"+x.id+"' class='"+(o.operacional===x.id?"on":"")+"'>"+x.nome+"</button>").join("")+"</div>";
       h+="<div class='seg'>"+Object.keys(ATIVOS).map(k=>"<button type='button' data-a='ativo' data-i='"+i+"' data-v='"+k+"' class='"+(o.ativo===k?"on":"")+"'>"+k+"</button>").join("")+
         "<button type='button' data-a='dir' data-i='"+i+"' data-v='C' class='"+(o.direcao==="C"?"on":"")+"'>Compra ▲</button><button type='button' data-a='dir' data-i='"+i+"' data-v='V' class='"+(o.direcao==="V"?"on":"")+"'>Venda ▼</button></div>";
@@ -223,19 +236,19 @@ function drawModal(){
       h+="</div>";
     });
     lastNx=nextHTML();h+="<div id='nx' style='display:grid;gap:10px'>"+lastNx+"</div>";
-    if(draft.ops.length&&!ro) h+="<div class='seg'><button type='button' data-a='rm'>Apagar a última operação</button></div>";
+    if(curOps().length&&!ro) h+="<div class='seg'><button type='button' data-a='rm'>Apagar a última operação</button></div>";
   }
   h+="<div class='err' id='mErr'></div><div class='actions'>"+(ro?"<button type='button' class='btn' data-a='close'>Fechar</button>":"<button type='button' class='btn' data-a='close'>Fechar sem salvar</button><button type='button' class='btn primary' data-a='save'>Salvar</button>")+"</div>";
   m.innerHTML=h;
 }
 let lastNx="";
 function nextHTML(){
-  const o1=draft.ops[0], o2=draft.ops[1];
-  if(!draft.ops.length) return "<div class='seg'><button type='button' data-a='add'>Registrar 1ª operação</button></div>";
-  if(o2) return "<div class='lock'>Limite de 2 operações atingido.</div>";
+  const so=curOps(), o1=so[0], o2=so[1], nm=cs==="manha"?"manhã":"tarde";
+  if(!so.length) return "<div class='seg'><button type='button' data-a='add'>Registrar 1ª operação da "+nm+"</button></div>";
+  if(o2) return "<div class='lock'>Limite de 2 operações da "+nm+" atingido. Sessão encerrada.</div>";
   if(o1.resultado==null) return "";
-  if(opVal(o1)<0) return "<div class='lock'>Stop na 1ª. Dia encerrado: sem 2ª operação.</div>";
-  return "<div class='seg'><button type='button' data-a='add'>Fiz a 2ª operação</button><button type='button' data-a='stop' class='"+(draft.parei?"on":"")+"'>Parei por hoje</button></div>";
+  if(opVal(o1)<0) return "<div class='lock'>Stop na 1ª. Sessão da "+nm+" encerrada: sem 2ª operação.</div>";
+  return "<div class='seg'><button type='button' data-a='add'>Fiz a 2ª operação</button><button type='button' data-a='stop' class='"+(draft[pareiK()]?"on":"")+"'>Parei nesta sessão</button></div>";
 }
 function softUpdate(i){
   const o=draft.ops[i];if(!o)return;
@@ -246,16 +259,17 @@ $("modal").addEventListener("click",e=>{
   const b=e.target.closest("button[data-a]");if(!b)return;
   const a=b.dataset.a;
   if(a==="close")return closeModal();
+  if(a==="sess"){cs=b.dataset.v;return drawModal()}
   if(ro)return;
   if(a==="save")return doSave();
   const i=+b.dataset.i, o=draft.ops[i];
-  if(a==="status"){draft.status=b.dataset.v;if(draft.status==="nao"){draft.ops=[];draft.parei=false}else if(!draft.ops.length)draft.ops.push(newOp())}
-  if(a==="add"){draft.parei=false;draft.ops.push(newOp())}
-  if(a==="stop")draft.parei=true;
-  if(a==="rm"){draft.ops.pop();draft.parei=false}
+  if(a==="status"){draft.status=b.dataset.v;if(draft.status==="nao"){draft.ops=[];SESS.forEach(x=>draft["parei_"+x.id]=false)}else if(!curOps().length)draft.ops.push(newOp())}
+  if(a==="add"){draft[pareiK()]=false;draft.ops.push(newOp())}
+  if(a==="stop")draft[pareiK()]=true;
+  if(a==="rm"){const so=curOps();draft.ops.splice(draft.ops.indexOf(so[so.length-1]),1);draft[pareiK()]=false}
   if(a==="ativo"){o.ativo=b.dataset.v;if(o.pontos!=null&&o.contratos){o.valor=Math.round(o.pontos*ATIVOS[o.ativo].pt*o.contratos*100)/100;o.resultado=calcRes(o)}}
   if(a==="opr")o.operacional=b.dataset.v;
-  if(a==="tipo"){o.tipo=b.dataset.v;o.resultado=calcRes(o);if(i===0&&o.resultado<0&&draft.ops.length>1){draft.ops.length=1}}
+  if(a==="tipo"){o.tipo=b.dataset.v;o.resultado=calcRes(o);const so=curOps();if(so[0]===o&&o.resultado<0&&so.length>1){so.slice(1).forEach(x=>draft.ops.splice(draft.ops.indexOf(x),1))}}
   if(a==="dir")o.direcao=b.dataset.v;
   drawModal();
 });
@@ -282,10 +296,12 @@ function doSave(){
   if(draft.status==="op"){
     if(!draft.ops.length){err.textContent="Registre a operação ou marque Não operei.";return}
     for(const [i,o] of draft.ops.entries()){
-      if(!o.operacional){err.textContent=(i+1)+"ª operação: escolha o operacional.";return}
-      if(!o.tipo){err.textContent=(i+1)+"ª operação: toque em Meta ou Stop.";return}
-      if(o.resultado==null||isNaN(o.resultado)){err.textContent=(i+1)+"ª operação: digite o valor.";return}
-      if(!o.contratos){err.textContent=(i+1)+"ª operação: informe os contratos.";return}
+      const nm=(sessOf(o)==="manha"?"Manhã":"Tarde")+", "+(sOps(draft,sessOf(o)).indexOf(o)+1)+"ª operação";
+      const bad=t=>{err.textContent=nm+": "+t;if(cs!==sessOf(o)){cs=sessOf(o);drawModal();$("mErr").textContent=nm+": "+t}};
+      if(!o.operacional)return bad("escolha o operacional.");
+      if(!o.tipo)return bad("toque em Meta ou Stop.");
+      if(o.resultado==null||isNaN(o.resultado))return bad("digite o valor.");
+      if(!o.contratos)return bad("informe os contratos.");
     }
   }
   const d=draft;closeModal();saveDay(d);window.ui&&ui.toast("✓ Dia salvo");

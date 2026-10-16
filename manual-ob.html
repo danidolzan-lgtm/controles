@@ -316,38 +316,47 @@ input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offs
   <!-- HORÁRIOS -->
   <section class="panel" id="horarios">
     <h2>Horários (Brasília)</h2>
-    <p><b>Horário fixo:</b> as sessões não mudam. Em 01/11 os EUA trocam o relógio e o que muda é só o horário das pausas (notícia dos EUA e abertura de Nova York), que passam a cair dentro da manhã.</p>
+    <p><b>4 sessões, horário fixo</b>, duas de manhã e duas à tarde (a sessão 2 tem 40 min). Foram escolhidas para <b>não ter nenhuma notícia fixa dentro delas</b>, nem antes nem depois de 01/11 (quando os EUA trocam o relógio). O check-list é feito <b>uma vez por dia</b>, de manhã, antes da sessão 1, e já avisa se alguma sessão deve ser pulada.</p>
     <div class="scroll">
       <table>
         <thead><tr><th>Sessão</th><th>Horário (fixo)</th><th>Por quê</th></tr></thead>
         <tbody>
-          <tr><td><b>Manhã</b></td><td class="t">09:45–11:45</td><td>Londres e Nova York abertas juntas, logo depois das notícias dos EUA.</td></tr>
-          <tr><td><b>Tarde</b></td><td class="t">13:30–15:30</td><td>Nova York sozinha, mais calma. Bom para o Respiro e a Muralha.</td></tr>
+          <tr><td><b>Sessão 1</b></td><td class="t">08:00–09:00</td><td>Londres a todo vapor, as notícias da Europa já saíram (03:00–06:00) e os EUA ainda não soltaram dados. Tendência limpa: bom para Respiro e Virada.</td></tr>
+          <tr><td><b>Sessão 2</b></td><td class="t">09:45–10:25</td><td>Londres e EUA juntos. Só 40 min porque é o único trecho limpo da manhã: começa 15 min depois dos dados das 09:30 e acaba antes das 10:25 (até 01/11, abertura de Nova York; depois, dados dos EUA).</td></tr>
+          <tr><td><b>Sessão 3</b></td><td class="t">13:30–14:30</td><td>Londres já fechou, Nova York sozinha e sem notícia. Mercado mais calmo: bom para Respiro e Muralha.</td></tr>
+          <tr><td><b>Sessão 4</b></td><td class="t">15:00–16:00</td><td>Tarde de Nova York, sem notícia fixa. O volume começa a cair: só entra com as médias bem espaçadas. <b>Na sexta, pula.</b></td></tr>
         </tbody>
       </table>
     </div>
     <div class="box no">
-      <h3>⛔ Não operar perto (5 min antes até 15 min depois)</h3>
+      <h3>⛔ Notícias relevantes (alto impacto)</h3>
+      <p>Notícia relevante é a que mexe nas moedas que você opera (dólar, euro e libra) e aparece com <b>3 touros</b> (alto impacto) no calendário econômico do Investing.com. Filtre: alto impacto · EUA, Zona do Euro e Reino Unido. Regra: <b>não operar de 5 min antes até 15 min depois</b>. Se cair dentro de uma sessão, pula a sessão.</p>
       <div class="scroll">
         <table>
-          <thead><tr><th>Evento</th><th>Até 01/11</th><th>A partir de 02/11</th></tr></thead>
+          <thead><tr><th>Notícia</th><th>Até 01/11</th><th>A partir de 02/11</th><th>Cai na sessão?</th></tr></thead>
           <tbody>
-            <tr><td><b>Notícia dos EUA</b></td><td class="t">09:25–09:45</td><td class="t">10:25–10:45</td></tr>
-            <tr><td><b>Abertura de Nova York</b></td><td class="t">10:25–10:45</td><td class="t">11:25–11:45</td></tr>
+            <tr><td><b>EUA:</b> Payroll (1ª sexta do mês), CPI e PPI (inflação), vendas no varejo, PIB, PCE, seguro-desemprego (toda quinta)</td><td class="t">09:30</td><td class="t">10:30</td><td>Não (a sessão 2 começa 09:45 e acaba 10:25)</td></tr>
+            <tr><td><b>Abertura da bolsa de Nova York</b></td><td class="t">10:30</td><td class="t">11:30</td><td>Não</td></tr>
+            <tr><td><b>EUA:</b> ISM industrial e de serviços, JOLTS, confiança do consumidor</td><td class="t">11:00</td><td class="t">12:00</td><td>Não</td></tr>
+            <tr><td><b>Fechamento de Londres</b> (fixing)</td><td class="t">12:00 (13:00 a partir de 26/10)</td><td class="t">13:00</td><td>Não</td></tr>
+            <tr><td><b>FOMC</b>, juros dos EUA, e a coletiva do presidente do Fed 30 min depois</td><td class="t">28/10 às 15:00</td><td class="t">09/12 às 16:00</td><td><b>Sim: pula a sessão 4</b></td></tr>
+            <tr><td><b>BoE</b>, juros da Inglaterra</td><td class="t">—</td><td class="t">05/11 e 17/12 às 09:00</td><td><b>Sim: a sessão 1 para às 08:50</b></td></tr>
+            <tr><td><b>BCE</b>, juros da Zona do Euro, e a coletiva</td><td class="t">29/10 às 10:15</td><td class="t">17/12 às 10:15</td><td><b>Sim: pula a sessão 2</b></td></tr>
+            <tr><td><b>Europa:</b> PMIs, inflação e PIB da Alemanha, Zona do Euro e Reino Unido</td><td class="t" colspan="2">03:00–06:00</td><td>Não</td></tr>
+            <tr><td><b>Feriado nos EUA</b> (Ação de Graças)</td><td class="t" colspan="2">26/11 o dia todo · 27/11 meio período</td><td><b>26/11 não opera · 27/11 só de manhã</b></td></tr>
           </tbody>
         </table>
       </div>
-      <p>Na pausa não entra nem com sinal perfeito. Uma operação aberta antes precisa vencer antes da pausa começar.</p>
+      <p>Também é notícia relevante, mesmo sem horário marcado: fala do presidente do Fed, do BCE ou do BoE, e qualquer notícia que faça o gráfico disparar do nada. Viu uma vela gigante sem motivo? Para 15 minutos.</p>
     </div>
     <div class="box no">
       <h3>Evite também</h3>
       <ul>
-        <li>O horário de almoço entre as sessões, quando o mercado fica lateral.</li>
-        <li>Dias de decisão de juros dos EUA (FOMC), à tarde.</li>
-        <li>A sexta-feira depois das 15:00.</li>
+        <li>Os intervalos entre as sessões, principalmente o almoço, quando o mercado fica lateral.</li>
+        <li>A sexta-feira depois das 15:00 (na sexta, pule a sessão 4).</li>
       </ul>
     </div>
-    <p class="hint">Prefira os pares principais com dólar (EUR/USD, GBP/USD, USD/JPY). Antes de cada sessão, confira o calendário econômico do dia.</p>
+    <p class="hint">Prefira os pares principais com dólar (EUR/USD, GBP/USD, USD/JPY). Depois de algumas semanas, veja no Lucro OB qual sessão rende mais e qual dá mais stop.</p>
   </section>
 
   <!-- SOROS -->
@@ -374,6 +383,7 @@ input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offs
         <li>No máximo <b>2 entradas por sessão</b>: a mão base e o Soros.</li>
         <li>Deu <b>loss na 1ª</b>: sessão encerrada, sem 2ª entrada.</li>
         <li>Fez a 2ª (Soros), ganhando ou perdendo: sessão encerrada.</li>
+        <li>Cada uma das <b>4 sessões</b> começa do zero, sempre com a <b>mão base</b>. Stop numa sessão não se recupera na seguinte com mão maior.</li>
         <li>Nunca aumente a mão base para recuperar um loss.</li>
       </ul>
     </div>

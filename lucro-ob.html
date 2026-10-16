@@ -237,6 +237,7 @@ const r2=v=>Math.round(v*100)/100;
 let ops=[], db=null, showDays=10, allAssets=false;
 let F={per:"mes",ses:"all",de:"",ate:""};
 try{Object.assign(F,JSON.parse(localStorage.getItem(LSF)||"{}"))}catch(e){}
+if(!["all","s1","manha","tarde","s4","fora"].includes(F.ses))F.ses="all";
 
 /* ---------- leitura do Excel ---------- */
 function loadScript(src){return new Promise((ok,no)=>{if(window.XLSX)return ok();const s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=()=>no(new Error("Não carregou o leitor de Excel (sem internet?)"));document.head.appendChild(s)})}
@@ -367,7 +368,9 @@ function applySnap(q){
 
 /* ---------- filtros ---------- */
 const PER=[["hoje","Hoje"],["semana","Esta semana"],["7d","7 dias"],["mes","Este mês"],["mesant","Mês passado"],["30d","30 dias"],["ano","Este ano"],["tudo","Tudo"],["custom","Período…"]];
-const SES=[["all","Todas as sessões"],["manha","Manhã"],["tarde","Tarde"],["noite","Noite"]];
+// 4 sessões fixas (pelo horário de abertura da operação); o que abriu fora delas cai em "Fora do horário"
+const SES=[["all","Todas as sessões"],["s1","Sessão 1 · 08:00"],["manha","Sessão 2 · 09:45"],["tarde","Sessão 3 · 13:30"],["s4","Sessão 4 · 15:00"],["fora","Fora do horário"]];
+const SJ={s1:[480,540],manha:[585,625],tarde:[810,870],s4:[900,960]};
 const ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 function bounds(){
   const now=new Date(),t=ymd(now);
@@ -384,7 +387,7 @@ function bounds(){
     default:return ["0000","9999"];
   }
 }
-const sesOf=o=>{const h=+o.t.slice(11,13);return h<12?"manha":h<18?"tarde":"noite"};
+const sesOf=o=>{const m=(+o.t.slice(11,13))*60+(+o.t.slice(14,16));for(const k in SJ)if(m>=SJ[k][0]&&m<SJ[k][1])return k;return "fora"};
 function filtered(){const [a,b]=bounds();return ops.filter(o=>{const d=o.t.slice(0,10);return d>=a&&d<=b&&(F.ses==="all"||sesOf(o)===F.ses)})}
 function chips(el,list,key){
   el.innerHTML=list.map(([k,l])=>"<button type='button' data-k='"+k+"' class='"+(F[key]===k?"on":"")+"'>"+l+"</button>").join("");
@@ -541,7 +544,7 @@ function render(){
   $("fRange").hidden=F.per!=="custom";$("fDe").value=F.de;$("fAte").value=F.ate;
   const L=filtered(),s=stats(L);
   const lab=PER.find(p=>p[0]===F.per)[1];
-  $("hLbl").textContent="Lucro líquido · "+(F.per==="custom"?(F.de?fmtDia(F.de):"")+" a "+(F.ate?fmtDia(F.ate):""):lab.toLowerCase())+(F.ses!=="all"?" · "+SES.find(x=>x[0]===F.ses)[1].toLowerCase():"");
+  $("hLbl").textContent="Lucro líquido · "+(F.per==="custom"?(F.de?fmtDia(F.de):"")+" a "+(F.ate?fmtDia(F.ate):""):lab.toLowerCase())+(F.ses!=="all"&&SES.find(x=>x[0]===F.ses)?" · "+SES.find(x=>x[0]===F.ses)[1].toLowerCase():"");
   const hL=$("hLucro");hL.textContent=sbrl(r2(s.luc));hL.className="big "+cls(s.luc);
   $("hRet").textContent=brl(s.ret);$("hInv").textContent=brl(s.inv);
   $("kAss").textContent=pct(s.ass);$("kAssS").textContent=s.w+" acertos · "+s.l+" erros"+(s.d?" · "+s.d+" empates":"");
