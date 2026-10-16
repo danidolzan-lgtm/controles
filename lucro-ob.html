@@ -275,28 +275,47 @@ function fromRows(rows){
     const head=rows[h].map(c=>String(c??"").trim()); const ix={};
     for(const k in COLS){const i=head.findIndex((c,j)=>COLS[k].test(c)&&!Object.values(ix).includes(j));if(i>=0)ix[k]=i}
     if(ix.v==null||ix.r==null||ix.t==null)continue;
-    const out=[];
+    const out=[],seen=new Map();
     rows.slice(h+1).forEach(r=>{
-      const t=when(r[ix.t]),v=num(r[ix.v]),ret=num(r[ix.r]);
-      if(!t||v==null||ret==null||v<=0)return;
+      const t=when(r[ix.t]),v=num(r[ix.v]);let ret=num(r[ix.r]);
+      if(!t||v==null||v<=0)return;
+      if(ret==null){if(/^[\s\-–—]*$|^(R\$|\$|US\$)?\s*[-–—]?\s*$/.test(String(r[ix.r]??"")))ret=0;else return}
       const dir=String(r[ix.d]??"").toLowerCase();
       const a=ix.a!=null?String(r[ix.a]??"").trim():"—";
-      out.push({id:ix.id!=null&&String(r[ix.id]).trim()?String(r[ix.id]).trim():(t+"|"+a+"|"+v),a:a||"—",p:ix.p!=null?num(r[ix.p]):null,t,
+      let id=ix.id!=null&&String(r[ix.id]??"").trim()?String(r[ix.id]).trim():(t+"|"+a+"|"+r2(v));
+      const n=(seen.get(id)||0)+1;seen.set(id,n);if(n>1)id+="#"+n;
+      out.push({id,a:a||"—",p:ix.p!=null?num(r[ix.p]):null,t,
         d:/baixo|down|put|sell|vend/.test(dir)?"down":/cima|up|call|buy|compr/.test(dir)?"up":"",v:r2(v),r:r2(Math.max(0,ret))});
     });
     if(out.length)return out;
   }
   return null;
 }
+function parseCSV(txt,sep){
+  const rows=[];let row=[],c="",q=false;
+  for(let i=0;i<txt.length;i++){const ch=txt[i];
+    if(q){if(ch==='"'){if(txt[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}
+    else if(ch==='"')q=true;else if(ch===sep){row.push(c.trim());c=""}
+    else if(ch==="\n"||ch==="\r"){if(ch==="\r"&&txt[i+1]==="\n")i++;row.push(c.trim());rows.push(row);row=[];c=""}
+    else c+=ch}
+  if(c!==""||row.length){row.push(c.trim());rows.push(row)}
+  return rows;
+}
+/* alguns exportadores gravam a dimensão da planilha menor do que os dados: recalcula pelo conteúdo */
+function fixRef(ws){
+  let r0=1e9,c0=1e9,r1=-1,c1=-1;
+  for(const k in ws){if(k[0]==="!")continue;const a=XLSX.utils.decode_cell(k);if(a.r<r0)r0=a.r;if(a.c<c0)c0=a.c;if(a.r>r1)r1=a.r;if(a.c>c1)c1=a.c}
+  if(r1>=0)ws["!ref"]=XLSX.utils.encode_range({s:{r:r0,c:c0},e:{r:r1,c:c1}});
+}
 async function readFile(file){
   const name=file.name.toLowerCase();
   if(/\.csv$/.test(name)){
     const txt=await file.text();const sep=(txt.match(/;/g)||[]).length>(txt.match(/,/g)||[]).length/2?";":",";
-    return fromRows(txt.split(/\r?\n/).map(l=>l.split(sep).map(c=>c.trim().replace(/^"|"$/g,""))));
+    return fromRows(parseCSV(txt.replace(/^\uFEFF/,""),sep));
   }
   await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
   const wb=XLSX.read(await file.arrayBuffer(),{type:"array",cellDates:true});
-  for(const sn of wb.SheetNames){const r=fromRows(XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:""}));if(r)return r}
+  for(const sn of wb.SheetNames){fixRef(wb.Sheets[sn]);const r=fromRows(XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:""}));if(r)return r}
   return null;
 }
 async function importar(file){
@@ -321,11 +340,29 @@ function sortOps(){ops.sort((x,y)=>x.t<y.t?-1:x.t>y.t?1:0)}
 /* ---------- salvar: um documento por mês ---------- */
 const pack=o=>[o.id,o.a,o.p,o.t,o.d,o.v,o.r];
 const unpack=a=>({id:a[0],a:a[1],p:a[2],t:a[3],d:a[4],v:a[5],r:a[6]});
+/* cada mês vira um ou mais documentos (2026-10, 2026-10_2, ...) para não passar do limite de 1 MB do Firebase */
+const PARTE=2500;let docIds=new Set(),saving=0,pendingSnap=null;
 async function save(meses){
-  if(db){
-    try{for(const m of meses){const list=ops.filter(o=>o.t.startsWith(m));list.length?await db.doc("meses/"+m).set({ops:JSON.stringify(list.map(pack))}):await db.doc("meses/"+m).delete()}$("status").textContent="Salvo"}
-    catch(e){$("status").textContent="Não salvou. Tente de novo."}
-  }else{try{localStorage.setItem(LS,JSON.stringify(ops.map(pack)))}catch(e){}$("status").textContent="Salvo neste aparelho"}
+  try{localStorage.setItem(LS,JSON.stringify(ops.map(pack)))}catch(e){}
+  if(!db){$("status").textContent="Salvo neste aparelho";return}
+  const snap=ops.slice();saving++;$("status").textContent="Salvando…";
+  try{
+    for(const m of meses){
+      const list=snap.filter(o=>o.t.startsWith(m)).map(pack);
+      const want=[];for(let i=0;i<list.length;i+=PARTE)want.push([i?m+"_"+(i/PARTE+1):m,list.slice(i,i+PARTE)]);
+      for(const [id,part] of want)await db.doc("meses/"+id).set({ops:JSON.stringify(part)});
+      const keep=new Set(want.map(w=>w[0]));
+      for(const id of [...docIds])if((id===m||id.startsWith(m+"_"))&&!keep.has(id))await db.doc("meses/"+id).delete();
+      keep.forEach(id=>docIds.add(id));
+    }
+    $("status").textContent="Salvo";
+  }catch(e){$("status").textContent="Não salvou tudo ("+(e.code||e.message||"erro")+"). Tente importar de novo."}
+  finally{saving--;if(!saving&&pendingSnap){const q=pendingSnap;pendingSnap=null;applySnap(q)}}
+}
+function applySnap(q){
+  const map=new Map();docIds=new Set();
+  q.docs.forEach(d=>{docIds.add(d.id);try{JSON.parse(d.data().ops||"[]").forEach(a=>{const o=unpack(a);map.set(o.id,o)})}catch(e){}});
+  ops=[...map.values()];sortOps();render();$("status").textContent="Sincronizado";
 }
 
 /* ---------- filtros ---------- */
@@ -541,8 +578,8 @@ sortOps();render();$("status").textContent="Conectando…";
   try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
   if(!db){$("status").textContent="Salvando neste aparelho";return}
   db.collection("meses").onSnapshot(q=>{
-    const all=[];q.docs.forEach(d=>{try{JSON.parse(d.data().ops||"[]").forEach(a=>all.push(unpack(a)))}catch(e){}});
-    ops=all;sortOps();render();$("status").textContent="Sincronizado";
+    if(saving){pendingSnap=q;return}
+    applySnap(q);
   },()=>{$("status").textContent="Sem conexão com o salvamento"});
 })();
 })();
