@@ -88,13 +88,15 @@ img,svg{max-width:100%}
 </div>
 <script>
 const START="2026-10-14", END="2026-12-17", LS="checklistB3m.v1";
-// horários de Brasília do manual: mudam em 02/11 (Europa e EUA trocam o relógio)
 function janelas(ds){return {manha:["09:15","11:30"],tarde:["14:00","16:30"]}}
-const noticiaEUA=ds=>ds>="2026-11-02"?"10:30":"09:30", aberturaNY=ds=>ds>="2026-11-02"?"11:30":"10:30";
+// horários das sessões são FIXOS. Só as pausas mudam em 02/11 (EUA troca o relógio em 01/11; o Brasil não muda)
+// pausa = 5 min antes até 15 min depois do evento: não operar nem com sinal perfeito
+function pausas(ds){const d=ds>="2026-11-02";return d?[{n:"notícia dos EUA",h:"10:30",de:"10:25",ate:"10:45"},{n:"abertura de Nova York",h:"11:30",de:"11:25",ate:"11:45"}]:[{n:"notícia dos EUA",h:"09:30",de:"09:25",ate:"09:45"},{n:"abertura de Nova York",h:"10:30",de:"10:25",ate:"10:45"}]}
+const pausasTxt=ds=>pausas(ds).map(p=>p.de+"–"+p.ate+" ("+p.n+")").join(" e ");
 const SESS=[{id:"manha",nome:"Manhã"},{id:"tarde",nome:"Tarde"}];
 const hj=(ds,id)=>janelas(ds)[id].join("–");
 const QS=[
-  {id:"hor",k:"Janela de horário",t:ds=>{const [a,b]=janelas(ds)[sess];return "Estou dentro da janela da "+(sess==="manha"?"manhã":"tarde")+", das "+a+" às "+b+", fora dos 15 min depois da notícia dos EUA ("+noticiaEUA(ds)+") e da abertura de Nova York ("+aberturaNY(ds)+"), e conferi o calendário (IPCA, Copom, FOMC)?"}},
+  {id:"hor",k:"Janela de horário",t:ds=>{const [a,b]=janelas(ds)[sess];return "Estou dentro da janela da "+(sess==="manha"?"manhã":"tarde")+", das "+a+" às "+b+", FORA das pausas de hoje: "+pausasTxt(ds)+", e conferi o calendário (IPCA, Copom, FOMC)?"}},
   {id:"op",k:"Operacional",t:"Vou entrar só em Respiro, Virada, Muralha (pavio ou engolfo), Giro ou Armadilha no M2, com médias 9, 21 e 50 espaçadas, volume da vela de sinal acima da média, stop técnico dentro do limite (WIN 150 pts · WDO 5 pts), o outro ativo não indo forte no mesmo sentido (WIN × WDO) e todos os filtros do manual conferidos?"},
   {id:"ger",k:"Gerenciamento",t:"Contratos do meu degrau no Progresso, ordem com stop e alvo de 2x o stop junto (OCO), no máximo 2 operações no dia, uma aberta por vez (nunca WIN e WDO juntos), e paro no 1º loss?"},
   {id:"men",k:"Mentalidade",t:"Estou calmo, sem vontade de recuperar nada, e aceito o stop se ele vier?"}
@@ -136,8 +138,11 @@ function render(){
 function drawJan(){
   const J=janelas(sel), mm=t=>{const [h,m]=t.split(":").map(Number);return h*60+m};
   const d=new Date(), m=d.getHours()*60+d.getMinutes(), [a,b]=J[sess], dentro=m>=mm(a)&&m<mm(b)&&!isWE(today());
-  $("jan").innerHTML="<span>Estou no horário de operar da "+(sess==="manha"?"manhã":"tarde")+": <b>"+a+" às "+b+"</b></span>"+(sel===today()?"<span class='ag "+(dentro?"in":"out")+"'>"+(dentro?"agora: dentro do horário":"agora: fora do horário")+"</span>":"")+
-    "<span class='hint' style='flex-basis:100%;color:var(--muted);font-size:.78rem'>Manhã "+J.manha.join("–")+" · Tarde "+J.tarde.join("–")+" · notícia EUA "+noticiaEUA(sel)+" · abertura NY "+aberturaNY(sel)+"</span>";
+  const pz=pausas(sel).find(p=>m>=mm(p.de)&&m<mm(p.ate)&&!isWE(today()));
+  const tag=!dentro?["out","agora: fora do horário"]:pz?["out","⛔ agora: PAUSA, "+pz.n+" até "+pz.ate]:["in","agora: dentro do horário"];
+  $("jan").innerHTML="<span>Estou no horário de operar da "+(sess==="manha"?"manhã":"tarde")+": <b>"+a+" às "+b+"</b></span>"+(sel===today()?"<span class='ag "+tag[0]+"'>"+tag[1]+"</span>":"")+
+    "<span style='flex-basis:100%;color:var(--loss);font-weight:600;font-size:.82rem'>⛔ Não operar perto: "+pausasTxt(sel)+"</span>"+
+    "<span class='hint' style='flex-basis:100%;color:var(--muted);font-size:.78rem'>Horário fixo: manhã "+J.manha.join("–")+" · tarde "+J.tarde.join("–")+(sel<"2026-11-02"?" · a partir de 02/11 as pausas passam para 10:25–10:45 e 11:25–11:45":"")+"</span>";
 }
 setInterval(()=>{if($("jan"))drawJan()},60000);
 function drawCal(){
