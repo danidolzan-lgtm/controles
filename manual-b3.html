@@ -1,4 +1,20 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="manual-b3"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Manual B3</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="manual-b3"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}
+/* cartões de horários e notícias: sem tabela, nada sai da tela */
+.ses-list,.nw-list{display:grid;gap:8px}
+.ses{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:2px;background:var(--surface)}
+.ses .hd{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.ses .hd b{font-family:var(--f-display)}
+.ses .hd span{font-family:var(--f-num);font-weight:600;color:var(--accent)}
+.ses p{font-size:.88rem;color:var(--muted)}
+.nw-h{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin-top:4px}
+.nw{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 12px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 12px;align-items:baseline}
+.nw .o{font-size:.9rem;min-width:0}
+.nw .o small{display:block;color:var(--muted);font-size:.8rem}
+.nw .t{font-family:var(--f-num);font-size:.85rem;font-weight:600;text-align:right;white-space:nowrap}
+.nw .a{grid-column:1/-1;font-size:.8rem;color:var(--muted)}
+.nw .a.skip{color:var(--loss);font-weight:600}
+@media (max-width:480px){.nw{grid-template-columns:minmax(0,1fr)}.nw .t{text-align:left;white-space:normal}}
+</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Manual B3</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;600&display=swap">
 <style>
 :root{
@@ -393,35 +409,24 @@ select:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(-
   <section class="panel" id="horarios">
     <h2>Horários (Brasília)</h2>
     <p><b>2 sessões, horário fixo</b>, manhã e tarde, com no máximo 2 operações em cada. Foram escolhidas para ficar longe das notícias, antes e depois de 01/11 (quando os EUA trocam o relógio). O check-list é feito <b>uma vez por dia</b>, de manhã, e já avisa se alguma sessão deve ser pulada.</p>
-    <div class="scroll">
-      <table>
-        <thead><tr><th>Sessão</th><th>Horário (fixo)</th><th>Por quê</th></tr></thead>
-        <tbody>
-          <tr><td><b>Manhã</b></td><td class="t">09:45–11:15</td><td>Maior volume do dia, já passada a bagunça da abertura e os dados dos EUA das 09:30. <b>Pausa todo dia às 10:25–10:45</b> (até 01/11 é a abertura de Nova York; a partir de 02/11, os dados dos EUA). Termina antes da abertura de Nova York das 11:30 que passa a valer em 02/11.</td></tr>
-          <tr><td><b>Tarde</b></td><td class="t">14:00–15:30</td><td>Volume volta depois do almoço, Nova York aberta e sem notícia fixa.</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <div class="ses-list"><div class="ses"><div class="hd"><b>Manhã</b><span>09:45–11:15</span></div><p>Maior volume do dia, já passada a abertura e os dados das 09:30. Pausa todo dia às 10:25–10:45 (até 01/11 abertura de Nova York; depois, dados dos EUA).</p></div><div class="ses"><div class="hd"><b>Tarde</b><span>14:00–15:30</span></div><p>Volume volta depois do almoço, Nova York aberta e sem notícia fixa.</p></div></div>
     <div class="box no">
       <h3>⛔ Notícias relevantes (alto impacto)</h3>
-      <p>Notícia relevante é a que mexe no índice e no dólar: as do Brasil e as dos EUA com <b>3 touros</b> (alto impacto) no calendário do Investing.com. Filtre: alto impacto · Brasil e EUA. Regra: <b>não abrir ordem de 5 min antes até 15 min depois</b>. Se cair dentro de uma sessão, pula a sessão.</p>
-      <div class="scroll">
-        <table>
-          <thead><tr><th>Notícia</th><th>Até 01/11</th><th>A partir de 02/11</th><th>O que fazer</th></tr></thead>
-          <tbody>
-            <tr><td><b>Brasil:</b> IPCA, IPCA-15, PIB, varejo, produção industrial</td><td class="t" colspan="2">09:00</td><td>Antes da manhã. Nada.</td></tr>
-            <tr><td><b>Brasil:</b> ata do Copom (terça depois da reunião)</td><td class="t" colspan="2">08:00</td><td>Antes da manhã. Nada.</td></tr>
-            <tr><td><b>Brasil:</b> decisão do Copom</td><td class="t" colspan="2">18:30, depois do pregão</td><td>No dia seguinte pode abrir com gap. Atenção redobrada na manhã.</td></tr>
-            <tr><td><b>EUA:</b> Payroll (1ª sexta do mês) e CPI (inflação)</td><td class="t">09:30</td><td class="t">10:30</td><td><b>Manhã só 30 min depois</b> (até 01/11 a partir de 10:00; depois, a partir de 11:00)</td></tr>
-            <tr><td><b>EUA:</b> PPI, varejo, PIB, PCE, seguro-desemprego</td><td class="t">09:30</td><td class="t">10:30</td><td>Antes da manhã ou dentro da pausa fixa</td></tr>
-            <tr><td><b>Abertura da bolsa de Nova York</b></td><td class="t">10:30</td><td class="t">11:30</td><td>Pausa fixa 10:25–10:45 / depois da manhã</td></tr>
-            <tr><td><b>EUA:</b> ISM, JOLTS, confiança do consumidor</td><td class="t">11:00</td><td class="t">12:00</td><td>Até 01/11, quando tiver, pausa 10:55–11:15</td></tr>
-            <tr><td><b>FOMC</b>, juros dos EUA</td><td class="t">28/10 às 15:00</td><td class="t">09/12 às 16:00</td><td><b>Pula a tarde</b></td></tr>
-            <tr><td><b>Feriados</b></td><td class="t" colspan="2">02/11 e 20/11: B3 fechada · 26/11: EUA fechado</td><td>26/11 só de manhã</td></tr>
-          </tbody>
-        </table>
+      <p>No Investing.com, filtre <b>alto impacto (3 touros)</b> · Brasil e EUA. Regra: <b>nada de 5 min antes até 15 min depois</b>.</p>
+      <div class="nw-list">
+        <div class="nw-h">Caem nas sessões: dias de pular</div>
+        <div class="nw"><div class="o"><b>Payroll e CPI</b><small>EUA · 1ª sexta e meio do mês</small></div><div class="t">09:30 → 10:30</div><div class="a skip">Manhã só 30 min depois da notícia</div></div>
+        <div class="nw"><div class="o"><b>FOMC</b><small>juros dos EUA</small></div><div class="t">28/10 15:00 · 09/12 16:00</div><div class="a skip">Pula a tarde</div></div>
+        <div class="nw"><div class="o"><b>Feriados</b><small>B3 fechada · EUA fechado</small></div><div class="t">02/11, 20/11 · 26/11</div><div class="a skip">02/11 e 20/11 não opera · 26/11 só de manhã</div></div>
+        <div class="nw-h">Fixas, fora das sessões · horário até 01/11 → a partir de 02/11</div>
+        <div class="nw"><div class="o"><b>Brasil</b><small>IPCA, IPCA-15, PIB, varejo</small></div><div class="t">09:00</div><div class="a">Antes da manhã</div></div>
+        <div class="nw"><div class="o"><b>Ata do Copom</b><small>terça depois da reunião</small></div><div class="t">08:00</div><div class="a">Antes da manhã</div></div>
+        <div class="nw"><div class="o"><b>Decisão do Copom</b><small>depois do pregão</small></div><div class="t">18:30</div><div class="a">No dia seguinte pode abrir com gap: atenção redobrada</div></div>
+        <div class="nw"><div class="o"><b>EUA</b><small>PPI, varejo, PIB, PCE, seguro-desemprego</small></div><div class="t">09:30 → 10:30</div><div class="a">Antes da manhã ou dentro da pausa fixa</div></div>
+        <div class="nw"><div class="o"><b>Abertura de Nova York</b></div><div class="t">10:30 → 11:30</div><div class="a">Pausa fixa 10:25–10:45 / depois da manhã</div></div>
+        <div class="nw"><div class="o"><b>EUA</b><small>ISM, JOLTS, confiança do consumidor</small></div><div class="t">11:00 → 12:00</div><div class="a">Até 01/11, quando tiver: pausa 10:55–11:15</div></div>
       </div>
-      <p>Também conta como notícia relevante: fala do presidente do Fed ou do Banco Central, e qualquer notícia que faça o WIN ou o WDO disparar do nada. Vela gigante sem motivo? Para 15 minutos.</p>
+      <p class="hint">Também conta: fala do presidente do Fed ou do Banco Central, e WIN ou WDO disparando do nada. Nesses casos, para 15 minutos.</p>
     </div>
     <div class="box no">
       <h3>Evite também</h3>

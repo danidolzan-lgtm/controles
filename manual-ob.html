@@ -1,4 +1,20 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="manual-ob"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Manual OB</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="manual-ob"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}
+/* cartões de horários e notícias: sem tabela, nada sai da tela */
+.ses-list,.nw-list{display:grid;gap:8px}
+.ses{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:2px;background:var(--surface)}
+.ses .hd{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.ses .hd b{font-family:var(--f-display)}
+.ses .hd span{font-family:var(--f-num);font-weight:600;color:var(--accent)}
+.ses p{font-size:.88rem;color:var(--muted)}
+.nw-h{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin-top:4px}
+.nw{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 12px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 12px;align-items:baseline}
+.nw .o{font-size:.9rem;min-width:0}
+.nw .o small{display:block;color:var(--muted);font-size:.8rem}
+.nw .t{font-family:var(--f-num);font-size:.85rem;font-weight:600;text-align:right;white-space:nowrap}
+.nw .a{grid-column:1/-1;font-size:.8rem;color:var(--muted)}
+.nw .a.skip{color:var(--loss);font-weight:600}
+@media (max-width:480px){.nw{grid-template-columns:minmax(0,1fr)}.nw .t{text-align:left;white-space:normal}}
+</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Manual OB</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;600&display=swap">
 <style>
 :root{
@@ -317,37 +333,24 @@ input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offs
   <section class="panel" id="horarios">
     <h2>Horários (Brasília)</h2>
     <p><b>4 sessões, horário fixo</b>, duas de manhã e duas à tarde (a sessão 2 tem 40 min). Foram escolhidas para <b>não ter nenhuma notícia fixa dentro delas</b>, nem antes nem depois de 01/11 (quando os EUA trocam o relógio). O check-list é feito <b>uma vez por dia</b>, de manhã, antes da sessão 1, e já avisa se alguma sessão deve ser pulada.</p>
-    <div class="scroll">
-      <table>
-        <thead><tr><th>Sessão</th><th>Horário (fixo)</th><th>Por quê</th></tr></thead>
-        <tbody>
-          <tr><td><b>Sessão 1</b></td><td class="t">08:00–09:00</td><td>Londres a todo vapor, as notícias da Europa já saíram (03:00–06:00) e os EUA ainda não soltaram dados. Tendência limpa: bom para Respiro e Virada.</td></tr>
-          <tr><td><b>Sessão 2</b></td><td class="t">09:45–10:25</td><td>Londres e EUA juntos. Só 40 min porque é o único trecho limpo da manhã: começa 15 min depois dos dados das 09:30 e acaba antes das 10:25 (até 01/11, abertura de Nova York; depois, dados dos EUA).</td></tr>
-          <tr><td><b>Sessão 3</b></td><td class="t">13:30–14:30</td><td>Londres já fechou, Nova York sozinha e sem notícia. Mercado mais calmo: bom para Respiro e Muralha.</td></tr>
-          <tr><td><b>Sessão 4</b></td><td class="t">15:00–16:00</td><td>Tarde de Nova York, sem notícia fixa. O volume começa a cair: só entra com as médias bem espaçadas. <b>Na sexta, pula.</b></td></tr>
-        </tbody>
-      </table>
-    </div>
+    <div class="ses-list"><div class="ses"><div class="hd"><b>Sessão 1</b><span>08:00–09:00</span></div><p>Londres a todo vapor, as notícias da Europa já saíram e os EUA ainda não soltaram dados. Tendência limpa: bom para Respiro e Virada.</p></div><div class="ses"><div class="hd"><b>Sessão 2</b><span>09:45–10:25</span></div><p>Londres e EUA juntos. Só 40 min: é o único trecho limpo da manhã, entre os dados das 09:30 e as 10:25.</p></div><div class="ses"><div class="hd"><b>Sessão 3</b><span>13:30–14:30</span></div><p>Londres já fechou, Nova York sozinha e sem notícia. Mais calmo: bom para Respiro e Muralha.</p></div><div class="ses"><div class="hd"><b>Sessão 4</b><span>15:00–16:00</span></div><p>Tarde de Nova York, sem notícia fixa. Volume caindo: só com médias bem espaçadas. Na sexta, pula.</p></div></div>
     <div class="box no">
       <h3>⛔ Notícias relevantes (alto impacto)</h3>
-      <p>Notícia relevante é a que mexe nas moedas que você opera (dólar, euro e libra) e aparece com <b>3 touros</b> (alto impacto) no calendário econômico do Investing.com. Filtre: alto impacto · EUA, Zona do Euro e Reino Unido. Regra: <b>não operar de 5 min antes até 15 min depois</b>. Se cair dentro de uma sessão, pula a sessão.</p>
-      <div class="scroll">
-        <table>
-          <thead><tr><th>Notícia</th><th>Até 01/11</th><th>A partir de 02/11</th><th>Cai na sessão?</th></tr></thead>
-          <tbody>
-            <tr><td><b>EUA:</b> Payroll (1ª sexta do mês), CPI e PPI (inflação), vendas no varejo, PIB, PCE, seguro-desemprego (toda quinta)</td><td class="t">09:30</td><td class="t">10:30</td><td>Não (a sessão 2 começa 09:45 e acaba 10:25)</td></tr>
-            <tr><td><b>Abertura da bolsa de Nova York</b></td><td class="t">10:30</td><td class="t">11:30</td><td>Não</td></tr>
-            <tr><td><b>EUA:</b> ISM industrial e de serviços, JOLTS, confiança do consumidor</td><td class="t">11:00</td><td class="t">12:00</td><td>Não</td></tr>
-            <tr><td><b>Fechamento de Londres</b> (fixing)</td><td class="t">12:00 (13:00 a partir de 26/10)</td><td class="t">13:00</td><td>Não</td></tr>
-            <tr><td><b>FOMC</b>, juros dos EUA, e a coletiva do presidente do Fed 30 min depois</td><td class="t">28/10 às 15:00</td><td class="t">09/12 às 16:00</td><td><b>Sim: pula a sessão 4</b></td></tr>
-            <tr><td><b>BoE</b>, juros da Inglaterra</td><td class="t">—</td><td class="t">05/11 e 17/12 às 09:00</td><td><b>Sim: a sessão 1 para às 08:50</b></td></tr>
-            <tr><td><b>BCE</b>, juros da Zona do Euro, e a coletiva</td><td class="t">29/10 às 10:15</td><td class="t">17/12 às 10:15</td><td><b>Sim: pula a sessão 2</b></td></tr>
-            <tr><td><b>Europa:</b> PMIs, inflação e PIB da Alemanha, Zona do Euro e Reino Unido</td><td class="t" colspan="2">03:00–06:00</td><td>Não</td></tr>
-            <tr><td><b>Feriado nos EUA</b> (Ação de Graças)</td><td class="t" colspan="2">26/11 o dia todo · 27/11 meio período</td><td><b>26/11 não opera · 27/11 só de manhã</b></td></tr>
-          </tbody>
-        </table>
+      <p>No Investing.com, filtre <b>alto impacto (3 touros)</b> · EUA, Zona do Euro e Reino Unido. Regra: <b>nada de 5 min antes até 15 min depois</b>.</p>
+      <div class="nw-list">
+        <div class="nw-h">Caem nas sessões: dias de pular</div>
+        <div class="nw"><div class="o"><b>FOMC</b><small>juros dos EUA + coletiva do Fed</small></div><div class="t">28/10 15:00 · 09/12 16:00</div><div class="a skip">Pula a sessão 4</div></div>
+        <div class="nw"><div class="o"><b>BCE</b><small>juros da Zona do Euro + coletiva</small></div><div class="t">29/10 e 17/12 · 10:15</div><div class="a skip">Pula a sessão 2</div></div>
+        <div class="nw"><div class="o"><b>BoE</b><small>juros da Inglaterra</small></div><div class="t">05/11 e 17/12 · 09:00</div><div class="a skip">Sessão 1 para às 08:50</div></div>
+        <div class="nw"><div class="o"><b>Feriado nos EUA</b><small>Ação de Graças</small></div><div class="t">26/11 e 27/11</div><div class="a skip">26/11 não opera · 27/11 só de manhã</div></div>
+        <div class="nw-h">Fixas, fora das sessões · horário até 01/11 → a partir de 02/11</div>
+        <div class="nw"><div class="o"><b>EUA</b><small>Payroll, CPI, PPI, varejo, PIB, PCE, seguro-desemprego</small></div><div class="t">09:30 → 10:30</div><div class="a">Fora das sessões</div></div>
+        <div class="nw"><div class="o"><b>Abertura de Nova York</b></div><div class="t">10:30 → 11:30</div><div class="a">Fora das sessões</div></div>
+        <div class="nw"><div class="o"><b>EUA</b><small>ISM, JOLTS, confiança do consumidor</small></div><div class="t">11:00 → 12:00</div><div class="a">Fora das sessões</div></div>
+        <div class="nw"><div class="o"><b>Fechamento de Londres</b><small>muda em 26/10</small></div><div class="t">12:00 → 13:00</div><div class="a">Fora das sessões</div></div>
+        <div class="nw"><div class="o"><b>Europa</b><small>PMIs, inflação e PIB</small></div><div class="t">03:00–06:00</div><div class="a">Fora das sessões</div></div>
       </div>
-      <p>Também é notícia relevante, mesmo sem horário marcado: fala do presidente do Fed, do BCE ou do BoE, e qualquer notícia que faça o gráfico disparar do nada. Viu uma vela gigante sem motivo? Para 15 minutos.</p>
+      <p class="hint">Também conta: fala do presidente do Fed, BCE ou BoE, e vela gigante sem motivo. Nesses casos, para 15 minutos.</p>
     </div>
     <div class="box no">
       <h3>Evite também</h3>
