@@ -16,7 +16,7 @@ h2{font-family:var(--f-display);font-size:.78rem;text-transform:uppercase;letter
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media (max-width:360px){.grid{grid-template-columns:1fr}}
 .wrap>*{min-width:0}
-a{display:grid;gap:3px;text-decoration:none;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
+a{display:grid;gap:3px;align-content:start;text-decoration:none;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
 a:hover,a:focus-visible{border-color:var(--accent);outline:none}
 a b{font-family:var(--f-display);font-size:1rem}
 a span{font-size:.8rem;color:var(--muted)}
@@ -43,7 +43,7 @@ a:hover{transform:translateY(-2px)}
   .app{grid-template-columns:210px 1fr;align-items:start}
   .side{flex-direction:column;top:60px;padding:0}
   .side button{justify-content:flex-start;padding:12px 14px}
-  .grid{grid-template-columns:repeat(3,1fr)}
+  .grid{grid-template-columns:repeat(3,1fr);grid-auto-rows:1fr}
 }
 </style></head><body>
 <div class="wrap">
@@ -60,12 +60,12 @@ a:hover{transform:translateY(-2px)}
     <div class="grid b3">
       <a href="checklist-ob.html"><b>Check-list OB</b><span>Uma vez por dia, de manhã</span></a>
       <a href="diario-ob.html"><b>Diário OB</b><span>4 sessões por dia</span></a>
-      <a href="manual-ob.html"><b>Manual OB</b><span>Respiro, Virada, Muralha, Giro, Armadilha</span></a>
+      <a href="manual-ob.html"><b>Manual OB</b><span>Os 5 operacionais</span></a>
       <a href="progresso-ob.html"><b>Progresso OB</b><span>Metas e simulador do Soros</span></a>
       <a href="dopamina.html"><b>Dopamina OB</b><span>Acertei ou errei</span></a>
       <a href="ir-ob.html"><b>IR OB</b><span>Resultado mensal</span></a>
       <a href="analise-ob.html"><b>Análise de entrada OB</b><span>Print e seta na vela</span></a>
-      <a href="lucro-ob.html"><b>Lucro OB</b><span>Excel da Quotex · investido × retorno</span></a>
+      <a href="lucro-ob.html"><b>Lucro OB</b><span>Excel da Quotex</span></a>
     </div>
     <h2>Links</h2>
     <div class="grid lnk">
