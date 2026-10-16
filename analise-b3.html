@@ -423,9 +423,13 @@ Para a próxima: 1 frase
 Quando eu mandar só texto, é uma dúvida: responda com base no manual, direto e prático, dizendo o que é opinião quando sair do manual.
 Se entendeu, responda só: Pronto.`;
 const CFG="analiseB3.claudeUrl";
+const MHASH=(t=>{let h=5381;for(let i=0;i<t.length;i++)h=((h*33)^t.charCodeAt(i))>>>0;return h.toString(36)})(MANUAL), CFGM=CFG+".manual";
+function getM(){try{return localStorage.getItem(CFGM)||""}catch(e){return ""}}
+function desatual(){return !!getUrl()&&getM()!==MHASH}
+const UPD="Atualizei o meu manual. Esqueça a versão anterior e use esta daqui para frente, com as mesmas instruções.\n\n";
 const celular=()=>matchMedia("(pointer:coarse)").matches||/Android|iPhone|iPad/i.test(navigator.userAgent);
 const getUrl=()=>{try{return localStorage.getItem(CFG)||""}catch(e){return ""}};
-function cfgState(){const u=getUrl();$("cfgState").textContent=u?"✓ configurada":"não configurada — toque aqui";$("cfgState").style.color=u?"var(--win)":"var(--warn)";if(document.activeElement!==$("cfgUrl"))$("cfgUrl").value=u}
+function cfgState(){const u=getUrl(),old=desatual();$("cfgState").textContent=!u?"não configurada — toque aqui":old?"⚠ manual atualizado: recopie na conversa":"✓ configurada";$("cfgState").style.color=u&&!old?"var(--win)":"var(--warn)";$("cfgCopy").textContent=old?"Copiar manual atualizado":"Copiar mensagem de configuração";$("cfgCopy").className=old?"btn":"btn ghost";if(document.activeElement!==$("cfgUrl"))$("cfgUrl").value=u}
 async function copiarTexto(t){try{await navigator.clipboard.writeText(t);return true}catch(e){
   try{const a=document.createElement("textarea");a.value=t;a.style.position="fixed";a.style.opacity="0";document.body.appendChild(a);a.select();const ok=document.execCommand("copy");a.remove();return ok}catch(_){return false}}}
 function abrirConversa(fallbackTexto){
@@ -507,12 +511,14 @@ $("vSeg").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(!
 $("resp").addEventListener("input",e=>{if(cur.ia)cur.ia.texto=e.target.value.trim()});
 $("ctx").addEventListener("input",prepararPrint);
 /* configuração da conversa */
-$("cfgCopy").onclick=async()=>{const ok=await copiarTexto(CONFIG_MSG);ui_.toast(ok?"✓ Mensagem copiada: cole na conversa nova":"Não consegui copiar",!ok)};
+$("cfgCopy").onclick=async()=>{const upd=!!getUrl();const ok=await copiarTexto((upd?UPD:"")+CONFIG_MSG);
+  if(ok){try{localStorage.setItem(CFGM,MHASH)}catch(e){}if(db){try{await db.doc("config/claude").set({manual:MHASH},{merge:true})}catch(e){}}cfgState()}
+  ui_.toast(ok?(upd?"✓ Manual copiado: cole na sua conversa de análise":"✓ Mensagem copiada: cole na conversa nova"):"Não consegui copiar",!ok)};
 $("cfgSave").onclick=async()=>{
   const u=$("cfgUrl").value.trim();
   if(!/^https:\/\/claude\.ai\//.test(u)){ui_.toast("Cole um link que comece com https://claude.ai/",1);return}
   try{localStorage.setItem(CFG,u)}catch(e){}
-  if(db){try{await db.doc("config/claude").set({url:u})}catch(e){}}
+  if(db){try{await db.doc("config/claude").set({url:u},{merge:true})}catch(e){}}
   cfgState();ui_.done($("cfgSave"),"Link salvo");setTimeout(()=>{$("cfgBox").open=false},900);
 };
 $("cfgDel").onclick=async()=>{try{localStorage.removeItem(CFG)}catch(e){}if(db){try{await db.doc("config/claude").delete()}catch(e){}}cfgState();ui_.toast("Link removido")};
@@ -545,14 +551,15 @@ $("chatForm").addEventListener("submit",e=>{e.preventDefault();perguntar($("q").
 $("chips").addEventListener("click",e=>{const b=e.target.closest("button");if(b){$("q").value=b.textContent;perguntar(b.textContent)}});
 try{items=JSON.parse(localStorage.getItem(LS)||"[]")}catch(e){items=[]}
 $("cfgTxt").value=CONFIG_MSG;
-cfgState();if(!getUrl()||location.hash==="#cfgBox"){$("cfgBox").open=true;if(location.hash==="#cfgBox")setTimeout(()=>$("cfgBox").scrollIntoView({block:"start"}),300)}
+cfgState();if(!getUrl()||desatual()||location.hash==="#cfgBox"){$("cfgBox").open=true;if(location.hash==="#cfgBox")setTimeout(()=>$("cfgBox").scrollIntoView({block:"start"}),300)}
 draw();drawForm();$("status").textContent="Conectando…";
 (async()=>{
   try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
   if(!db){$("status").textContent="Salvando neste aparelho";return}
   db.doc("config/claude").onSnapshot(d=>{const u=d.exists&&d.data().url;
     if(u&&u!==getUrl()){try{localStorage.setItem(CFG,u)}catch(e){}cfgState()}
-    else if(!u&&getUrl())db.doc("config/claude").set({url:getUrl()}).catch(()=>{});
+    else if(!u&&getUrl())db.doc("config/claude").set({url:getUrl()},{merge:true}).catch(()=>{});
+    const m=d.exists&&d.data().manual;if(m&&m!==getM()){try{localStorage.setItem(CFGM,m)}catch(e){}cfgState()}
   },()=>{});
   let first=true;
   db.collection("analises").onSnapshot(q=>{

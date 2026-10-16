@@ -329,7 +329,7 @@ async function save(meses){
 }
 
 /* ---------- filtros ---------- */
-const PER=[["hoje","Hoje"],["7d","7 dias"],["mes","Este mês"],["mesant","Mês passado"],["30d","30 dias"],["ano","Este ano"],["tudo","Tudo"],["custom","Período…"]];
+const PER=[["hoje","Hoje"],["semana","Esta semana"],["7d","7 dias"],["mes","Este mês"],["mesant","Mês passado"],["30d","30 dias"],["ano","Este ano"],["tudo","Tudo"],["custom","Período…"]];
 const SES=[["all","Todas as sessões"],["manha","Manhã"],["tarde","Tarde"],["noite","Noite"]];
 const ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 function bounds(){
@@ -337,6 +337,7 @@ function bounds(){
   const back=n=>{const d=new Date(now);d.setDate(d.getDate()-n);return ymd(d)};
   switch(F.per){
     case "hoje":return [t,t];
+    case "semana":return [back(now.getDay()),t];
     case "7d":return [back(6),t];
     case "30d":return [back(29),t];
     case "mes":return [t.slice(0,8)+"01",t];
