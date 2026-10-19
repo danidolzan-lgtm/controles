@@ -40,8 +40,11 @@ button:focus-visible,input:focus-visible,select:focus-visible,label.drop:focus-w
 
 /* hero */
 .hero{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,2fr);gap:16px;align-items:center}
-@media (max-width:720px){.hero{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:900px){.hero{grid-template-columns:minmax(0,1fr)}}
 .big{font-family:var(--f-num);font-weight:600;font-size:clamp(1.9rem,6vw,2.6rem);line-height:1.1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.hero>div:first-child{container-type:inline-size;min-width:0}
+.hero .big{white-space:nowrap;font-size:clamp(1.4rem,11cqi,2.6rem)}
+.hero .eq{gap:6px;flex-wrap:nowrap;white-space:nowrap;font-size:clamp(.7rem,3.3cqi,.88rem)}
 .eq{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-family:var(--f-num);font-size:.88rem;color:var(--muted);margin-top:6px}
 .eq b{color:var(--fg);font-weight:600}
 .kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
