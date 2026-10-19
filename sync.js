@@ -77,11 +77,13 @@
       "html[data-page] .wrap{max-width:var(--site-max)!important;width:100%!important;padding-inline:var(--site-pad)!important;padding-top:20px!important}" +
       ".site-h{position:sticky;top:0;z-index:80;background:rgba(255,255,255,.86);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--line,#DDE4F2);font-family:'IBM Plex Sans',system-ui,sans-serif;padding-top:env(safe-area-inset-top,0px)}" +
       "@media (prefers-color-scheme: dark){.site-h{background:rgba(15,23,42,.86)}}" +
-      ".site-h a,.site-h a:hover{background:none;border:0;padding:0;border-radius:0;position:static;overflow:visible;transform:none;box-shadow:none;display:inline}.site-h a::before{display:none!important}.site-h a span,.site-h a b{font-size:inherit;color:inherit}" +
+      ".site-h a{background:none;border:0;padding:0;border-radius:0;position:static;overflow:visible;transform:none;box-shadow:none;display:inline}.site-h a:hover{background:none;border:0;transform:none;box-shadow:none}.site-h a::before{display:none!important}.site-h a span,.site-h a b{font-size:inherit;color:inherit}" +
       ".site-in{max-width:var(--site-max);margin:0 auto;padding:0 var(--site-pad);height:var(--site-h);display:flex;align-items:center;gap:14px}" +
       ".site-h .site-brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--fg,#13203B);font:800 1.05rem 'Archivo',system-ui,sans-serif;white-space:nowrap;flex:none}" +
       ".site-logo{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#2563EB,#7C3AED);color:#fff;display:grid;place-items:center;font-size:.78rem;letter-spacing:.02em;box-shadow:0 4px 12px -4px rgba(37,99,235,.6)}" +
       ".site-h .site-logo{color:#fff!important}" +
+      ".site-logo{transition:transform .18s ease,box-shadow .18s ease}.site-h .site-brand .t{transition:color .18s ease}" +
+      ".site-h .site-brand:hover .site-logo{transform:translateY(-2px) rotate(-6deg) scale(1.06);box-shadow:0 8px 18px -6px rgba(37,99,235,.7)}.site-h .site-brand:hover .t{color:var(--accent,#2563EB)}" +
       ".site-crumb{display:flex;gap:7px;align-items:center;color:var(--muted,#58668A);font-size:.92rem;min-width:0;white-space:nowrap;overflow:hidden}" +
       ".site-crumb .sep{opacity:.5}.site-crumb b{color:var(--fg,#13203B);font-weight:600;overflow:hidden;text-overflow:ellipsis}" +
       ".site-h .site-crumb .tag{font:inherit;display:inline-flex;align-items:center;gap:6px}.site-crumb .tag i{width:8px;height:8px;border-radius:50%}" +
