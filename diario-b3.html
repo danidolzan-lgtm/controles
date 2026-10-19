@@ -38,7 +38,9 @@ input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid 
 .month{display:grid;gap:8px}
 .month h3{font-family:var(--f-display);font-size:.95rem;margin:0}
 .month h3::first-letter{text-transform:uppercase}
-.dow,.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.dow,.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.day.we{opacity:.35;cursor:default;background:var(--bg)}.day.we:hover{border-color:var(--line);transform:none}
+
 .dow span{font-size:.68rem;color:var(--muted);text-align:center;text-transform:uppercase;letter-spacing:.05em}
 .day{appearance:none;border:1px solid var(--line);background:var(--surface);border-radius:7px;min-height:58px;padding:5px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;cursor:pointer;color:var(--fg);font:inherit;text-align:left;min-width:0}
 .day:hover{border-color:var(--accent)}
@@ -176,14 +178,15 @@ function renderCal(){
   while(cur<=e){
     const y=cur.getFullYear(),m=cur.getMonth();
     const box=document.createElement("div");box.className="month";
-    box.innerHTML="<h3>"+cur.toLocaleDateString("pt-BR",{month:"long",year:"numeric"})+"</h3><div class='dow'><span>seg</span><span>ter</span><span>qua</span><span>qui</span><span>sex</span></div>";
+    box.innerHTML="<h3>"+cur.toLocaleDateString("pt-BR",{month:"long",year:"numeric"})+"</h3><div class='dow'><span>dom</span><span>seg</span><span>ter</span><span>qua</span><span>qui</span><span>sex</span><span>sáb</span></div>";
     const g=document.createElement("div");g.className="grid";
     const d0=(y===s.getFullYear()&&m===s.getMonth())?s.getDate():1, last=new Date(y,m+1,0).getDate();
     let first=true;
     for(let d=d0;d<=last;d++){
-      const dt=new Date(y,m,d,12), wd=dt.getDay(); if(wd===0||wd===6)continue;
+      const dt=new Date(y,m,d,12), wd=dt.getDay();
       const ds=y+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0"); if(ds>END)break;
-      if(first){for(let i=1;i<wd;i++){const b=document.createElement("div");b.className="day blank";g.appendChild(b)}first=false}
+      if(first){for(let i=0;i<wd;i++){const b=document.createElement("div");b.className="day blank";g.appendChild(b)}first=false}
+      if(wd===0||wd===6){const b=document.createElement("button");b.type="button";b.className="day we";b.disabled=true;b.title="Fim de semana: travado";b.innerHTML="<span class='d'>"+d+"</span>";g.appendChild(b);continue}
       const doc=days[ds], ops=doc?doc.ops||[]:[], net=doc?dayNet(doc):0;
       const b=document.createElement("button");b.type="button";b.className="day"+(ds===t?" today":"")+(ops.length?(net>0?" pos":net<0?" neg":""):"");
       let h="<span class='d'>"+d+"</span><span class='dots'>"+ops.map(o=>"<i class='dot "+(opVal(o)>0?"w":opVal(o)<0?"l":"")+"'></i>").join("")+(doc&&doc.status==="nao"?"<i class='dot'></i>":"")+"</span>";

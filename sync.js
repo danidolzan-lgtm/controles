@@ -92,6 +92,9 @@
       ".site-btn{margin-left:auto;flex:none;appearance:none;display:inline-flex;align-items:center;gap:8px;font:600 .9rem 'IBM Plex Sans',system-ui,sans-serif;color:var(--fg,#13203B);background:var(--surface,#fff);border:1px solid var(--line,#DDE4F2);border-radius:10px;padding:8px 14px;cursor:pointer}" +
       ".site-btn:hover,.site-btn[aria-expanded=true]{border-color:var(--accent,#2563EB);color:var(--accent,#2563EB)}" +
       ".site-btn svg{width:18px;height:18px}" +
+      ".day.we,.legend i.we{background-image:repeating-linear-gradient(135deg,transparent 0 5px,rgba(120,135,170,.22) 5px 6.5px)!important}" +
+      ".site-back{margin-left:0;padding:8px 12px 8px 8px}.site-back svg{width:18px;height:18px}" +
+      "@media (max-width:560px){.site-back .t{display:inline!important}.site-crumb .tag,.site-crumb .sep:first-child{display:none}}" +
       ".site-drop{position:absolute;left:0;right:0;top:100%;background:var(--surface,#fff);border-bottom:1px solid var(--line,#DDE4F2);box-shadow:0 24px 48px -24px rgba(19,32,59,.45);max-height:calc(100dvh - var(--site-h));overflow:auto}" +
       ".site-drop-in{max-width:var(--site-max);margin:0 auto;padding:18px var(--site-pad) 24px;display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))}" +
       ".site-drop h4{margin:0 0 6px;font:700 .72rem 'IBM Plex Sans',system-ui,sans-serif;text-transform:uppercase;letter-spacing:.08em;color:var(--muted,#58668A);display:flex;align-items:center;gap:8px}" +
@@ -152,6 +155,16 @@
       if (document.querySelector(".site-h")) return;
       var h = el("header", "site-h"); h.setAttribute("role", "banner");
       var inn = el("div", "site-in");
+      if (file !== "index") {
+        var back = el("button", "site-btn site-back", "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M15 18l-6-6 6-6'/></svg><span class='t'>Voltar</span>");
+        back.type = "button"; back.setAttribute("aria-label", "Voltar");
+        back.addEventListener("click", function () {
+          var ref = document.referrer, same = false;
+          try { same = !!ref && new URL(ref).origin === location.origin && ref.split("#")[0] !== location.href.split("#")[0]; } catch (e) {}
+          if (same && history.length > 1) history.back(); else location.href = "index.html";
+        });
+        inn.appendChild(back);
+      }
       inn.appendChild(el("a", "site-brand", "<span class='site-logo'>MC</span><span class='t'>Meus Controles</span>")).href = "index.html";
       var crumb = el("div", "site-crumb");
       if (cur) crumb.innerHTML = "<span class='sep'>/</span><a class='tag' href='index.html' data-k='" + cur.g.k + "' style='color:inherit;text-decoration:none'><i style='background:" + cur.g.c + "'></i>" + esc(cur.g.s) + "</a><span class='sep'>/</span><b>" + esc(cur.it[1]) + "</b>";
