@@ -15,53 +15,67 @@
   --accent:#60A5FA; --win:#4ADE80; --win-soft:#123D26; --loss:#FB7185; --loss-soft:#4A1A28; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
-.wrap{max-width:640px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:16px}
-h1{font-family:var(--f-display);font-weight:800;font-size:1.6rem;margin:0}
+.wrap{width:100%;max-width:1600px;margin:0 auto;padding-inline:clamp(16px,3vw,40px);padding-block:16px 40px;display:grid;gap:16px;grid-template-columns:minmax(0,1fr);align-items:start}
+.side,.main{display:grid;gap:14px;min-width:0;align-content:start}
+@media (min-width:900px){.wrap{grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:22px}.side{position:sticky;top:70px}}
+h1{font-family:var(--f-display);font-weight:800;font-size:1.5rem;margin:0;line-height:1.15}
 h2{font-family:var(--f-display);font-size:1rem;margin:0}
-.sub,.status{color:var(--muted);font-size:.85rem}
-.top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
+.sub,.status{color:var(--muted);font-size:.82rem}
+.status{display:inline-flex;align-items:center;gap:6px}
+.status::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.status.ok::before{background:var(--win)}
+.top{display:grid;gap:4px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
 .score{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-@media (max-width:420px){.score{grid-template-columns:repeat(2,1fr)}}
 .score div{display:grid;gap:2px}
-.lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
-.big{font-family:var(--f-num);font-weight:600;font-size:1.5rem;font-variant-numeric:tabular-nums}
+.lbl{font-size:.66rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.big{font-family:var(--f-num);font-weight:600;font-size:1.4rem;font-variant-numeric:tabular-nums}
 .pos{color:var(--win)} .neg{color:var(--loss)}
 .check{display:grid;gap:10px}
+.check h2::first-letter{text-transform:uppercase}
 .btns{display:flex;gap:8px;flex-wrap:wrap}
-.btn{appearance:none;font:inherit;font-weight:600;border-radius:8px;padding:12px 18px;cursor:pointer;border:1px solid var(--line);background:var(--bg);color:var(--fg);flex:1;min-width:120px}
+.btn{appearance:none;font:inherit;font-weight:600;border-radius:9px;padding:12px 16px;cursor:pointer;border:1px solid var(--line);background:var(--bg);color:var(--fg);flex:1;min-width:110px;transition:background .15s,border-color .15s}
+.btn:hover:not([disabled]){border-color:var(--accent)}
+.btn[disabled]{opacity:.5;cursor:default}
 .btn.w.on{background:var(--win);border-color:var(--win);color:var(--surface)}
 .btn.l.on{background:var(--loss);border-color:var(--loss);color:var(--surface)}
 .btn.save{background:var(--accent);border-color:var(--accent);color:var(--surface)}
 button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.month{display:grid;gap:8px}
-.month h3{font-family:var(--f-display);font-size:.95rem;margin:0}
-.month h3::first-letter{text-transform:uppercase}
-.dow,.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
-.dow span{font-size:.68rem;color:var(--muted);text-align:center;text-transform:uppercase}
-.day{appearance:none;font:inherit;color:var(--fg);border:1px solid var(--line);background:var(--surface);border-radius:7px;aspect-ratio:1;max-width:100%;display:grid;place-items:center;font-family:var(--f-num);font-size:.85rem;cursor:pointer}
+.calhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.78rem;color:var(--muted)}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px;border:1px solid var(--line);background:var(--surface)}
+.legend i.w{background:var(--win);border-color:var(--win)} .legend i.l{background:var(--loss);border-color:var(--loss)} .legend i.t{border:2px solid var(--accent)}
+#cal{display:grid;gap:18px 20px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.month{display:grid;gap:6px;align-content:start}
+.month h3{font-family:var(--f-display);font-size:.92rem;margin:0;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.month h3 span:first-child::first-letter{text-transform:uppercase}
+.month h3 small{font-family:var(--f-num);font-weight:400;font-size:.72rem;color:var(--muted)}
+.dow,.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.dow span{font-size:.64rem;color:var(--muted);text-align:center;text-transform:uppercase;letter-spacing:.05em}
+.day{appearance:none;font:inherit;color:var(--fg);border:1px solid var(--line);background:var(--surface);border-radius:6px;height:36px;min-width:0;display:grid;place-items:center;font-family:var(--f-num);font-size:.8rem;cursor:pointer;padding:0;transition:border-color .12s,transform .12s}
+.day:hover:not([disabled]){border-color:var(--accent);transform:translateY(-1px)}
 .day.blank{visibility:hidden}
-.day.w{background:var(--win);border-color:var(--win);color:var(--surface)}
-.day.l{background:var(--loss);border-color:var(--loss);color:var(--surface)}
-.day.today{outline:2px solid var(--accent);outline-offset:1px}
-.day.sel{box-shadow:0 0 0 3px var(--accent) inset}
-.day[disabled]{cursor:default;opacity:.55}
+.day.w{background:var(--win);border-color:var(--win);color:var(--surface);font-weight:600}
+.day.l{background:var(--loss);border-color:var(--loss);color:var(--surface);font-weight:600}
+.day.today{border:2px solid var(--accent)}
+.day.sel{box-shadow:0 0 0 2px var(--accent)}
+.day[disabled]{cursor:default;opacity:.45}
+.day.past:not(.w):not(.l){background:var(--bg);border-style:dashed}
 .hint{font-size:.8rem;color:var(--muted)}
-.pctp{display:grid;gap:8px}
+.pctp{display:grid;gap:8px;border-width:2px}
 .pcth{display:flex;justify-content:space-between;align-items:baseline}
-.pcth .big{font-size:2.4rem}
-.pctp{border-width:2px}
-.bar{height:12px;border-radius:6px;background:var(--loss-soft);overflow:hidden}
-.bar i{display:block;height:100%;background:var(--win);width:100%}
-.wrap>*{min-width:0}
+.pcth .big{font-size:2.2rem}
+.bar{height:10px;border-radius:6px;background:var(--loss-soft);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--win);width:100%;transition:width .3s}
 img,svg{max-width:100%}
+@media (orientation:landscape) and (max-height:560px){.wrap{grid-template-columns:minmax(260px,38%) minmax(0,1fr);gap:14px;padding-block:8px 24px}.side{position:sticky;top:8px}.big{font-size:1.2rem}.pcth .big{font-size:1.8rem}.btn{padding:9px 12px}.panel{padding:12px}h1{font-size:1.3rem}}
+@media (min-width:1200px){.day{height:42px;font-size:.88rem}}
+@media (max-width:420px){.day{height:34px}.big{font-size:1.25rem}.score{gap:6px}}
 </style>
 <div class="wrap">
-  <div class="top">
-    <div><h1>Dopamina B3</h1><div class="sub">14/10 a 17/12/2026 · seg a sex · verde acertei, vermelho errei</div></div>
-    <div class="status" id="status">Carregando…</div>
-  </div>
-  <div class="panel pctp">
+  <aside class="side">
+    <div class="top"><div><h1>Dopamina B3</h1><div class="sub">14/10 a 17/12/2026 · segunda a sexta</div></div><div class="status" id="status">Carregando…</div></div>
+<div class="panel pctp">
     <div class="pcth"><span class="lbl" style="font-size:.8rem">% de disciplina até 17/12</span><span class="big" id="sPct">100%</span></div>
     <div class="bar" aria-hidden="true"><i id="sBar"></i></div>
     <div class="hint" id="sPctTxt"></div>
@@ -78,10 +92,14 @@ img,svg{max-width:100%}
       <button type="button" class="btn w" id="bW">Acertei</button>
       <button type="button" class="btn l" id="bL">Errei</button>
     </div>
-    <div class="btns"><button type="button" class="btn save" id="bSave">Salvar</button><button type="button" class="btn" id="bCancel">Fechar sem salvar</button></div>
+    <div class="btns"><button type="button" class="btn save" id="bSave">Salvar</button><button type="button" class="btn" id="bCancel">Cancelar</button></div>
     <div class="hint" id="cHint"></div>
   </div>
-  <div class="panel" id="cal" style="display:grid;gap:18px"></div>
+  </aside>
+  <main class="main panel">
+    <div class="calhead"><h2>Calendário · seg a sex</h2><div class="legend"><span><i class="w"></i>Acertei</span><span><i class="l"></i>Errei</span><span><i class="t"></i>Hoje</span></div></div>
+    <div id="cal"></div>
+  </main>
 </div>
 <script>
 const START="2026-10-14", END="2026-12-17", LS="dopaminaB3m.v1";
@@ -121,7 +139,8 @@ function drawCal(){
   while(cur<=end){
     const y=cur.getFullYear(),m=cur.getMonth();
     const box=document.createElement("div");box.className="month";
-    box.innerHTML="<h3>"+cur.toLocaleDateString("pt-BR",{month:"long",year:"numeric"})+"</h3><div class='dow'><span>seg</span><span>ter</span><span>qua</span><span>qui</span><span>sex</span></div>";
+    const mk=String(y)+"-"+String(m+1).padStart(2,"0");let mw=0,ml=0;Object.keys(marks).forEach(k=>{if(k.startsWith(mk)&&isWd(k)&&k>=START&&k<=END){marks[k]==="w"?mw++:ml++}});
+    box.innerHTML="<h3><span>"+cur.toLocaleDateString("pt-BR",{month:"long",year:"numeric"})+"</span><small>"+mw+" ✓ · "+ml+" ✗</small></h3><div class='dow'><span>seg</span><span>ter</span><span>qua</span><span>qui</span><span>sex</span></div>";
     const g=document.createElement("div");g.className="grid";
     const sd=new Date(START+"T12:00:00"), d0=(y===sd.getFullYear()&&m===sd.getMonth())?sd.getDate():1;
     let lead=false;
@@ -133,7 +152,7 @@ function drawCal(){
       const wd=new Date(y,m,d).getDay();if(wd===0||wd===6){continue}
       if(!lead){for(let i=1;i<wd;i++){const bk=document.createElement("div");bk.className="day blank";g.appendChild(bk)}lead=true}
       if(ds<START){b.className="day blank";g.appendChild(b);continue}
-      b.className="day"+(marks[ds]==="w"?" w":marks[ds]==="l"?" l":"")+(ds===t?" today":"")+(ds===sel?" sel":"");
+      b.className="day"+(marks[ds]==="w"?" w":marks[ds]==="l"?" l":"")+(ds===t?" today":"")+(ds===sel?" sel":"")+(ds<t&&!marks[ds]?" past":"");
       if(ds>t) b.disabled=true;
       b.setAttribute("aria-label",fmt(ds)+(marks[ds]?(marks[ds]==="w"?", acertei":", errei"):""));
       b.addEventListener("click",()=>pick(ds));
@@ -160,7 +179,7 @@ load();sel=lastWd(today()<START?START:(today()>END?END:today()));if(sel<START)se
   db.collection("dias").onSnapshot(q=>{
     const m={};q.docs.forEach(d=>{const r=d.data().r;if(r==="w"||r==="l")m[d.id]=r});marks=m;
     if(sel&&!editable(sel)) draft=marks[sel]||null;
-    render();$("status").textContent="Sincronizado";
+    render();$("status").textContent="Sincronizado";$("status").classList.add("ok");
   },()=>{$("status").textContent="Sem conexão com o salvamento"});
 })();
 </script>
