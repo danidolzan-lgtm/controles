@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="analise-b3"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Análise de Entrada B3</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="analise-b3-z21"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Análise de Entrada B3</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 /* Layout: placar no topo; nova análise em passos (print → seta na vela → operacional e direção → critérios do manual → resultado); lista de análises salvas. */
@@ -93,7 +93,7 @@ textarea#ctx,textarea#q,textarea#resp{min-height:52px}
 </style>
 <div class="wrap">
   <div class="top">
-    <div><h1>Análise de Entrada B3</h1><div class="sub">WIN e WDO · print da entrada · seta na vela · o Claude confere com os operacionais</div></div>
+    <div><h1>Análise de Entrada B3</h1><div class="sub">WIN e WDO · M2 · print da entrada · seta na vela · o Claude confere com o Manual B3</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
 
@@ -117,10 +117,10 @@ textarea#ctx,textarea#q,textarea#resp{min-height:52px}
       <div class="hint" id="setaTxt">A seta aparece onde você tocar. Toque de novo para mudar.</div>
     </div>
     <div class="step"><i>3</i>O que você operou</div>
-    <div class="seg" id="opSeg"><button type="button" data-op="impulso">Impulso direcional</button><button type="button" data-op="retorno">Retorno</button><button type="button" data-op="quebra">Quebra de estrutura</button><button type="button" data-op="triangulo">Triângulo em volume</button></div>
+    <div class="seg" id="opSeg"><button type="button" data-op="respiro">Respiro</button><button type="button" data-op="virada">Virada</button><button type="button" data-op="muralha">Muralha</button><button type="button" data-op="giro">Giro</button><button type="button" data-op="armadilha">Armadilha</button></div>
     <div class="seg" id="dirSeg"><button type="button" class="call" data-dir="call">Compra ▲</button><button type="button" class="put" data-dir="put">Venda ▼</button></div>
     <div class="seg" id="atSeg"><button type="button" data-at="WIN">WIN</button><button type="button" data-at="WDO">WDO</button></div>
-    <span class="hint">Volume na entrada (opcional):</span>
+    <span class="hint">Volume da vela de sinal (comparado com a média das últimas 10):</span>
     <div class="seg" id="volSeg"><button type="button" data-vol="acima">Volume acima da média</button><button type="button" data-vol="abaixo">Volume abaixo</button></div>
     <textarea id="ctx" placeholder="Algo a mais para o Claude saber (opcional): stop e alvo em pontos, cores das médias, horário…"></textarea>
     <div class="step"><i>4</i>Mandar para o Claude</div>
@@ -134,7 +134,7 @@ textarea#ctx,textarea#q,textarea#resp{min-height:52px}
       <div class="seg" id="vSeg"><button type="button" data-v="certo">✓ Certa</button><button type="button" data-v="errado">✕ Errada</button><button type="button" data-v="incerto">? Incerta</button></div>
       <textarea id="resp" placeholder="Cole aqui a resposta do Claude (opcional), para guardar junto com a análise"></textarea>
     </div>
-    <details id="critDet" hidden><summary class="hint" style="cursor:pointer">Conferir eu mesmo, item por item (opcional)</summary>
+    <details id="critDet"><summary class="hint" style="cursor:pointer">Conferir eu mesmo, item por item (opcional)</summary>
     <div id="critBox" hidden style="display:grid;gap:4px;margin-top:8px">
       <div id="crit"></div>
     </div>
@@ -144,13 +144,13 @@ textarea#ctx,textarea#q,textarea#resp{min-height:52px}
     <div class="seg" id="resSeg"><button type="button" data-res="win">Win</button><button type="button" data-res="loss">Loss</button><button type="button" data-res="">Ainda não sei</button></div>
     <textarea id="obs" placeholder="Observação (opcional): o que viu, o que sentiu, o que faria diferente"></textarea>
     <div class="row"><button type="button" class="btn" id="salvar">Salvar análise</button><button type="button" class="btn ghost" id="limpar">Limpar</button></div>
-    <div class="note">O Claude confere o print com as regras dos operacionais. Ele pode errar em print pequeno ou com médias de cores parecidas: use o parecer como segunda opinião.</div>
+    <div class="note">O Claude confere o print com as regras do seu manual. Ele pode errar em print pequeno ou com médias de cores parecidas: use o parecer como segunda opinião.</div>
   </div>
 
   <div class="panel" id="chatBox">
     <h2>Tire suas dúvidas</h2>
     <div class="hint">Escreva a dúvida: ela é copiada e a sua conversa de análise abre. Cole e envie.</div>
-    <div class="chips" id="chips"><button type="button">Qual a diferença entre Impulso direcional e Quebra de estrutura?</button><button type="button">Quando o Retorno não vale?</button><button type="button">Como confirmo o volume no Triângulo?</button></div>
+    <div class="chips" id="chips"><button type="button">Qual a diferença entre Respiro e Muralha?</button><button type="button">Quando entro no Giro?</button><button type="button">Posso entrar na Virada se a vela de sinal for grande?</button></div>
     <form id="chatForm" style="display:grid;gap:8px"><textarea id="q" rows="2" placeholder="Escreva sua dúvida…"></textarea><div class="row"><button type="submit" class="btn" id="send">Copiar e abrir conversa ↗</button></div></form>
     <div class="guia" id="guiaQ" hidden></div>
   </div>
@@ -159,7 +159,7 @@ textarea#ctx,textarea#q,textarea#resp{min-height:52px}
     <summary><b>Minha conversa de análise no Claude</b> <span class="hint" id="cfgState">não configurada</span></summary>
     <ol class="hint" style="margin:0;padding-left:18px;display:grid;gap:4px">
       <li>No Claude, abra uma conversa nova (ou um projeto) só para isso.</li>
-      <li>Toque em <b>Copiar mensagem de configuração</b> e cole como primeira mensagem. Ela leva os seus operacionais e regras e explica como analisar os prints.</li>
+      <li>Toque em <b>Copiar mensagem de configuração</b> e cole como primeira mensagem. Ela leva o seu manual e explica como analisar os prints.</li>
       <li>Copie o link dessa conversa (no app: compartilhar ▸ copiar link, ou a barra de endereço no PC) e cole aqui embaixo.</li>
     </ol>
     <textarea id="cfgTxt" readonly rows="6" style="font:inherit;font-size:.8rem;width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--muted)"></textarea>
@@ -175,11 +175,11 @@ textarea#ctx,textarea#q,textarea#resp{min-height:52px}
   </div>
 </div>
 <script>
-const LS="analiseB3.v1";
+const LS="analiseB3.z21";
 const $=id=>document.getElementById(id);
 const ui_=window.ui||{toast(){},done(){}};
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const NOME={impulso:"Impulso direcional",retorno:"Retorno",quebra:"Quebra de estrutura",triangulo:"Triângulo em volume",respiro:"Respiro",virada:"Virada",muralha:"Muralha",muralhaEng:"Muralha",giro:"Giro",armadilha:"Armadilha"};
+const NOME={respiro:"Respiro",virada:"Virada",muralha:"Muralha",muralhaEng:"Muralha",giro:"Giro",armadilha:"Armadilha"};
 
 /* ---------- regras do manual ---------- */
 // cada critério: texto para compra / para venda. "c" = precisa ser Sim; "f" = filtro, precisa ser Não.
@@ -242,7 +242,7 @@ const R={
 };
 const txt=(t,dir)=>dir==="put"&&t[1]?t[1]:t[0];
 function perguntas(op,dir){
-  if(!op||!dir||!R[op])return [];
+  if(!op||!dir)return [];
   const r=R[op];
   return [...r.c.map((t,i)=>({id:"c"+i,t:txt(t,dir),tipo:"c"})),...r.f.map((t,i)=>({id:"f"+i,t:txt(t,dir),tipo:"f"})),...BASE_F.map((t,i)=>({id:"b"+i,t:t[0],tipo:"f"}))];
 }
@@ -355,9 +355,9 @@ $("salvar").onclick=async()=>{
   if(!cur.img){ui_.toast("Coloque o print primeiro",1);return}
   if(!cur.op||!cur.dir){ui_.toast("Escolha o operacional e a direção",1);return}
   const V=veredito(cur.op,cur.dir,cur.resp);
-  const manual=!!V&&!V.faltam;
+  const manual=!V.faltam;
   if(cur.ia)cur.ia.texto=$("resp").value.trim();
-  if(!cur.ia&&!manual){ui_.toast("Marque o que o Claude disse (Certa/Errada/Incerta)",1);$("vBox").scrollIntoView({behavior:"smooth",block:"center"});return}
+  if(!cur.ia&&!manual){ui_.toast("Marque o que o Claude disse (Certa/Errada/Incerta) ou responda os itens",1);$("vBox").scrollIntoView({behavior:"smooth",block:"center"});return}
   const fim=window.ui?ui.busy($("salvar"),"Salvando…"):()=>{};
   const img=await imagemComSeta();
   const iaV=cur.ia&&cur.ia.veredito;
@@ -402,29 +402,34 @@ $("lista").addEventListener("click",async e=>{
 
 /* ---------- Claude: o print vai com a legenda desenhada; você cola na SUA conversa ----------
    Sem chave e sem custo extra. A conversa escolhida fica salva na sua conta. */
-const MANUAL=`MINHAS REGRAS NA B3 (mini índice WIN e mini dólar WDO)
-Operacionais (curso Além da Previsão): IMPULSO DIRECIONAL, RETORNO, QUEBRA DE ESTRUTURA e TRIÂNGULO EM VOLUME. Só entro nesses quatro, com todos os critérios do operacional confirmados.
-Gerenciamento: no máximo 2 operações por dia; se a 1ª der loss, encerro o dia. Uma operação aberta por vez. Toda entrada já vai com stop e alvo do operacional. Cada operação é registrada como meta (positiva) ou stop (negativa).
-Horário: janela fixa 09:45–14:00. Os operacionais já consideram notícia, então não há pausa de notícia; só não opero com a B3 fechada (02/11 e 20/11).
-Valor do ponto: WIN R$ 0,20 e WDO R$ 10 por contrato. Contratos conforme a banca (escada do Progresso, de 1 até 100 contratos).`;
+const MANUAL=`MANUAL B3 (mini índice WIN e mini dólar WDO)
+Base: gráfico M2, médias exponenciais 9, 21 e 50. Entrada na abertura da vela seguinte à vela de sinal. Toda entrada já vai com ordem de stop e de alvo (OCO). Alvo = 2x a distância do stop. Duas sessões por dia (manhã 09:45–11:15 e tarde 14:00–15:30); máximo 2 operações por sessão; loss na 1ª encerra a sessão; uma operação aberta por vez, nunca WIN e WDO juntos. Valor do ponto: WIN R$ 0,20, WDO R$ 10 por contrato.
+Não opera em nenhum setup quando: as três médias estão emboladas sem espaço entre elas (lateral); faltam 5 min ou menos para notícia de impacto ou ela saiu há menos de 15 min; a vela de sinal é maior que 2x o tamanho médio das últimas 10 velas; o volume da vela de sinal está abaixo da média das últimas 10 velas; o stop técnico passa de WIN 150 pontos ou WDO 5 pontos; são os primeiros 15 minutos do pregão; o outro ativo está indo forte no mesmo sentido da entrada (WIN e WDO costumam andar um contra o outro: compra no WIN pede WDO caindo ou de lado; se o print não mostra o outro ativo, pergunte).
+RESPIRO (pullback na zona 9–21). COMPRA: 9 acima da 21, 21 acima da 50, 50 subindo; o preço recua até a zona 9–21 e encosta ou fura um pouco a 21; gatilho: vela fecha acima da 9 com pavio inferior; entrada na abertura da vela seguinte; stop 1–2 ticks abaixo da mínima da vela de sinal ou da 21 (o mais baixo). VENDA: espelho (9 abaixo da 21, 21 abaixo da 50, 50 caindo; vela fecha abaixo da 9 com pavio superior; stop acima da máxima do sinal ou da 21, o mais alto). Volume: no recuo até a 21 o volume diminui; a vela de sinal tem volume acima da média das últimas 10. Não entra se: no recuo o preço furou a 50; a 50 está deitada; já é o 3º recuo seguido.
+VIRADA (cruzamento 9 x 21 a favor da 50). COMPRA: preço acima da 50; a 9 cruza a 21 para cima; gatilho: primeira vela verde que fecha depois do cruzamento; entrada na vela seguinte; stop 1–2 ticks abaixo da menor mínima das últimas 3 velas. VENDA: espelho (abaixo da 50, cruza para baixo, primeira vela vermelha, stop acima da maior máxima das últimas 3 velas). Volume: a vela de confirmação tem volume acima da média das últimas 10; cruzamento com volume fraco costuma virar lateral, fique de fora. Não entra se: 9 e 21 cruzaram mais de 2 vezes nas últimas 15 velas; a 50 está deitada ou o preço cruzou a 50 nas últimas 10 velas; a vela de confirmação fecha colada na 50.
+MURALHA (rejeição na 50). COMPRA: 21 acima da 50 e 50 subindo; o preço cai até tocar a 50; gatilho: vela com pavio inferior maior ou igual ao corpo que fecha acima da 50; entrada na vela seguinte; stop 1–2 ticks abaixo do pavio da vela de sinal. VENDA: espelho (pavio superior, fecha abaixo da 50, stop acima do pavio). Volume: a vela de rejeição (pavio na 50) tem volume acima da média; toque na 50 com volume baixo é rejeição fraca e pode romper. Não entra se: 3º toque seguido na 50; a vela de sinal fecha do outro lado da 50; a 50 está deitada.
+MURALHA, entrada por ENGOLFO (mesmo setup e mesmos filtros da Muralha, só outro gatilho; é registrada como Muralha). COMPRA: 21 acima da 50 e 50 subindo; a vela toca a 50 e fecha acima dela (sem pavio grande); a vela seguinte é verde e engole o corpo inteiro dela; entrada na abertura da vela seguinte ao engolfo; stop 1–2 ticks abaixo da menor mínima das duas velas; alvo 2x. VENDA: espelho. Volume: a vela que engole tem volume acima da média. Não entra se: 3º toque seguido na 50; a 50 está deitada; a vela do toque fechou do outro lado da 50 (aí é Armadilha); o corpo da vela do toque é minúsculo (doji); a 21 está mais perto da entrada do que 1x o stop.
+ARMADILHA (falso rompimento da 50). COMPRA: 21 acima da 50 e 50 subindo; UMA única vela fecha abaixo da 50; a vela seguinte é verde e engole o corpo da que furou; gatilho: o engolfo fecha acima da 9, ou, se fechou acima da 50 mas abaixo da 9, a vela seguinte fecha acima da 9 (depois disso, cancelado); entrada na abertura da vela seguinte ao gatilho; stop 1–2 ticks abaixo da mínima da vela que furou; alvo 2x (o alvo costuma passar pela 21; aqui não há filtro da 21). VENDA: espelho. Volume: o engolfo e a vela de gatilho com volume acima da média. Não entra se: 2 velas ou mais fecharam do outro lado da 50; nem o engolfo nem a seguinte fecharam do lado certo da 9; a 9 já cruzou a 21 com força para o lado do rompimento com a 50 perdendo inclinação (cara de Giro); a 50 está deitada; o stop passa do limite. Aparece na Muralha quando o toque fecha do outro lado da 50 e no Giro que falhou com uma vela só do outro lado. Setup novo, ainda em teste.
+GIRO (reversão: o preço rompe a 50 e as médias viram). COMPRA: antes o mercado vinha caindo (9 abaixo da 21, 21 abaixo da 50); uma vela de corpo cheio fecha acima da 50; a 9 cruza a 21 para cima; o preço recua até a 9 ou a 50 sem fechar abaixo da 50; gatilho: vela verde fecha acima da 50; entrada na vela seguinte (nunca no rompimento); stop 1–2 ticks abaixo da 50 ou da mínima do recuo (o mais baixo). VENDA: espelho. Volume: a vela do rompimento da 50 tem volume forte (pelo menos 1,5x a média das últimas 10); no recuo o volume diminui; a vela de sinal volta com volume acima da média. Não entra se: a 50 ainda está bem inclinada contra a entrada; a vela do rompimento é maior que 2x a média das últimas 10 velas; no recuo uma vela fechou de volta do outro lado da 50 (se foi uma vela só, pode ter virado Armadilha para o lado contrário); passaram mais de 10 velas desde o rompimento sem o recuo; o preço já rompeu e voltou pela 50 nas últimas 20 velas. Reversão costuma acertar menos.
+Horários fixos (não mudam em 01/11): manhã 09:45–11:15 e tarde 14:00–15:30. Pausa todo dia 10:25–10:45 (abertura de NY até 01/11; dados dos EUA depois). Até 01/11, em dia de dado forte das 11:00, pausa 10:55–11:15. Payroll e CPI: manhã só 30 min depois da notícia. FOMC (28/10 e 09/12): sem a tarde. Feriados: 02/11 e 20/11 B3 fechada; 26/11 só manhã. Qualquer notícia de alto impacto: sem operar de 5 min antes até 15 min depois. Evitar também os primeiros 15 min, IPCA/Copom/FOMC e almoço. Entrada dentro de uma pausa é ERRADA.`;
 const CONFIG_MSG=MANUAL+`
 
-Esta conversa é só para analisar minhas entradas na B3 (WIN e WDO). Vou mandar prints do gráfico. Cada print tem uma faixa escura no topo dizendo o operacional, a direção (compra ou venda), o ativo e às vezes uma observação. Analise pelas regras de cada operacional do curso Além da Previsão (Impulso direcional, Retorno, Quebra de estrutura e Triângulo em volume). Se eu ainda não te passei alguma regra do operacional, me pergunte antes de dar o parecer em vez de inventar. Se o stop e o alvo aparecerem no print, confira também se estão no lugar certo do operacional. No gráfico há um círculo e uma seta (verde para cima = compra, vermelha para baixo = venda) marcando a vela em que ENTREI; a vela de sinal é a anterior.
-Para cada print, compare só pelo que dá para ver com as regras do operacional informado e com o gerenciamento acima. Se algo não dá para confirmar no print, diga em vez de chutar. Responda em português, curto, neste formato:
+Esta conversa é só para analisar minhas entradas na B3 (WIN e WDO). Vou mandar prints do gráfico M2. Cada print tem uma faixa escura no topo dizendo o operacional, a direção (compra ou venda), o ativo e às vezes uma observação. Confira sempre o VOLUME da vela de sinal: ele precisa estar acima da média das últimas 10 velas (a faixa diz o que eu vi; se as barras de volume aparecerem no print, confira também) e coloque o volume como um dos critérios da resposta. Se o stop e o alvo aparecerem no print, confira também se estão no lugar do manual e se o alvo é 2x o stop. No gráfico há um círculo e uma seta (verde para cima = compra, vermelha para baixo = venda) marcando a vela em que ENTREI; a vela de sinal é a anterior.
+Para cada print, compare só pelo que dá para ver com as regras do operacional informado e com os filtros da Base. Se algo não dá para confirmar no print, diga em vez de chutar. Responda em português, curto, neste formato:
 VEREDITO: CERTA, ERRADA ou INCERTA (confiança alta/média/baixa)
 Critérios: um por linha com ✓, ✕ ou ?
 Outro setup que combina mais (se houver)
 Para a próxima: 1 frase
-Quando eu mandar só texto, é uma dúvida: responda com base nos operacionais e nas regras acima, direto e prático, dizendo o que é opinião.
+Quando eu mandar só texto, é uma dúvida: responda com base no manual, direto e prático, dizendo o que é opinião quando sair do manual.
 Se entendeu, responda só: Pronto.`;
 const CFG="analiseB3.claudeUrl";
 const MHASH=(t=>{let h=5381;for(let i=0;i<t.length;i++)h=((h*33)^t.charCodeAt(i))>>>0;return h.toString(36)})(MANUAL), CFGM=CFG+".manual";
 function getM(){try{return localStorage.getItem(CFGM)||""}catch(e){return ""}}
 function desatual(){return !!getUrl()&&getM()!==MHASH}
-const UPD="Atualizei as minhas regras (troquei os operacionais). Esqueça a versão anterior e use esta daqui para frente, com as mesmas instruções.\n\n";
+const UPD="Atualizei o meu manual. Esqueça a versão anterior e use esta daqui para frente, com as mesmas instruções.\n\n";
 const celular=()=>matchMedia("(pointer:coarse)").matches||/Android|iPhone|iPad/i.test(navigator.userAgent);
 const getUrl=()=>{try{return localStorage.getItem(CFG)||""}catch(e){return ""}};
-function cfgState(){const u=getUrl(),old=desatual();$("cfgState").textContent=!u?"não configurada — toque aqui":old?"⚠ regras atualizadas: recopie na conversa":"✓ configurada";$("cfgState").style.color=u&&!old?"var(--win)":"var(--warn)";$("cfgCopy").textContent=old?"Copiar regras atualizadas":"Copiar mensagem de configuração";$("cfgCopy").className=old?"btn":"btn ghost";if(document.activeElement!==$("cfgUrl"))$("cfgUrl").value=u}
+function cfgState(){const u=getUrl(),old=desatual();$("cfgState").textContent=!u?"não configurada — toque aqui":old?"⚠ manual atualizado: recopie na conversa":"✓ configurada";$("cfgState").style.color=u&&!old?"var(--win)":"var(--warn)";$("cfgCopy").textContent=old?"Copiar manual atualizado":"Copiar mensagem de configuração";$("cfgCopy").className=old?"btn":"btn ghost";if(document.activeElement!==$("cfgUrl"))$("cfgUrl").value=u}
 async function copiarTexto(t){try{await navigator.clipboard.writeText(t);return true}catch(e){
   try{const a=document.createElement("textarea");a.value=t;a.style.position="fixed";a.style.opacity="0";document.body.appendChild(a);a.select();const ok=document.execCommand("copy");a.remove();return ok}catch(_){return false}}}
 function abrirConversa(fallbackTexto){
@@ -508,7 +513,7 @@ $("ctx").addEventListener("input",prepararPrint);
 /* configuração da conversa */
 $("cfgCopy").onclick=async()=>{const upd=!!getUrl();const ok=await copiarTexto((upd?UPD:"")+CONFIG_MSG);
   if(ok){try{localStorage.setItem(CFGM,MHASH)}catch(e){}if(db){try{await db.doc("config/claude").set({manual:MHASH},{merge:true})}catch(e){}}cfgState()}
-  ui_.toast(ok?(upd?"✓ Regras copiadas: cole na sua conversa de análise":"✓ Mensagem copiada: cole na conversa nova"):"Não consegui copiar",!ok)};
+  ui_.toast(ok?(upd?"✓ Manual copiado: cole na sua conversa de análise":"✓ Mensagem copiada: cole na conversa nova"):"Não consegui copiar",!ok)};
 $("cfgSave").onclick=async()=>{
   const u=$("cfgUrl").value.trim();
   if(!/^https:\/\/claude\.ai\//.test(u)){ui_.toast("Cole um link que comece com https://claude.ai/",1);return}
@@ -536,10 +541,10 @@ function respostaHTML(r,op,dir){
 async function perguntar(txt){
   txt=txt.trim();if(!txt){ui_.toast("Escreva a dúvida",1);return}
   const u=getUrl();
-  const t=u?txt:MANUAL+"\n\nEssas são as minhas regras de day trade na B3. Responda com base nelas, em português, direto e prático.\n\nMinha dúvida: "+txt;
+  const t=u?txt:MANUAL+"\n\nEsse é o meu manual de day trade na B3. Responda com base nele, em português, direto e prático.\n\nMinha dúvida: "+txt;
   await copiarTexto(t);
   abrirConversa(t);
-  guia("guiaQ",u?[celular()?"Toque e segure na caixa de mensagem e escolha <b>Colar</b>.":"Clique na caixa de mensagem e aperte <b>Ctrl+V</b>.","Envie e o Claude responde com base nos seus operacionais."]:["Abriu uma conversa nova já com a pergunta e o seu manual (se vier vazia, cole: está copiado).",semConv]);
+  guia("guiaQ",u?[celular()?"Toque e segure na caixa de mensagem e escolha <b>Colar</b>.":"Clique na caixa de mensagem e aperte <b>Ctrl+V</b>.","Envie e o Claude responde com base no seu manual."]:["Abriu uma conversa nova já com a pergunta e o seu manual (se vier vazia, cole: está copiado).",semConv]);
   ui_.done($("send"),"Copiado");
 }
 $("chatForm").addEventListener("submit",e=>{e.preventDefault();perguntar($("q").value)});

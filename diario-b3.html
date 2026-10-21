@@ -1,7 +1,7 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="diario-b3m"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Diário B3</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="diario-b3-z21"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Diário B3</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: resumo no topo, ajustes de contrato, calendário seg–sex 13/10–17/12, tabelas por operacional/ativo. Janela do dia abre ao tocar no calendário. */
+/* Layout: resumo no topo, ajustes de contrato, calendário seg–sex 21/10–17/12, tabelas por operacional/ativo. Janela do dia abre ao tocar no calendário. */
 :root{
   --bg:#EEF3FC; --surface:#FFFFFF; --line:#DDE4F2; --fg:#13203B; --muted:#58668A;
   --accent:#2563EB; --accent-soft:#DCE7FF;
@@ -91,7 +91,7 @@ td:first-child{font-family:var(--f-body);white-space:normal}
 
 <div class="wrap">
   <div class="top">
-    <div><h1>Diário B3</h1><div class="sub">WIN e WDO · Impulso direcional, Retorno, Quebra de estrutura e Triângulo em volume · janela 09:45–14:00 · máx. 2 operações por dia · stop na 1ª encerra o dia</div></div>
+    <div><h1>Diário B3</h1><div class="sub">WIN e WDO · M2 · Respiro, Virada, Muralha, Giro e Armadilha · alvo 2x o stop · manhã e tarde · máx. 2 operações por sessão · stop na 1ª encerra a sessão</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
 
@@ -116,7 +116,7 @@ td:first-child{font-family:var(--f-body);white-space:normal}
 
   <div class="two">
     <div class="panel"><h2 style="margin-bottom:8px">Por operacional</h2><div class="tbl-wrap"><table id="tOp"></table></div></div>
-    <div class="panel"><h2 style="margin-bottom:8px">Por ativo e ordem</h2><div class="tbl-wrap"><table id="tAt"></table></div></div>
+    <div class="panel"><h2 style="margin-bottom:8px">Por ativo, sessão e ordem</h2><div class="tbl-wrap"><table id="tAt"></table></div></div>
   </div>
 </div>
 
@@ -124,9 +124,9 @@ td:first-child{font-family:var(--f-body);white-space:normal}
 <datalist id="opsList"></datalist>
 
 <script>
-const START="2026-10-14", END="2026-12-17", LS="diarioB3m.v1";
-const OPS=[{id:"impulso",nome:"Impulso direcional"},{id:"retorno",nome:"Retorno"},{id:"quebra",nome:"Quebra de estrutura"},{id:"triangulo",nome:"Triângulo em volume"}];
-const opNome=id=>(OPS.find(o=>o.id===id)||{nome:id||"Sem operacional"}).nome;
+const START="2026-10-21", END="2026-12-17", LS="diarioB3.z21";
+const OPS=[{id:"respiro",nome:"Respiro"},{id:"virada",nome:"Virada"},{id:"muralha",nome:"Muralha"},{id:"giro",nome:"Giro"},{id:"armadilha",nome:"Armadilha"}];
+const opNome=id=>(OPS.find(o=>o.id===(id==="muralhaEng"?"muralha":id))||{nome:id||"Sem operacional"}).nome;
 const ATIVOS={WIN:{nome:"Mini índice",pt:0.20},WDO:{nome:"Mini dólar",pt:10}};
 let days={}, cfg={ct:1}, db=null;
 const $=id=>document.getElementById(id);
@@ -139,10 +139,9 @@ function setStatus(t){$("status").textContent=t}
 function calcRes(o){const v=parseFloat(o.valor);if(!o.tipo||isNaN(v))return null;return o.tipo==="meta"?Math.abs(v):-Math.abs(v)}
 function opVal(op){return +op.resultado||0}
 function dayNet(d){return (d.ops||[]).reduce((s,o)=>s+opVal(o),0)}
-// Uma janela por dia (09:45–14:00), no máximo 2 operações no dia; stop na 1ª encerra o dia.
-// Operações antigas de manhã/tarde entram todas no dia.
-const SESS=[{id:"dia",nome:"Dia",h:"09:45–14:00"}];
-const sessOf=o=>"dia";
+// 2 sessões por dia (manhã e tarde), até 2 operações em cada. Operação antiga sem sessão conta como manhã.
+const SESS=[{id:"manha",nome:"Manhã",h:"09:45–11:15"},{id:"tarde",nome:"Tarde",h:"14:00–15:30"}];
+const sessOf=o=>o.sess||"manha";
 const sOps=(d,id)=>(d.ops||[]).filter(o=>sessOf(o)===id);
 function dayOk(d){return SESS.every(x=>{const o=sOps(d,x.id);if(o.length>2)return false;if(o.length===2&&opVal(o[0])<0)return false;return true})}
 
@@ -202,21 +201,20 @@ function statRow(nome,ops){const g=ops.filter(o=>opVal(o)>0).length,v=ops.reduce
   return "<tr><td>"+esc(nome)+"</td><td>"+ops.length+"</td><td>"+pct(g,ops.length)+"</td><td class='"+(v>0?"pos":v<0?"neg":"")+"'>"+n2(v)+"</td></tr>"}
 function renderTables(){
   const ops=allOps(), head="<thead><tr><th></th><th>Ops</th><th>Acerto</th><th>R$</th></tr></thead><tbody>";
-  const out=ops.filter(o=>!OPS.some(x=>x.id===o.operacional));
-  $("tOp").innerHTML=head+OPS.map(x=>statRow(x.nome,ops.filter(o=>o.operacional===x.id))).join("")+(out.length?statRow("Antigos (outros operacionais)",out):"")+"</tbody>";
-  $("tAt").innerHTML=head+Object.keys(ATIVOS).map(k=>statRow(ATIVOS[k].nome,ops.filter(o=>o.ativo===k))).join("")+statRow("1ª do dia",ops.filter(o=>o.idx===0))+statRow("2ª do dia",ops.filter(o=>o.idx===1))+"</tbody>";
+  $("tOp").innerHTML=head+OPS.map(x=>statRow(x.nome,ops.filter(o=>(o.operacional==="muralhaEng"?"muralha":o.operacional)===x.id))).join("")+"</tbody>";
+  $("tAt").innerHTML=head+Object.keys(ATIVOS).map(k=>statRow(ATIVOS[k].nome,ops.filter(o=>o.ativo===k))).join("")+SESS.map(x=>statRow(x.nome,ops.filter(o=>sessOf(o)===x.id))).join("")+statRow("1ª da sessão",ops.filter(o=>o.idx===0))+statRow("2ª da sessão",ops.filter(o=>o.idx===1))+"</tbody>";
 }
 function renderList(){}
 
 /* ---------- janela do dia ---------- */
-let draft=null, ro=false, lastFocus=null, cs="dia";
+let draft=null, ro=false, lastFocus=null, cs="manha";
 function newOp(){const prev=draft.ops[draft.ops.length-1];return {sess:cs,ativo:prev?prev.ativo:"WIN",direcao:"",operacional:"",contratos:+cfg.ct||1,tipo:"",valor:null,resultado:null}}
 const curOps=()=>draft.ops.filter(o=>sessOf(o)===cs);
 const pareiK=()=>"parei_"+cs;
 function openDay(ds){
   lastFocus=document.activeElement;
-  draft=JSON.parse(JSON.stringify(days[ds]||{date:ds,status:"",ops:[]}));draft.date=ds;draft.ops=draft.ops||[];if(draft.parei_manha||draft.parei_tarde||draft.parei){draft.parei_dia=true}delete draft.parei;delete draft.parei_manha;delete draft.parei_tarde
-  ro=ds<todayStr();cs="dia";drawModal();$("ov").hidden=false;
+  draft=JSON.parse(JSON.stringify(days[ds]||{date:ds,status:"",ops:[]}));draft.date=ds;draft.ops=draft.ops||[];if(draft.parei){draft.parei_manha=true;delete draft.parei}
+  ro=ds<todayStr();cs=ds===todayStr()&&new Date().getHours()>=13?"tarde":"manha";drawModal();$("ov").hidden=false;
   setTimeout(()=>{const f=$("modal").querySelector("button,input");f&&f.focus()},0);
 }
 function closeModal(){$("ov").hidden=true;draft=null;lastFocus&&lastFocus.focus&&lastFocus.focus()}
@@ -227,11 +225,11 @@ function drawModal(){
   if(ro)h+="<div class='lock'>Dia encerrado. Só visualização.</div>";
   h+="<div class='seg'><button type='button' data-a='status' data-v='op' class='"+(draft.status==="op"?"on":"")+"'>Operei</button><button type='button' data-a='status' data-v='nao' class='"+(draft.status==="nao"?"on":"")+"'>Não operei</button></div>";
   if(draft.status==="op"){
-    if(SESS.length>1)h+="<div class='stabs'>"+SESS.map(x=>{const o=sOps(draft,x.id),n=o.reduce((a,b)=>a+opVal(b),0);return "<button type='button' data-a='sess' data-v='"+x.id+"' class='"+(cs===x.id?"on":"")+"'>"+x.nome+"<small>"+x.h+(o.length?" · "+n2(n):"")+"</small></button>"}).join("")+"</div>";
+    h+="<div class='stabs'>"+SESS.map(x=>{const o=sOps(draft,x.id),n=o.reduce((a,b)=>a+opVal(b),0);return "<button type='button' data-a='sess' data-v='"+x.id+"' class='"+(cs===x.id?"on":"")+"'>"+x.nome+"<small>"+x.h+(o.length?" · "+n2(n):"")+"</small></button>"}).join("")+"</div>";
     draft.ops.forEach((o,i)=>{
       if(sessOf(o)!==cs)return;
       const k=curOps().indexOf(o);
-      h+="<div class='op'><div class='t'><span>"+(k+1)+"ª operação do dia</span><span id='rv"+i+"' class='num "+(opVal(o)>0?"pos":opVal(o)<0?"neg":"")+"'>"+(o.resultado==null?"":n2(opVal(o)))+"</span></div>";
+      h+="<div class='op'><div class='t'><span>"+(k+1)+"ª operação da "+(cs==="manha"?"manhã":"tarde")+"</span><span id='rv"+i+"' class='num "+(opVal(o)>0?"pos":opVal(o)<0?"neg":"")+"'>"+(o.resultado==null?"":n2(opVal(o)))+"</span></div>";
       h+="<div class='lbl'>Operacional</div><div class='seg'>"+OPS.map(x=>"<button type='button' data-a='opr' data-i='"+i+"' data-v='"+x.id+"' class='"+(o.operacional===x.id?"on":"")+"'>"+x.nome+"</button>").join("")+"</div>";
       h+="<div class='seg'>"+Object.keys(ATIVOS).map(k=>"<button type='button' data-a='ativo' data-i='"+i+"' data-v='"+k+"' class='"+(o.ativo===k?"on":"")+"'>"+k+"</button>").join("")+
         "<button type='button' data-a='dir' data-i='"+i+"' data-v='C' class='"+(o.direcao==="C"?"on":"")+"'>Compra ▲</button><button type='button' data-a='dir' data-i='"+i+"' data-v='V' class='"+(o.direcao==="V"?"on":"")+"'>Venda ▼</button></div>";
@@ -248,12 +246,12 @@ function drawModal(){
 }
 let lastNx="";
 function nextHTML(){
-  const so=curOps(), o1=so[0], o2=so[1];
-  if(!so.length) return "<div class='seg'><button type='button' data-a='add'>Registrar 1ª operação do dia</button></div>";
-  if(o2) return "<div class='lock'>Limite de 2 operações do dia atingido. Dia encerrado.</div>";
+  const so=curOps(), o1=so[0], o2=so[1], nm=cs==="manha"?"manhã":"tarde";
+  if(!so.length) return "<div class='seg'><button type='button' data-a='add'>Registrar 1ª operação da "+nm+"</button></div>";
+  if(o2) return "<div class='lock'>Limite de 2 operações da "+nm+" atingido. Sessão encerrada.</div>";
   if(o1.resultado==null) return "";
-  if(opVal(o1)<0) return "<div class='lock'>Stop na 1ª. Dia encerrado: sem 2ª operação.</div>";
-  return "<div class='seg'><button type='button' data-a='add'>Fiz a 2ª operação</button><button type='button' data-a='stop' class='"+(draft[pareiK()]?"on":"")+"'>Parei no dia</button></div>";
+  if(opVal(o1)<0) return "<div class='lock'>Stop na 1ª. Sessão da "+nm+" encerrada: sem 2ª operação.</div>";
+  return "<div class='seg'><button type='button' data-a='add'>Fiz a 2ª operação</button><button type='button' data-a='stop' class='"+(draft[pareiK()]?"on":"")+"'>Parei nesta sessão</button></div>";
 }
 function softUpdate(i){
   const o=draft.ops[i];if(!o)return;
@@ -281,7 +279,7 @@ $("modal").addEventListener("click",e=>{
 $("modal").addEventListener("input",onField);
 $("modal").addEventListener("change",onField);
 function onField(e){
-  const el=e.target;if(!draft||!el.dataset||!el.dataset.f||ro)return;
+  const el=e.target;if(!el.dataset||!el.dataset.f||ro)return;
   const i=+el.dataset.i,o=draft.ops[i],f=el.dataset.f;
   const v=parseFloat(el.value), n=isNaN(v)?null:v;
   const auto=()=>{if(o.pontos!=null&&o.contratos){o.valor=Math.round(o.pontos*ATIVOS[o.ativo||"WIN"].pt*o.contratos*100)/100;const vl=$("vl"+i);if(vl)vl.value=o.valor;o.resultado=calcRes(o)}};
@@ -301,7 +299,7 @@ function doSave(){
   if(draft.status==="op"){
     if(!draft.ops.length){err.textContent="Registre a operação ou marque Não operei.";return}
     for(const [i,o] of draft.ops.entries()){
-      const nm=(sOps(draft,sessOf(o)).indexOf(o)+1)+"ª operação";
+      const nm=(sessOf(o)==="manha"?"Manhã":"Tarde")+", "+(sOps(draft,sessOf(o)).indexOf(o)+1)+"ª operação";
       const bad=t=>{err.textContent=nm+": "+t;if(cs!==sessOf(o)){cs=sessOf(o);drawModal();$("mErr").textContent=nm+": "+t}};
       if(!o.operacional)return bad("escolha o operacional.");
       if(!o.tipo)return bad("toque em Meta ou Stop.");

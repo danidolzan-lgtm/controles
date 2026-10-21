@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="progresso-b3m"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Progresso B3</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="progresso-b3-z21"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Progresso B3</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 /* Layout: escada vertical de metas de banca, resumo da meta atual no topo. */
@@ -142,7 +142,7 @@ const CT=[1,2,3,5,7,10,12,15,20,25,30,35,40,50,60,70,80,90,100];
 const ctTxt=n=>n+(n===1?" contrato":" contratos");
 const ctDaBanca=b=>{let c=1;LV.forEach((v,i)=>{if(b>=v)c=CT[i]});return c};
 let st={conquistados:[],banca:null}, db=null, ref=null;
-const LS="progressoB3m.v1";
+const LS="progressoB3.z21";
 const $=id=>document.getElementById(id);
 const brl=v=>"R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:0,maximumFractionDigits:2});
 function load(){try{const r=JSON.parse(localStorage.getItem(LS)||"null");if(r)st=r}catch(e){}}
@@ -183,7 +183,7 @@ $("banca").addEventListener("change",e=>{const v=parseFloat(e.target.value),n=is
 load(); if(st.banca!=null) $("banca").value=st.banca; render(); $("status").textContent="Conectando…";
 /* ---------- Simulador B3 ---------- */
 const PT={WIN:0.2,WDO:10}, STOPDEF={WIN:150,WDO:5}, LIM={WIN:150,WDO:5};
-const SLS="simuladorB3.v1", DEF={banca:null,ativo:"WIN",ct:null,stopPts:150,mult:2,custo:0,dias:5,gain:5,loss:3,modo:"fixo"};
+const SLS="simuladorB3.v1", DEF={banca:null,ativo:"WIN",ct:null,stopPts:150,mult:2,custo:0,dias:5,gain:6,loss:4,modo:"fixo"};
 let sim=Object.assign({},DEF), sref=null;
 try{const r=JSON.parse(localStorage.getItem(SLS)||"null");if(r)sim=Object.assign({},DEF,r)}catch(e){}
 const F={sBanca:"banca",sCt:"ct",sStopPts:"stopPts",sMult:"mult",sCusto:"custo",sDias:"dias",sGain:"gain",sLoss:"loss"};
@@ -206,13 +206,13 @@ function calcSim(){
   const w=semana(banca), m=+sim.mult||0;
   $("sCtTxt").textContent=sim.ct?"Usando "+ctTxt(+sim.ct)+" (apague para seguir a escada).":"Pela escada, a banca de "+brl2(banca)+" usa "+ctTxt(ctDaBanca(banca))+".";
   $("oCt").textContent=w.ct; $("oCt1").textContent=sim.ativo+" · "+(sim.ct?"definido por você":"pela escada");
-  $("oAlvoPts").textContent=nf((+sim.stopPts)*m)+" pts"; $("oAlvoPts1").textContent="stop de "+nf(+sim.stopPts)+" pts × "+nf(m);
+  $("oAlvoPts").textContent=nf((+sim.stopPts)*m)+" pts"; $("oAlvoPts1").textContent="stop de "+nf(+sim.stopPts)+" pts × "+nf(m)+(+sim.stopPts>LIM[sim.ativo]?" · stop acima do limite do manual ("+LIM[sim.ativo]+" pts)":"");
   $("oG").textContent=sg(w.g); $("oG1").textContent=pc(w.g/banca)+" da banca"+(+sim.custo?" · já tirando o custo":"");
   $("oL").textContent=sg(-w.l); $("oL1").textContent=pc(w.l/banca)+" da banca"+(+sim.custo?" · com o custo":"");
   const be=w.l/(w.g+w.l);
   $("oPaga").textContent="Um gain paga "+(w.l>0?(w.g/w.l).toLocaleString("pt-BR",{maximumFractionDigits:2}):"–")+" losses. Para empatar, precisa acertar "+pc(be)+" das operações.";
-  const ops=(+sim.dias||0)*2, usadas=(+sim.gain||0)+(+sim.loss||0);
-  $("oWarn").hidden=usadas<=ops; $("oWarn").textContent="Você colocou "+usadas+" operações, mas a regra permite no máximo "+ops+" na semana (2 por dia × "+sim.dias+" dias; loss na 1ª encerra o dia).";
+  const ops=(+sim.dias||0)*4, usadas=(+sim.gain||0)+(+sim.loss||0);
+  $("oWarn").hidden=usadas<=ops; $("oWarn").textContent="Você colocou "+usadas+" operações, mas o manual permite no máximo "+ops+" na semana (2 por sessão × 2 sessões × "+sim.dias+" dias).";
   $("oSem").textContent=sg(w.res); $("oSem1").textContent=pc(w.res/banca)+" da banca";
   $("cSem").className="card "+(w.res>0?"g":w.res<0?"r":"");
   $("oAss").textContent=usadas?pc((+sim.gain||0)/usadas):"–"; $("oAss1").textContent=(+sim.gain||0)+" gains em "+usadas+" operações (empate em "+pc(be)+")";
