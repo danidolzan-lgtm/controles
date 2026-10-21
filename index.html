@@ -50,36 +50,15 @@ a:hover{transform:translateY(-2px)}
   <div><h1>Meus Controles</h1><p class="sub">Seus dados ficam salvos na sua conta e aparecem iguais no celular e no PC.</p></div>
   <div class="app">
   <nav class="side" role="tablist" aria-label="Áreas">
-    <button type="button" role="tab" data-tab="ob"><i style="background:#2563EB"></i>Opções binárias</button>
     <button type="button" role="tab" data-tab="b3"><i style="background:#0F766E"></i>B3</button>
     <button type="button" role="tab" data-tab="pes"><i style="background:#7C3AED"></i>Pessoal</button>
   </nav>
   <div class="content">
-  <section data-sec="ob">
-    <h2>Opções binárias</h2>
-    <div class="grid b3">
-      <a href="checklist-ob.html"><b>Check-list OB</b><span>Uma vez por dia, de manhã</span></a>
-      <a href="diario-ob.html"><b>Diário OB</b><span>4 sessões por dia</span></a>
-      <a href="manual-ob.html"><b>Manual OB</b><span>Os 5 operacionais</span></a>
-      <a href="progresso-ob.html"><b>Progresso OB</b><span>Metas e simulador do Soros</span></a>
-      <a href="dopamina.html"><b>Dopamina OB</b><span>Acertei ou errei</span></a>
-      <a href="ir-ob.html"><b>IR OB</b><span>Resultado mensal</span></a>
-      <a href="analise-ob.html"><b>Análise de entrada OB</b><span>Print e seta na vela</span></a>
-      <a href="lucro-ob.html"><b>Lucro OB</b><span>Excel da Quotex</span></a>
-    </div>
-    <h2>Links</h2>
-    <div class="grid lnk">
-      <a href="https://quotex.com/pt/trade" target="_blank" rel="noopener"><b>Quotex ↗</b><span>Corretora · operar</span></a>
-      <a href="https://br.investing.com/economic-calendar" target="_blank" rel="noopener"><b>Notícias ↗</b><span>Calendário econômico (Investing)</span></a>
-      <a data-claude="analiseOB.claudeUrl" data-cfg="analise-ob.html#cfgBox" href="analise-ob.html#cfgBox"><b>Claude · conversa OB ↗</b><span>Prints e dúvidas de OB</span></a>
-    </div>
-  </section>
   <section data-sec="b3">
     <h2>B3 · mini índice e mini dólar</h2>
     <div class="grid bolsa">
       <a href="checklist-b3.html"><b>Check-list B3</b><span>Uma vez por dia, de manhã</span></a>
-      <a href="diario-b3.html"><b>Diário B3</b><span>Pontos, contratos e R$</span></a>
-      <a href="manual-b3.html"><b>Manual B3</b><span>M2 · stop e alvo 2x</span></a>
+      <a href="diario-b3.html"><b>Diário B3</b><span>Máx. 2 por dia · loss encerra</span></a>
       <a href="progresso-b3.html"><b>Progresso B3</b><span>Contratos e simulador</span></a>
       <a href="dopamina-b3.html"><b>Dopamina B3</b><span>Acertei ou errei</span></a>
       <a href="ir-b3.html"><b>IR B3</b><span>Day trade · DARF</span></a>
@@ -109,8 +88,8 @@ a:hover{transform:translateY(-2px)}
   const tabs=[...document.querySelectorAll(".side button")], secs=[...document.querySelectorAll("[data-sec]")];
   function abrir(t){tabs.forEach(b=>{const on=b.dataset.tab===t;b.classList.toggle("on",on);b.setAttribute("aria-selected",on)});secs.forEach(s=>s.hidden=s.dataset.sec!==t);try{localStorage.setItem("index.tab",t)}catch(e){}}
   tabs.forEach(b=>b.addEventListener("click",()=>abrir(b.dataset.tab)));
-  let t="ob";try{t=localStorage.getItem("index.tab")||"ob"}catch(e){}
-  abrir(tabs.some(b=>b.dataset.tab===t)?t:"ob");
+  let t="b3";try{t=localStorage.getItem("index.tab")||"b3"}catch(e){}
+  abrir(tabs.some(b=>b.dataset.tab===t)?t:"b3");
   // conversas do Claude salvas nas páginas de análise
   document.querySelectorAll("[data-claude]").forEach(a=>{let u="";try{u=localStorage.getItem(a.dataset.claude)||""}catch(e){}
     if(u){a.href=u;a.target="_blank";a.rel="noopener"}else{a.querySelector("span").textContent="Configure na Análise de entrada"}});

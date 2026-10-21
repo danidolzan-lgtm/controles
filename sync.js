@@ -66,8 +66,7 @@
     var file = (decodeURIComponent(location.pathname).split("/").pop() || "index.html").replace(/\.html?$/i, "") || "index";
     document.documentElement.setAttribute("data-page", file);
     var GROUPS = [
-      { g: "Opções binárias", s: "OB", k: "ob", c: "#2563EB", items: [["checklist-ob", "Check-list"], ["diario-ob", "Diário"], ["manual-ob", "Manual"], ["progresso-ob", "Progresso"], ["dopamina", "Dopamina"], ["ir-ob", "IR"], ["analise-ob", "Análise"], ["lucro-ob", "Lucro"]] },
-      { g: "B3", s: "B3", k: "b3", c: "#0F766E", items: [["checklist-b3", "Check-list"], ["diario-b3", "Diário"], ["manual-b3", "Manual"], ["progresso-b3", "Progresso"], ["dopamina-b3", "Dopamina"], ["ir-b3", "IR"], ["analise-b3", "Análise"]] },
+      { g: "B3", s: "B3", k: "b3", c: "#0F766E", items: [["checklist-b3", "Check-list"], ["diario-b3", "Diário"], ["progresso-b3", "Progresso"], ["dopamina-b3", "Dopamina"], ["ir-b3", "IR"], ["analise-b3", "Análise"]] },
       { g: "Pessoal", s: "Pessoal", k: "pes", c: "#7C3AED", items: [["salario", "Salário"], ["oracao", "Oração"], ["receitas", "Receitas"], ["limpeza", "Limpeza de peças"], ["consorcio", "Consórcios"]] }
     ];
     var cur = null;
@@ -129,9 +128,6 @@
         "html[data-page^=diario] .wrap{grid-template-columns:minmax(0,1.75fr) minmax(320px,1fr)!important;align-items:start}" + "html[data-page^=diario] .wrap>*{grid-column:1/-1}" +
         "html[data-page^=diario] .wrap>.two{grid-column:2;grid-template-columns:minmax(0,1fr)!important}" + "html[data-page^=diario] .wrap>.two~*{grid-column:1/-1}" +
         "html[data-page^=diario] .wrap>.panel:not(.cfg){grid-column:1}" +
-        /* IR OB: importação e regras à esquerda, tabela dos meses à direita */
-        "html[data-page=ir-ob] .wrap{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)!important;grid-template-rows:auto auto auto auto auto 1fr;align-items:start}" + "html[data-page=ir-ob] .wrap>*{grid-column:1/-1}" +
-        "html[data-page=ir-ob] #imp{grid-column:1;grid-row:4}html[data-page=ir-ob] .wrap>.note{grid-column:1;grid-row:5}html[data-page=ir-ob] #imp~.panel:not(.note){grid-column:2;grid-row:4 / 7}" +
         /* IR B3: meses em grade */
         "html[data-page=ir-b3] #meses{grid-template-columns:repeat(auto-fill,minmax(480px,1fr));align-items:start}" +
         /* receitas: busca à esquerda, caderno à direita */
@@ -197,6 +193,53 @@
       document.querySelectorAll(".voltar").forEach(function (v) { v.remove(); });
     }
     if (document.body) build(); else document.addEventListener("DOMContentLoaded", build);
+  })();
+
+  /* ===== App instalável (PWA): manifest, ícone e atualização automática ===== */
+  (function () {
+    var hd = document.head || document.documentElement;
+    function tag(t, at) { var e = document.createElement(t); for (var k in at) e.setAttribute(k, at[k]); hd.appendChild(e); return e; }
+    if (!document.querySelector("link[rel=manifest]")) tag("link", { rel: "manifest", href: "manifest.webmanifest" });
+    if (!document.querySelector("link[rel=apple-touch-icon]")) tag("link", { rel: "apple-touch-icon", href: "apple-touch-icon.png" });
+    if (!document.querySelector("link[rel=icon]")) tag("link", { rel: "icon", type: "image/png", href: "icon-192.png" });
+    if (!document.querySelector("meta[name=theme-color]")) tag("meta", { name: "theme-color", content: "#2563EB" });
+    tag("meta", { name: "apple-mobile-web-app-capable", content: "yes" });
+    tag("meta", { name: "mobile-web-app-capable", content: "yes" });
+    tag("meta", { name: "apple-mobile-web-app-title", content: "Controles" });
+    tag("meta", { name: "apple-mobile-web-app-status-bar-style", content: "default" });
+    if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("sw.js").then(function (r) {
+          // confere se tem versão nova ao voltar para o app
+          document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") r.update().catch(function () {}); });
+        }).catch(function () {});
+      });
+    }
+    /* botão "Instalar no celular" na página inicial */
+    var standalone = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone;
+    var file0 = (decodeURIComponent(location.pathname).split("/").pop() || "index.html").replace(/\.html?$/i, "") || "index";
+    if (standalone || file0 !== "index") return;
+    var deferred = null;
+    var ios = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    function box() {
+      var b = document.getElementById("pwaInstall"); if (b) return b;
+      b = document.createElement("div"); b.id = "pwaInstall";
+      b.style.cssText = "display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px auto 0;padding:10px 12px;border-radius:10px;border:1px solid var(--line,#DDE4F2);background:var(--surface,#fff);font:14px/1.4 'IBM Plex Sans',system-ui,sans-serif;width:calc(100% - 32px);max-width:640px;box-sizing:border-box";
+      var w = document.querySelector(".wrap"); if (w) w.parentNode.insertBefore(b, w); else document.body.appendChild(b);
+      return b;
+    }
+    function mostrar() {
+      var b = box();
+      if (deferred) {
+        b.innerHTML = "<img src='icon-192.png' alt='' width='32' height='32' style='border-radius:8px'><span style='flex:1;min-width:160px'>Instale o Meus Controles no celular: abre como app e atualiza sozinho.</span><button type='button' style='font:600 14px system-ui,sans-serif;padding:8px 14px;border-radius:8px;border:0;background:#2563EB;color:#fff;cursor:pointer'>Instalar</button>";
+        b.querySelector("button").onclick = function () { deferred.prompt(); deferred.userChoice.finally(function () { deferred = null; b.remove(); }); };
+      } else if (ios) {
+        b.innerHTML = "<img src='icon-192.png' alt='' width='32' height='32' style='border-radius:8px'><span style='flex:1;min-width:160px'>Para instalar no iPhone: abra no <b>Safari</b>, toque em <b>Compartilhar</b> ⬆️ e depois em <b>Adicionar à Tela de Início</b>.</span>";
+      }
+    }
+    window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); deferred = e; if (document.body) mostrar(); else document.addEventListener("DOMContentLoaded", mostrar); });
+    window.addEventListener("appinstalled", function () { var b = document.getElementById("pwaInstall"); if (b) b.remove(); });
+    if (ios) { if (document.body) mostrar(); else document.addEventListener("DOMContentLoaded", mostrar); }
   })();
 
   var resolveDb, dbPromise = new Promise(function (r) { resolveDb = r; });

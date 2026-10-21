@@ -70,7 +70,7 @@ img,svg{max-width:100%}
 </style>
 <div class="wrap">
   <div class="top">
-    <div><h1>Check-list B3</h1><div class="sub">WIN e WDO · M2 · uma vez por dia, de manhã, antes da 1ª sessão. Quatro "sim" liberam o dia.</div></div>
+    <div><h1>Check-list B3</h1><div class="sub">WIN e WDO · uma vez por dia, de manhã, antes de operar. Quatro "sim" liberam o dia.</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
   <div class="panel">
@@ -88,26 +88,21 @@ img,svg{max-width:100%}
 </div>
 <script>
 const START="2026-10-14", END="2026-12-17", LS="checklistB3m.v1";
-// check-list feito UMA vez por dia, de manhã, antes da 1ª sessão. Horários fixos (não mudam em 02/11).
-const SESS=[{id:"manha",nome:"Manhã"},{id:"tarde",nome:"Tarde"}];
-const JAN={manha:["09:45","11:15"],tarde:["14:00","15:30"]};
-// Manhã: começa depois dos dados dos EUA das 09:30 (até 01/11). Às 10:25–10:45 tem pausa TODO dia:
-// até 01/11 é a abertura de Nova York; a partir de 02/11 são os dados dos EUA. Tarde: longe de tudo, menos FOMC.
+// check-list feito UMA vez por dia, de manhã, antes de operar. Janela fixa 09:45–14:00.
+// Operacionais do Além da Previsão já consideram notícia: não tem pausa de notícia, só feriado.
+const SESS=[{id:"dia",nome:"Janela"}];
+const JAN={dia:["09:45","14:00"]};
 const EVT={
-  "2026-10-28":[{n:"FOMC, juros dos EUA",de:"14:55",ate:"15:45",pula:{tarde:"FOMC 15:00"}}],
-  "2026-11-02":[{n:"Finados, B3 fechada",de:"00:00",ate:"23:59",pula:{manha:"B3 fechada",tarde:"B3 fechada"}}],
-  "2026-11-20":[{n:"Consciência Negra, B3 fechada",de:"00:00",ate:"23:59",pula:{manha:"B3 fechada",tarde:"B3 fechada"}}],
-  "2026-11-26":[{n:"feriado nos EUA",de:"00:00",ate:"23:59",pula:{tarde:"EUA fechado, volume fraco"}}],
-  "2026-12-09":[{n:"FOMC, juros dos EUA",de:"15:00",ate:"16:00",pula:{tarde:"FOMC 16:00"}}]
+  "2026-11-02":[{n:"Finados, B3 fechada",pula:{dia:"B3 fechada"}}],
+  "2026-11-20":[{n:"Consciência Negra, B3 fechada",pula:{dia:"B3 fechada"}}],
+  "2026-12-24":[{n:"Véspera de Natal, B3 fechada",pula:{dia:"B3 fechada"}}]
 };
-function pausas(ds){const p=[{n:ds>="2026-11-02"?"dados dos EUA":"abertura de Nova York",de:"10:25",ate:"10:45"}];if(ds<"2026-11-02")p.push({n:"dados dos EUA das 11:00, só se houver notícia forte",de:"10:55",ate:"11:15"});return p.concat((EVT[ds]||[]).filter(e=>e.de!=="00:00"))}
 function pulos(ds){const o={};(EVT[ds]||[]).forEach(e=>Object.assign(o,e.pula||{}));return o}
-const pausasTxt=ds=>pausas(ds).map(p=>p.de+"–"+p.ate+" ("+p.n+")").join(" e ");
-const sessTxt=()=>SESS.map(s=>s.nome+" "+JAN[s.id].join("–")).join(" · ");
+const sessTxt=()=>JAN.dia.join("–");
 const QS=[
-  {id:"hor",k:"Horários e notícias",t:ds=>{const pl=pulos(ds),k=Object.keys(pl);return "Abri o calendário (alto impacto · USD e BRL: IPCA, Copom, Payroll, CPI, FOMC), vou operar só nas sessões ("+sessTxt()+"), respeitando a pausa das "+pausasTxt(ds)+(k.length?", vou PULAR "+k.map(x=>SESS.find(s=>s.id===x).nome+" ("+pl[x]+")").join(", "):"")+" e, em dia de Payroll ou CPI, só começo 30 min depois da notícia?"}},
-  {id:"op",k:"Operacional",t:"Vou entrar só em Respiro, Virada, Muralha (pavio ou engolfo), Giro ou Armadilha no M2, com médias 9, 21 e 50 espaçadas, volume da vela de sinal acima da média, stop técnico dentro do limite (WIN 150 pts · WDO 5 pts), o outro ativo não indo forte no mesmo sentido (WIN × WDO) e todos os filtros do manual conferidos?"},
-  {id:"ger",k:"Gerenciamento",t:"Contratos do meu degrau no Progresso, ordem com stop e alvo de 2x o stop junto (OCO), no máximo 2 operações em cada sessão (manhã e tarde), uma aberta por vez (nunca WIN e WDO juntos), e encerro a sessão no 1º loss?"},
+  {id:"hor",k:"Horário",t:ds=>{const pl=pulos(ds).dia;return pl?"Hoje a B3 está fechada ("+pl+"). Não tem operação.":"Vou operar só dentro da janela "+sessTxt()+" e fecho a plataforma quando ela acabar?"}},
+  {id:"op",k:"Operacional",t:"Vou entrar só em Impulso direcional, Retorno, Quebra de estrutura ou Triângulo em volume, com todos os critérios do operacional confirmados (sem entrada por \"achismo\")?"},
+  {id:"ger",k:"Gerenciamento",t:"Contratos do meu degrau no Progresso, ordem já com stop e alvo do operacional, uma operação aberta por vez, no máximo 2 operações no dia, e se a 1ª der loss eu encerro o dia?"},
   {id:"men",k:"Mentalidade",t:"Estou calmo, sem vontade de recuperar nada, e aceito o stop se ele vier?"}
 ];
 let data={}, db=null, sel=null, draft=null;
@@ -117,7 +112,7 @@ const fmt=ds=>new Date(ds+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long
 const isWE=ds=>{const g=new Date(ds+"T12:00:00").getDay();return g===0||g===6};
 const ok1=s=>s&&QS.every(q=>s[q.id]===true);
 // dias antigos tinham um check-list por sessão: conta como liberado se alguma sessão foi liberada
-const ok=r=>!!r&&(ok1(r)||SESS.some(s=>ok1(r[s.id]))||["manha","tarde"].some(k=>ok1(r[k])));
+const ok=r=>!!r&&(ok1(r)||["manha","tarde"].some(k=>ok1(r[k])));
 const respondido=r=>!!r&&QS.some(q=>typeof r[q.id]==="boolean"||["manha","tarde"].some(k=>r[k]&&typeof r[k][q.id]==="boolean"));
 const editable=ds=>ds===today();
 function load(){try{const r=JSON.parse(localStorage.getItem(LS)||"null");if(r)data=r}catch(e){}}
@@ -138,9 +133,9 @@ function render(){
     d.appendChild(yn);box.appendChild(d);
   });
   const v=$("verdict"), answered=QS.every(q=>typeof cur[q.id]==="boolean");
-  if(ok1(cur)||(!answered&&ok(cur))){v.className="verdict ok";v.innerHTML="<b>Liberado para operar hoje</b><span>Manhã 09:45–11:15 (pausa 10:25–10:45) e tarde 14:00–15:30. No máximo 2 operações por sessão, sempre com stop e alvo 2x; deu loss, encerra a sessão.</span>"}
+  if(ok1(cur)||(!answered&&ok(cur))){v.className="verdict ok";v.innerHTML="<b>Liberado para operar hoje</b><span>Janela 09:45–14:00. No máximo 2 operações no dia, sempre com stop e alvo; loss na 1ª encerra o dia.</span>"}
   else if(answered){v.className="verdict no";v.innerHTML="<b>Não operar hoje</b><span>Algum item ficou em não. Fecha a plataforma e volta amanhã.</span>"}
-  else{v.className="verdict";v.innerHTML="<b>Responda as 4 perguntas</b><span>Faça uma vez, de manhã, antes da 1ª sessão. Quatro sim liberam o dia.</span>"}
+  else{v.className="verdict";v.innerHTML="<b>Responda as 4 perguntas</b><span>Faça uma vez, de manhã, antes de operar. Quatro sim liberam o dia.</span>"}
   $("acts").hidden=!can; $("lock").hidden=can;
   $("lock").textContent= sel<today()?"Dia encerrado. Só visualização.":"Esse dia ainda não chegou. O check-list abre no próprio dia.";
   drawJan();drawCal();
@@ -148,13 +143,10 @@ function render(){
 function drawJan(){
   const mm=t=>{const [h,m]=t.split(":").map(Number);return h*60+m};
   const d=new Date(), m=d.getHours()*60+d.getMinutes(), hoje=sel===today()&&!isWE(today());
-  const pz=pausas(sel).find(p=>m>=mm(p.de)&&m<mm(p.ate)), pl=pulos(sel);
-  let h="<span style='flex-basis:100%'>Sessões de hoje (horário fixo):</span>";
-  SESS.forEach(s=>{const [a,b]=JAN[s.id],dentro=hoje&&m>=mm(a)&&m<mm(b),pu=pl[s.id];
-    h+="<span class='ag "+(pu?"out":dentro?(pz?"out":"in"):"")+"' style='"+(pu||dentro?"":"background:var(--surface);color:var(--fg)")+"'>"+s.nome+" <b>"+a+"–"+b+"</b>"+(pu?" · PULAR ("+pu+")":dentro?(pz?" · ⛔ PAUSA até "+pz.ate:" · agora"):"")+"</span>"});
-  const pt=pausasTxt(sel);
-  if(pt)h+="<span style='flex-basis:100%;color:var(--loss);font-weight:600;font-size:.82rem'>⛔ Pausa dentro das sessões hoje: "+pt+"</span>";
-  h+="<span class='hint' style='flex-basis:100%;color:var(--muted);font-size:.78rem'>Fixo: manhã 09:45–11:15 e tarde 14:00–15:30, com pausa todo dia às 10:25–10:45. Payroll e CPI: manhã só 30 min depois da notícia.</span>";
+  const pu=pulos(sel).dia, [a,b]=JAN.dia, dentro=hoje&&m>=mm(a)&&m<mm(b);
+  let h="<span style='flex-basis:100%'>Janela de hoje (horário fixo):</span>";
+  h+="<span class='ag "+(pu?"out":dentro?"in":"")+"' style='"+(pu||dentro?"":"background:var(--surface);color:var(--fg)")+"'>Operar <b>"+a+"–"+b+"</b>"+(pu?" · NÃO OPERAR ("+pu+")":dentro?" · agora":"")+"</span>";
+  h+="<span class='hint' style='flex-basis:100%;color:var(--muted);font-size:.78rem'>Máximo 2 operações no dia · loss na 1ª encerra o dia · os operacionais já consideram notícia.</span>";
   $("jan").innerHTML=h;
 }
 setInterval(()=>{if($("jan"))drawJan()},60000);
