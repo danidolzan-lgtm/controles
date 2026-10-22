@@ -171,6 +171,8 @@ function renderKpis(){
   $("kDisc").textContent=opDays.length?okD+"/"+opDays.length:"–";
   $("kDisc").className="big "+(opDays.length?(okD===opDays.length?"pos":"neg"):"");
 }
+// valor curto no calendário: até 100 com centavos, acima disso sem centavos, acima de 10 mil em "k"
+const nCal=v=>{const a=Math.abs(v),sg=v<0?"-":v>0?"+":"";if(a>=10000)return sg+(a/1000).toLocaleString("pt-BR",{maximumFractionDigits:1})+"k";if(a>=100)return sg+Math.round(a).toLocaleString("pt-BR");return sg+a.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})};
 function renderCal(){
   const cal=$("cal");cal.innerHTML="";const t=todayStr();
   const s=new Date(START+"T12:00:00"),e=new Date(END+"T12:00:00");
@@ -190,7 +192,7 @@ function renderCal(){
       const doc=days[ds], ops=doc?doc.ops||[]:[], net=doc?dayNet(doc):0;
       const b=document.createElement("button");b.type="button";b.className="day"+(ds===t?" today":"")+(ops.length?(net>0?" pos":net<0?" neg":""):"");
       let h="<span class='d'>"+d+"</span><span class='dots'>"+ops.map(o=>"<i class='dot "+(opVal(o)>0?"w":opVal(o)<0?"l":"")+"'></i>").join("")+(doc&&doc.status==="nao"?"<i class='dot'></i>":"")+"</span>";
-      if(ops.length)h+="<span class='v "+(net>0?"pos":net<0?"neg":"")+"'>"+n2(net)+"</span>";
+      if(ops.length)h+="<span class='v "+(net>0?"pos":net<0?"neg":"")+"' title='"+n2(net)+"'>"+nCal(net)+"</span>";
       b.innerHTML=h;b.setAttribute("aria-label",dt.toLocaleDateString("pt-BR")+(ops.length?", resultado "+n2(net):""));
       b.addEventListener("click",()=>openDay(ds));g.appendChild(b);
     }

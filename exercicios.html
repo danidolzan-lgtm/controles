@@ -48,11 +48,11 @@ h3{font-family:var(--f-display);font-size:.95rem;margin:0}
 .tm .ph{font-weight:600}.tm .clk{font-family:var(--f-num);font-size:2.4rem;font-weight:600;line-height:1}
 .tm .nx{color:var(--muted);font-size:.85rem}
 .lock{background:var(--part-soft);color:var(--fg);border-radius:8px;padding:8px 12px;font-size:.88rem}
-.month h3{margin:0 0 6px;text-transform:capitalize}
+.month h3{margin:0 0 6px}.month h3::first-letter{text-transform:uppercase}
 .dow,.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
 .dow span{text-align:center;font-size:.7rem;color:var(--muted);text-transform:uppercase}
-.day{appearance:none;font:inherit;font-family:var(--f-num);font-size:.85rem;aspect-ratio:1/1;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:7px;cursor:pointer;display:grid;place-items:center;padding:0}
-.day.blank{visibility:hidden}.day.we{opacity:.45;cursor:default}
+.day{appearance:none;font:inherit;font-family:var(--f-num);font-size:.85rem;height:44px;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:7px;cursor:pointer;display:grid;place-items:center;padding:0}
+.day.blank{visibility:hidden}.day.we,.day.past{opacity:.45;cursor:default}
 .day.full{background:var(--win);border-color:var(--win);color:#fff;font-weight:600}
 .day.part{background:var(--part-soft);border-color:var(--part)}
 .day.miss{background:var(--loss-soft);border-color:var(--loss)}
@@ -226,7 +226,7 @@ function renderCal(){
       const ds=y+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
       const b=document.createElement("button");b.type="button";b.textContent=d;
       let cls="day";
-      if(ds<START){cls+=" we";b.disabled=true}
+      if(ds<START){cls+=" past";b.disabled=true}
       else if(isWE(ds)){cls+=" we";b.disabled=true}
       else{const f=feitas(data[ds]);if(f===3)cls+=" full";else if(f>0)cls+=" part";else if(ds<t)cls+=" miss";b.onclick=()=>{sel=ds;renderDia();renderCal();$("dTitle").scrollIntoView({behavior:"smooth",block:"start"})}}
       if(ds===t)cls+=" today";if(ds===sel)cls+=" sel";

@@ -94,6 +94,18 @@
       ".site-btn{margin-left:auto;flex:none;appearance:none;display:inline-flex;align-items:center;gap:8px;font:600 .9rem 'IBM Plex Sans',system-ui,sans-serif;color:var(--fg,#13203B);background:var(--surface,#fff);border:1px solid var(--line,#DDE4F2);border-radius:10px;padding:8px 14px;cursor:pointer}" +
       ".site-btn:hover,.site-btn[aria-expanded=true]{border-color:var(--accent,#2563EB);color:var(--accent,#2563EB)}" +
       ".site-btn svg{width:18px;height:18px}" +
+      ".site-btn{position:relative}.site-btn.on-line::after{content:'';position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;background:#22C55E;box-shadow:0 0 0 2px var(--surface,#fff)}" +
+      ".site-acct{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:nowrap;border:1px solid var(--line,#DDE4F2);border-radius:10px;padding:10px 12px;background:var(--bg,#EEF3FC)}.site-acct .who{flex:1}" +
+      ".site-acct .who{display:flex;align-items:center;gap:10px;min-width:0}.site-acct .who i{width:10px;height:10px;border-radius:50%;background:#22C55E;flex:none}" +
+      ".site-acct .who>span{display:grid;min-width:0}.site-acct small{font-size:.72rem;color:var(--muted,#58668A);text-transform:uppercase;letter-spacing:.06em}.site-acct b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fg,#13203B)}" +
+      ".site-out{appearance:none;font:600 .9rem 'IBM Plex Sans',system-ui,sans-serif;color:#E11D48;background:transparent;border:1px solid #E11D48;border-radius:9px;padding:8px 16px;cursor:pointer}.site-out:hover{background:#E11D48;color:#fff}" +
+      ".site-crumb,.site-crumb *{text-transform:none!important;letter-spacing:normal!important}" +
+      "@media (max-width:900px){.kpi .big{font-size:1.3rem!important;word-break:keep-all}}" +
+      /* calendários no celular: só seg–sex (fim de semana já é travado), células mais largas */
+      "@media (max-width:640px){.month .dow{grid-template-columns:repeat(5,minmax(0,1fr))!important}.month .dow>span:first-child,.month .dow>span:last-child{display:none}" +
+        ".month .grid{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:6px!important}.month .grid>.day.we{display:none!important}.month .grid>.day.blank:first-child{display:none!important}" +
+        ".month .day .v{font-size:.72rem!important;letter-spacing:-.02em}.month .day .dots{gap:2px!important;flex-wrap:wrap}.month .day .dot{width:6px!important;height:6px!important}" +
+        ".legend .we-l{display:none}}" +
       ".day.we,.legend i.we{background-image:repeating-linear-gradient(135deg,transparent 0 5px,rgba(120,135,170,.22) 5px 6.5px)!important}" +
       ".site-back{margin-left:0;padding:8px 12px 8px 8px}.site-back svg{width:18px;height:18px}" +
       "@media (max-width:560px){.site-back .t{display:inline!important}.site-crumb .tag,.site-crumb .sep:first-child{display:none}}" +
@@ -187,6 +199,16 @@
         di.appendChild(col);
       });
       var home = el("div", "home"); var ha = el("a", "", "← Início · Meus Controles"); ha.href = "index.html"; home.appendChild(ha); di.insertBefore(home, di.firstChild);
+      /* conta (e-mail e Sair) dentro do menu */
+      var acct = el("div", "site-acct"); acct.hidden = true; di.insertBefore(acct, home.nextSibling);
+      window.__siteAcct = function (u, sair) {
+        if (!u) { acct.hidden = true; btn.classList.remove("on-line"); return; }
+        acct.hidden = false; btn.classList.add("on-line");
+        acct.innerHTML = "<span class='who'><i></i><span><small>Conectado</small><b></b></span></span>";
+        acct.querySelector("b").textContent = u.email || "sua conta";
+        var out = el("button", "site-out", "Sair"); out.type = "button"; out.onclick = sair; acct.appendChild(out);
+      };
+      if (window.__siteAcctPend) window.__siteAcct.apply(null, window.__siteAcctPend);
       drop.appendChild(di); h.appendChild(drop);
       function setOpen(o) { drop.hidden = !o; btn.setAttribute("aria-expanded", o ? "true" : "false"); }
       btn.addEventListener("click", function (e) { e.stopPropagation(); setOpen(drop.hidden); });
@@ -222,7 +244,8 @@
     /* botão "Instalar no celular" na página inicial */
     var standalone = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone;
     var file0 = (decodeURIComponent(location.pathname).split("/").pop() || "index.html").replace(/\.html?$/i, "") || "index";
-    if (standalone || file0 !== "index") return;
+    var celular = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (window.matchMedia && matchMedia("(pointer:coarse)").matches && !matchMedia("(pointer:fine)").matches);
+    if (standalone || file0 !== "index" || !celular) return;
     var deferred = null;
     var ios = /iPhone|iPad|iPod/i.test(navigator.userAgent);
     function box() {
@@ -244,6 +267,20 @@
     window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); deferred = e; if (document.body) mostrar(); else document.addEventListener("DOMContentLoaded", mostrar); });
     window.addEventListener("appinstalled", function () { var b = document.getElementById("pwaInstall"); if (b) b.remove(); });
     if (ios) { if (document.body) mostrar(); else document.addEventListener("DOMContentLoaded", mostrar); }
+  })();
+
+  /* Quotex no Android: abre no Chrome (no app instalado ele abria dentro do próprio app). PC fica igual. */
+  (function () {
+    if (!/Android/i.test(navigator.userAgent)) return;
+    function fix() {
+      document.querySelectorAll('a[href*="quotex.com"]').forEach(function (a) {
+        if (a.dataset.chrome) return; a.dataset.chrome = "1";
+        var u = a.href;
+        a.href = "intent://" + u.replace(/^https?:\/\//, "") + "#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=" + encodeURIComponent(u) + ";end";
+        a.removeAttribute("target");
+      });
+    }
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", fix); else fix();
   })();
 
   var resolveDb, dbPromise = new Promise(function (r) { resolveDb = r; });
@@ -342,7 +379,10 @@
     };
   }
   function showUser(u) {
-    if (!SHOW_USER) { if (bar) bar.hidden = true; return; }
+    if (bar) bar.hidden = true;
+    var sair = function () { auth.signOut().then(function () { location.reload(); }); };
+    if (window.__siteAcct) window.__siteAcct(u, sair); else window.__siteAcctPend = [u, sair];
+    return;
     var b = ensureBar(); b.innerHTML = ""; b.hidden = false;
     b.style.gridTemplateColumns = "1fr auto"; b.style.alignItems = "center";
     var s = document.createElement("span"); s.style.cssText = "min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.8"; var dot = document.createElement("span"); dot.textContent = "● "; dot.style.color = "#22C55E"; s.appendChild(dot); s.appendChild(document.createTextNode("Online · " + (u.email || "sua conta"))); b.appendChild(s);
