@@ -1,0 +1,284 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="exercicios"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Exercícios</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: degrau atual e progresso no topo; hoje com as 3 sessões de 15 min (timer guiado); calendário seg–sex; escada dos 5 degraus. */
+:root{
+  --bg:#EEF3FC; --surface:#FFFFFF; --line:#DDE4F2; --fg:#13203B; --muted:#58668A;
+  --accent:#2563EB; --accent-soft:#DCE7FF; --win:#15803D; --win-soft:#DCFCE7; --loss:#E11D48; --loss-soft:#FFE4EA; --part:#D97706; --part-soft:#FEF3C7;
+  --f-display:"Archivo",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7; --accent:#60A5FA; --accent-soft:#1E3A8A;
+  --win:#4ADE80; --win-soft:#123D26; --loss:#FB7185; --loss-soft:#4A1A28; --part:#FBBF24; --part-soft:#3F2A06; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B1220; --surface:#16213A; --line:#2A3A5C; --fg:#E6EDFA; --muted:#9AA9C7; --accent:#60A5FA; --accent-soft:#1E3A8A;
+  --win:#4ADE80; --win-soft:#123D26; --loss:#FB7185; --loss-soft:#4A1A28; --part:#FBBF24; --part-soft:#3F2A06; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
+.wrap{max-width:900px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:16px}
+h1{font-family:var(--f-display);font-weight:800;font-size:1.6rem;margin:0}
+h2{font-family:var(--f-display);font-size:1.05rem;margin:0}
+h3{font-family:var(--f-display);font-size:.95rem;margin:0}
+.sub,.status,.hint{color:var(--muted);font-size:.85rem}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:12px}
+.num{font-family:var(--f-num)}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:560px){.kpis{grid-template-columns:1fr 1fr}.kpis .panel:first-child{grid-column:1/-1}}
+.kpis .panel{gap:4px;padding:14px}
+.lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.big{font-family:var(--f-display);font-weight:800;font-size:1.5rem}
+.bar{height:10px;border-radius:6px;background:var(--accent-soft);overflow:hidden}.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+.btn{appearance:none;font:inherit;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:8px;padding:9px 14px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.win{background:var(--win);border-color:var(--win);color:#fff}
+.btn:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sess{border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:8px;background:var(--bg)}
+.sess.ok{border-color:var(--win);background:var(--win-soft)}
+.sess .h{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
+.sess .tag{font-size:.75rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.05em}
+.sess .ex{font-family:var(--f-display);font-weight:800;font-size:1.15rem}
+.sess .rx{font-family:var(--f-num);font-weight:600}
+.sess ol{margin:0;padding-left:18px;color:var(--muted);font-size:.85rem;display:grid;gap:2px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{appearance:none;font:inherit;font-size:.82rem;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:5px 11px;cursor:pointer}
+.chips button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.tm{display:grid;gap:6px;text-align:center;padding:12px;border-radius:10px;background:var(--surface);border:1px solid var(--line)}
+.tm .ph{font-weight:600}.tm .clk{font-family:var(--f-num);font-size:2.4rem;font-weight:600;line-height:1}
+.tm .nx{color:var(--muted);font-size:.85rem}
+.lock{background:var(--part-soft);color:var(--fg);border-radius:8px;padding:8px 12px;font-size:.88rem}
+.month h3{margin:0 0 6px;text-transform:capitalize}
+.dow,.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.dow span{text-align:center;font-size:.7rem;color:var(--muted);text-transform:uppercase}
+.day{appearance:none;font:inherit;font-family:var(--f-num);font-size:.85rem;aspect-ratio:1/1;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:7px;cursor:pointer;display:grid;place-items:center;padding:0}
+.day.blank{visibility:hidden}.day.we{opacity:.45;cursor:default}
+.day.full{background:var(--win);border-color:var(--win);color:#fff;font-weight:600}
+.day.part{background:var(--part-soft);border-color:var(--part)}
+.day.miss{background:var(--loss-soft);border-color:var(--loss)}
+.day.today{outline:2px solid var(--accent);outline-offset:1px}.day.sel{box-shadow:inset 0 0 0 2px var(--accent)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.78rem;color:var(--muted)}.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px;border:1px solid var(--line)}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.85rem;min-width:560px}
+th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+tr.cur td{background:var(--accent-soft)}
+td b{font-family:var(--f-display)}
+.note{font-size:.82rem;color:var(--muted)}
+details summary{cursor:pointer;font-weight:600}
+.cfgf{display:flex;gap:10px;flex-wrap:wrap}.cfgf label{display:grid;gap:4px;font-size:.8rem;color:var(--muted)}
+.cfgf input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px}
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <div><h1>Exercícios</h1><div class="sub">Corpo todo em casa · 3 sessões de 15 min pela manhã · segunda a sexta · 5 degraus</div></div>
+    <div class="status" id="status">Carregando…</div>
+  </div>
+
+  <div class="kpis">
+    <div class="panel"><div class="lbl">Degrau atual</div><div class="big" id="kNivel">–</div><div class="hint" id="kNivelTxt"></div></div>
+    <div class="panel"><div class="lbl">Dias completos no degrau</div><div class="big num" id="kDias">0/10</div><div class="bar"><i id="kBar"></i></div></div>
+    <div class="panel"><div class="lbl">Sessões feitas</div><div class="big num" id="kSess">0</div><div class="hint" id="kSemana"></div></div>
+  </div>
+
+  <div class="panel" id="sobe" hidden></div>
+
+  <div class="panel">
+    <div class="row" style="justify-content:space-between"><h2 id="dTitle">Hoje</h2><span class="hint" id="dTipo"></span></div>
+    <div class="lock" id="lock" hidden></div>
+    <div id="sessoes" style="display:grid;gap:12px"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Calendário</h2>
+    <div id="cal" style="display:grid;gap:18px"></div>
+    <div class="legend"><span><i style="background:var(--win)"></i>3 sessões</span><span><i style="background:var(--part-soft);border-color:var(--part)"></i>1 ou 2 sessões</span><span><i style="background:var(--loss-soft);border-color:var(--loss)"></i>não treinou</span></div>
+  </div>
+
+  <div class="panel">
+    <h2>Os 5 degraus</h2>
+    <div class="hint">Dia A (seg, qua, sex) e Dia B (ter, qui). Cada sessão: 3 min de aquecimento, 10 min de EMOM (no início de cada minuto faz as repetições e descansa o resto do minuto) e 2 min de alongamento.</div>
+    <div class="tw"><table id="tLv"></table></div>
+    <div class="note"><b>Quando subir:</b> 10 dias completos no degrau (as 3 sessões) e, nas últimas sessões, as repetições saindo com técnica limpa e marcadas como "fácil" ou "ok". Se um degrau ficar pesado demais, pode voltar um.<br><b>Segurança:</b> dor em articulação (joelho, ombro, lombar) é sinal para parar o exercício, não para insistir. Cansaço muscular é normal.</div>
+    <div class="row"><span class="hint">Trocar de degrau manualmente:</span><div class="chips" id="lvPick"></div></div>
+  </div>
+
+  <details class="panel">
+    <summary>Horários das sessões</summary>
+    <div class="cfgf">
+      <label>Sessão 1<input id="h1" type="time"></label>
+      <label>Sessão 2<input id="h2" type="time"></label>
+      <label>Sessão 3<input id="h3" type="time"></label>
+    </div>
+    <span class="hint">Só para lembrar a ordem do dia. Pode fazer as três em qualquer horário da manhã.</span>
+  </details>
+</div>
+
+<script>
+const START="2026-10-22", LS="exercicios.v1";
+/* ---------- os exercícios (peso do corpo, sem equipamento; mochila com livros como carga) ---------- */
+const SESS=[{id:"s1",nome:"Sessão 1",foco:"Pernas e glúteos"},{id:"s2",nome:"Sessão 2",foco:"Peito, costas e braços"},{id:"s3",nome:"Sessão 3",foco:"Abdômen e condicionamento"}];
+const AQ={s1:"Marcha no lugar 1 min · rotação de quadril e joelhos 1 min · 10 agachamentos leves",s2:"Círculos de braço 1 min · rotação de ombros e punhos 1 min · 10 flexões na parede",s3:"Polichinelo leve 1 min · rotação de tronco 1 min · 10 elevações de joelho"};
+const AL={s1:"Posterior de coxa, quadríceps e panturrilha (40 s cada)",s2:"Peito no batente da porta, ombro cruzado e tríceps (40 s cada)",s3:"Cobra (abdômen), joelhos no peito e torção deitado (40 s cada)"};
+// L[degrau][sessão] = {A:[exercício, prescrição por minuto, dica], B:[...]}
+const L=[
+ {nome:"Início",s1:{A:["Sentar e levantar da cadeira","6 repetições","Pés na largura do quadril, desce controlado até encostar e sobe sem usar as mãos."],B:["Ponte de glúteo","10 repetições","Deitado, pés no chão; sobe o quadril apertando o glúteo e segura 1 s em cima."]},
+  s2:{A:["Flexão na parede","8 repetições","Mãos na altura do peito, corpo reto como uma tábua."],B:["Superman","8 repetições","De bruços, levanta braços e pernas juntos e segura 2 s."]},
+  s3:{A:["Prancha de joelhos","20 segundos","Cotovelos embaixo dos ombros, barriga contraída, sem afundar a lombar."],B:["Perdigueiro","8 repetições (4 de cada lado)","De quatro, estica braço e perna opostos, segura 2 s, troca."]}},
+ {nome:"Base",s1:{A:["Agachamento livre","8 repetições","Desce até a coxa ficar paralela ao chão, joelho acompanhando a ponta do pé."],B:["Ponte de glúteo","15 repetições","Segura 2 s em cima em cada repetição."]},
+  s2:{A:["Flexão inclinada (mãos na mesa ou bancada)","8 repetições","Corpo reto, peito vai até a borda."],B:["Remada com mochila","8 por braço (troca o braço a cada minuto)","Apoia a outra mão na cadeira, costas retas, puxa a mochila até a cintura."]},
+  s3:{A:["Prancha","25 segundos","Corpo reto da cabeça ao calcanhar, respira normal."],B:["Bicicleta no chão","16 toques (8 de cada lado)","Cotovelo vai ao joelho oposto, sem puxar o pescoço."]}},
+ {nome:"Intermediário",s1:{A:["Agachamento livre","12 repetições","Desce em 2 s, sobe forte."],B:["Afundo alternado","10 repetições (5 de cada perna)","Passo largo, joelho de trás quase encosta no chão, tronco reto."]},
+  s2:{A:["Flexão de joelhos","10 repetições","Mãos um pouco mais abertas que os ombros, peito quase no chão."],B:["Mergulho na cadeira","8 repetições","Mãos na beira da cadeira, desce dobrando o cotovelo até 90°."]},
+  s3:{A:["Prancha","40 segundos","Se tremer muito, prefira técnica: pausa e completa."],B:["Escalador","20 toques (10 de cada lado)","Posição de flexão, puxa os joelhos alternados ao peito, quadril baixo."]}},
+ {nome:"Avançando",s1:{A:["Agachamento com salto","8 repetições","Aterrissa macio, já descendo para o próximo agachamento."],B:["Afundo alternado","16 repetições (8 de cada perna)","Pode segurar a mochila para pesar mais."]},
+  s2:{A:["Flexão no chão","10 repetições","Corpo inteiro reto, peito quase encosta."],B:["Flexão pike (ombros)","8 repetições","Quadril alto em V, desce a cabeça entre as mãos."]},
+  s3:{A:["Prancha com toque no ombro","16 toques (8 de cada lado)","Pés mais abertos, quadril não balança."],B:["Escalador","30 toques (15 de cada lado)","Ritmo rápido e constante."]}},
+ {nome:"Avançado",s1:{A:["Agachamento búlgaro","6 por perna (troca a perna a cada minuto)","Pé de trás apoiado na cadeira, desce reto."],B:["Afundo com salto alternado","10 repetições (5 de cada perna)","Troca as pernas no ar, aterrissa macio."]},
+  s2:{A:["Flexão declinada (pés na cadeira)","10 repetições","Corpo reto, desce controlado."],B:["Flexão pike com pés elevados","8 repetições","Pés na cadeira, quadril alto, desce a cabeça devagar."]},
+  s3:{A:["Burpee","8 repetições","Agacha, joga os pés para trás, volta e salta."],B:["Burpee com flexão","6 repetições","Faz uma flexão no chão antes de voltar e saltar."]}}
+];
+const DIAS_SUBIR=10;
+/* ---------- estado ---------- */
+let data={}, cfg={nivel:0,desde:START,hist:[],h:["07:00","09:30","11:30"]}, db=null, sel=null;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+const wd=ds=>new Date(ds+"T12:00:00").getDay();
+const isWE=ds=>{const g=wd(ds);return g===0||g===6};
+const tipo=ds=>[1,3,5].includes(wd(ds))?"A":"B";
+const fmt=ds=>new Date(ds+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit"});
+const feitas=r=>r?SESS.filter(s=>r[s.id]&&r[s.id].ok).length:0;
+const nivelDo=ds=>{const r=data[ds];return r&&r.nivel!=null?r.nivel:cfg.nivel};
+function lsLoad(){try{const r=JSON.parse(localStorage.getItem(LS)||"null");if(r){data=r.data||{};cfg=Object.assign(cfg,r.cfg||{})}}catch(e){}}
+function lsSave(){try{localStorage.setItem(LS,JSON.stringify({data,cfg}))}catch(e){}}
+async function saveDay(ds){lsSave();render();
+  if(db){try{await db.doc("dias/"+ds).set(data[ds]);$("status").textContent="Salvo"}catch(e){$("status").textContent="Não salvou na conta. Ficou neste aparelho."}}else $("status").textContent="Salvo neste aparelho"}
+async function saveCfg(){lsSave();if(db){try{await db.doc("config/geral").set(cfg)}catch(e){}}}
+
+/* ---------- tela ---------- */
+function render(){renderKpis();renderDia();renderCal();renderTab()}
+function diasCompletosNoNivel(){return Object.keys(data).filter(ds=>ds>=cfg.desde&&feitas(data[ds])===3&&nivelDo(ds)===cfg.nivel).length}
+function renderKpis(){
+  const n=cfg.nivel, dc=diasCompletosNoNivel();
+  $("kNivel").textContent=(n+1)+" · "+L[n].nome; $("kNivelTxt").textContent="desde "+new Date(cfg.desde+"T12:00:00").toLocaleDateString("pt-BR");
+  $("kDias").textContent=Math.min(dc,DIAS_SUBIR)+"/"+DIAS_SUBIR; $("kBar").style.width=Math.min(100,dc/DIAS_SUBIR*100)+"%";
+  const tot=Object.values(data).reduce((s,r)=>s+feitas(r),0); $("kSess").textContent=tot;
+  // semana atual (seg a sex)
+  const t=new Date(today()+"T12:00:00"), seg=new Date(t); seg.setDate(t.getDate()-((t.getDay()+6)%7));
+  let fs=0; for(let i=0;i<5;i++){const d=new Date(seg);d.setDate(seg.getDate()+i);const ds=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");fs+=feitas(data[ds])}
+  $("kSemana").textContent="esta semana: "+fs+" de 15";
+  // sugestão de subir
+  const box=$("sobe"), faceis=ultimasSens();
+  if(dc>=DIAS_SUBIR&&n<L.length-1){box.hidden=false;
+    box.innerHTML="<h2>Pronto para o degrau "+(n+2)+" · "+L[n+1].nome+"?</h2><span class='hint'>Você fechou "+dc+" dias completos no degrau "+(n+1)+(faceis?", e as últimas sessões saíram fáceis/ok":". As últimas sessões ainda estão pesadas: se quiser, fique mais uns dias")+".</span><div class='row'><button type='button' class='btn primary' id='bSobe'>Subir para o degrau "+(n+2)+"</button></div>";
+    $("bSobe").onclick=()=>mudarNivel(n+1);
+  } else if(dc>=DIAS_SUBIR&&n===L.length-1){box.hidden=false;box.innerHTML="<h2>Degrau 5 fechado 💪</h2><span class='hint'>Para continuar evoluindo: some 2 repetições por minuto ou faça a mochila mais pesada.</span>"}
+  else box.hidden=true;
+}
+function ultimasSens(){const ss=[];Object.keys(data).sort().reverse().forEach(ds=>SESS.forEach(s=>{const x=data[ds][s.id];if(x&&x.ok&&x.sens)ss.push(x.sens)}));const u=ss.slice(0,6);return u.length&&u.filter(x=>x==="pesado").length<=1}
+function mudarNivel(n){cfg.hist=(cfg.hist||[]).concat([{de:cfg.nivel,para:n,em:today()}]);cfg.nivel=n;cfg.desde=today();
+  const t=today();if(data[t]&&!feitas(data[t]))data[t].nivel=n;saveCfg();render();window.ui&&ui.toast("✓ Agora no degrau "+(n+1)+" · "+L[n].nome)}
+function renderDia(){
+  const ds=sel, can=ds===today(), r=data[ds]||{}, n=nivelDo(ds), tp=tipo(ds);
+  $("dTitle").textContent=(ds===today()?"Hoje · ":"")+fmt(ds);
+  $("dTipo").textContent=isWE(ds)?"fim de semana":"Dia "+tp+" · degrau "+(n+1);
+  const lk=$("lock");
+  if(isWE(ds)){lk.hidden=false;lk.textContent="Fim de semana: descanso.";$("sessoes").innerHTML="";return}
+  lk.hidden=can; lk.textContent=ds<today()?"Dia passado: dá para marcar o que ficou faltando, se esqueceu de registrar.":"Esse dia ainda não chegou.";
+  let h="";
+  SESS.forEach((s,i)=>{
+    const [ex,rx,dica]=L[n][s.id][tp], x=r[s.id]||{}, ok=!!x.ok, futuro=ds>today();
+    h+="<div class='sess"+(ok?" ok":"")+"'><div class='h'><span class='tag'>"+s.nome+" · "+(cfg.h[i]||"")+" · "+s.foco+"</span><span class='hint'>15 min</span></div>"+
+      "<div class='ex'>"+esc(ex)+"</div><div class='rx'>EMOM 10 min · "+esc(rx)+" por minuto</div><div class='hint'>"+esc(dica)+"</div>"+
+      "<ol><li><b>3 min aquecimento:</b> "+esc(AQ[s.id])+"</li><li><b>10 min EMOM:</b> no começo de cada minuto, "+esc(rx)+"; descansa o resto do minuto.</li><li><b>2 min alongamento:</b> "+esc(AL[s.id])+"</li></ol>"+
+      "<div id='tm_"+s.id+"'></div>"+
+      "<div class='row'>"+(futuro?"":(can&&!ok?"<button type='button' class='btn' data-a='timer' data-s='"+s.id+"'>▶ Iniciar timer</button>":"")+"<button type='button' class='btn "+(ok?"win":"primary")+"' data-a='ok' data-s='"+s.id+"'>"+(ok?"✓ Feita":"Marcar como feita")+"</button>")+"</div>"+
+      (ok?"<div class='row'><span class='hint'>Como foi?</span><div class='chips'>"+[["facil","Fácil"],["ok","Ok"],["pesado","Pesado"]].map(([v,l])=>"<button type='button' data-a='sens' data-s='"+s.id+"' data-v='"+v+"' class='"+(x.sens===v?"on":"")+"'>"+l+"</button>").join("")+"</div></div>":"")+
+      "</div>";
+  });
+  $("sessoes").innerHTML=h;
+}
+$("sessoes").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-a]");if(!b)return;
+  const ds=sel, s=b.dataset.s, a=b.dataset.a;
+  if(ds>today()||isWE(ds))return;
+  if(a==="timer")return startTimer(s);
+  data[ds]=data[ds]||{date:ds}; if(data[ds].nivel==null)data[ds].nivel=cfg.nivel;
+  const x=data[ds][s]=data[ds][s]||{};
+  if(a==="ok"){x.ok=!x.ok;if(x.ok){x.em=new Date().toISOString();stopTimer(s)}else delete x.sens;
+    window.ui&&ui.toast(x.ok?(feitas(data[ds])===3?"✓ Dia completo!":"✓ Sessão feita"):"Sessão desmarcada")}
+  if(a==="sens")x.sens=b.dataset.v;
+  saveDay(ds);
+});
+function renderCal(){
+  const cal=$("cal");cal.innerHTML="";const t=today();
+  const s=new Date(START+"T12:00:00"), lim=new Date(t+"T12:00:00"); lim.setMonth(lim.getMonth()+1);
+  let cur=new Date(s.getFullYear(),s.getMonth(),1,12);
+  while(cur<=lim){
+    const y=cur.getFullYear(),m=cur.getMonth();
+    const box=document.createElement("div");box.className="month";
+    box.innerHTML="<h3>"+cur.toLocaleDateString("pt-BR",{month:"long",year:"numeric"})+"</h3><div class='dow'><span>dom</span><span>seg</span><span>ter</span><span>qua</span><span>qui</span><span>sex</span><span>sáb</span></div>";
+    const g=document.createElement("div");g.className="grid";
+    for(let i=0;i<new Date(y,m,1).getDay();i++){const b=document.createElement("div");b.className="day blank";g.appendChild(b)}
+    for(let d=1;d<=new Date(y,m+1,0).getDate();d++){
+      const ds=y+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+      const b=document.createElement("button");b.type="button";b.textContent=d;
+      let cls="day";
+      if(ds<START){cls+=" we";b.disabled=true}
+      else if(isWE(ds)){cls+=" we";b.disabled=true}
+      else{const f=feitas(data[ds]);if(f===3)cls+=" full";else if(f>0)cls+=" part";else if(ds<t)cls+=" miss";b.onclick=()=>{sel=ds;renderDia();renderCal();$("dTitle").scrollIntoView({behavior:"smooth",block:"start"})}}
+      if(ds===t)cls+=" today";if(ds===sel)cls+=" sel";
+      b.className=cls;b.setAttribute("aria-label",fmt(ds));g.appendChild(b);
+    }
+    box.appendChild(g);cal.appendChild(box);cur=new Date(y,m+1,1,12);
+  }
+}
+function renderTab(){
+  let h="<thead><tr><th>Degrau</th><th>Sessão 1 · pernas</th><th>Sessão 2 · superior</th><th>Sessão 3 · core</th></tr></thead><tbody>";
+  L.forEach((lv,i)=>{h+="<tr class='"+(i===cfg.nivel?"cur":"")+"'><td><b>"+(i+1)+"</b><br>"+lv.nome+"</td>"+SESS.map(s=>"<td><b>A</b> "+esc(lv[s.id].A[0])+" · "+esc(lv[s.id].A[1])+"<br><b>B</b> "+esc(lv[s.id].B[0])+" · "+esc(lv[s.id].B[1])+"</td>").join("")+"</tr>"});
+  $("tLv").innerHTML=h+"</tbody>";
+  $("lvPick").innerHTML=L.map((lv,i)=>"<button type='button' data-n='"+i+"' class='"+(i===cfg.nivel?"on":"")+"'>"+(i+1)+"</button>").join("");
+}
+$("lvPick").addEventListener("click",e=>{const b=e.target.closest("[data-n]");if(!b)return;const n=+b.dataset.n;if(n!==cfg.nivel)mudarNivel(n)});
+["h1","h2","h3"].forEach((id,i)=>$(id).addEventListener("change",e=>{cfg.h[i]=e.target.value;saveCfg();renderDia();window.ui&&ui.toast("✓ Horário salvo")}));
+
+/* ---------- timer guiado de 15 min: 3 aquecimento, 10 EMOM, 2 alongamento ---------- */
+let T=null, actx=null;
+function beep(f,ms){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=f;o.connect(g);g.connect(actx.destination);g.gain.setValueAtTime(.2,actx.currentTime);o.start();o.stop(actx.currentTime+ms/1000)}catch(e){}try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
+function fase(sec){if(sec<180)return{n:"Aquecimento",r:180-sec};if(sec<780){const k=Math.floor((sec-180)/60);return{n:"EMOM · minuto "+(k+1)+" de 10",r:60-((sec-180)%60),emom:true}}if(sec<900)return{n:"Alongamento",r:900-sec};return null}
+let wake=null;
+function startTimer(sid){
+  if(T)stopTimer(T.s);
+  T={s:sid,t0:Date.now(),last:-1};
+  try{navigator.wakeLock&&navigator.wakeLock.request("screen").then(w=>wake=w).catch(()=>{})}catch(e){}
+  beep(880,200);tick();T.iv=setInterval(tick,250);
+}
+function stopTimer(sid){if(!T||T.s!==sid)return;clearInterval(T.iv);const box=$("tm_"+sid);if(box)box.innerHTML="";T=null;try{wake&&wake.release()}catch(e){}wake=null}
+function tick(){
+  if(!T)return;const box=$("tm_"+T.s);const sec=Math.floor((Date.now()-T.t0)/1000), f=fase(sec);
+  if(!f){beep(660,600);const s=T.s;stopTimer(s);if(sel===today()){const r=data[sel]=data[sel]||{date:sel};if(r.nivel==null)r.nivel=cfg.nivel;r[s]=Object.assign(r[s]||{},{ok:true,em:new Date().toISOString()});saveDay(sel);window.ui&&ui.toast("✓ Sessão concluída: marque como foi")}return}
+  if(sec!==T.last){T.last=sec;
+    if(sec===180||sec===780||(f.emom&&(sec-180)%60===0))beep(f.emom?988:740,f.emom?250:400);
+    else if(f.r<=3&&f.r>0)beep(520,90);}
+  if(!box)return;
+  const [ex,rx]=L[nivelDo(sel)][T.s][tipo(sel)];
+  const mm=String(Math.floor(f.r/60)).padStart(1,"0")+":"+String(f.r%60).padStart(2,"0");
+  box.innerHTML="<div class='tm'><div class='ph'>"+f.n+"</div><div class='clk'>"+mm+"</div><div class='nx'>"+(f.emom?esc(ex)+" · "+esc(rx):"Total: "+Math.floor((900-sec)/60)+" min restantes")+"</div><div class='row' style='justify-content:center'><button type='button' class='btn' data-stop='1'>Parar timer</button></div></div>";
+  box.querySelector("[data-stop]").onclick=()=>stopTimer(T.s);
+}
+
+/* ---------- início ---------- */
+lsLoad();
+{const t=today();sel=t<START?START:t}
+$("h1").value=cfg.h[0];$("h2").value=cfg.h[1];$("h3").value=cfg.h[2];
+render();$("status").textContent="Conectando…";
+(async()=>{
+  try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
+  if(!db){$("status").textContent="Salvando neste aparelho";return}
+  db.doc("config/geral").onSnapshot(s=>{if(s.exists){cfg=Object.assign(cfg,s.data());["h1","h2","h3"].forEach((id,i)=>{if(document.activeElement!==$(id))$(id).value=cfg.h[i]||""});render()}},()=>{});
+  db.collection("dias").onSnapshot(q=>{const m={};q.docs.forEach(d=>{m[d.id]=d.data()});data=m;lsSave();if(!T)render();else{renderKpis();renderCal()}$("status").textContent="Sincronizado"},()=>{$("status").textContent="Sem conexão com o salvamento"});
+})();
+</script>
+</body></html>
