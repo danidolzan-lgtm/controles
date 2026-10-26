@@ -1,7 +1,7 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="dopamina-ob"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Tabela de Dopamina</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: placar no topo, check-in de hoje, calendário seg–sex (só dias de operar) de 13/10 a 17/12. */
+/* Layout: placar no topo, check-in de hoje, % semanal (reinicia toda segunda), calendário seg–sex (só dias de operar) de 13/10 a 17/12. */
 :root{
   --bg:#EEF3FC; --surface:#FFFFFF; --line:#DDE4F2; --fg:#13203B; --muted:#58668A;
   --accent:#2563EB; --win:#15803D; --win-soft:#DCFCE7; --loss:#E11D48; --loss-soft:#FFE4EA;
@@ -70,6 +70,12 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .bar{height:10px;border-radius:6px;background:var(--loss-soft);overflow:hidden}
 .bar i{display:block;height:100%;background:var(--win);width:100%;transition:width .3s}
 img,svg{max-width:100%}
+.weeks{display:grid;gap:6px}
+.wk{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;font-size:.85rem;padding:6px 8px;border-radius:8px;background:var(--bg)}
+.wk b{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.wk small{font-family:var(--f-num);color:var(--muted);font-size:.74rem}
+.wk.cur{outline:2px solid var(--accent)}
+.wk.bad b{color:var(--loss)} .wk.good b{color:var(--win)}
 @media (orientation:landscape) and (max-height:560px){.wrap{grid-template-columns:minmax(260px,38%) minmax(0,1fr);gap:14px;padding-block:8px 24px}.side{position:sticky;top:8px}.big{font-size:1.2rem}.pcth .big{font-size:1.8rem}.btn{padding:9px 12px}.panel{padding:12px}h1{font-size:1.3rem}}
 @media (min-width:1200px){.day{height:42px;font-size:.88rem}}
 @media (max-width:420px){.day{height:34px}.big{font-size:1.25rem}.score{gap:6px}}
@@ -78,16 +84,22 @@ img,svg{max-width:100%}
   <aside class="side">
     <div class="top"><div><h1>Tabela de Dopamina</h1><div class="sub">13/10 a 17/12/2026 · segunda a sexta</div></div><div class="status" id="status">Carregando…</div></div>
 <div class="panel pctp">
-    <div class="pcth"><span class="lbl" style="font-size:.8rem">% de disciplina até 17/12</span><span class="big" id="sPct">100%</span></div>
+    <div class="pcth"><span class="lbl" style="font-size:.8rem" id="sPctLbl">% de disciplina da semana</span><span class="big" id="sPct">100%</span></div>
     <div class="bar" aria-hidden="true"><i id="sBar"></i></div>
     <div class="hint" id="sPctTxt"></div>
   </div>
+<div class="panel pctp">
+    <div class="pcth"><span class="lbl" style="font-size:.8rem">% geral até 17/12</span><span class="big" id="gPct">100%</span></div>
+    <div class="bar" aria-hidden="true"><i id="gBar"></i></div>
+    <div class="hint" id="gPctTxt"></div>
+  </div>
   <div class="panel score">
-    <div><span class="lbl">Acertei</span><span class="big pos" id="sW">0</span></div>
-    <div><span class="lbl">Errei</span><span class="big neg" id="sL">0</span></div>
+    <div><span class="lbl">Acertei (sem.)</span><span class="big pos" id="sW">0</span></div>
+    <div><span class="lbl">Errei (sem.)</span><span class="big neg" id="sL">0</span></div>
     <div><span class="lbl">Sequência</span><span class="big" id="sSeq">0</span></div>
     <div><span class="lbl">Melhor</span><span class="big" id="sBest">0</span></div>
   </div>
+  <div class="panel"><h2 style="margin-bottom:8px">Semanas</h2><div class="weeks" id="weeks"></div></div>
   <div class="panel check">
     <h2 id="cTitle">Check-in</h2>
     <div class="btns">
@@ -114,18 +126,33 @@ function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth
 const fmt=ds=>new Date(ds+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit"});
 function editable(ds){const t=today();return isWd(ds)&&ds>=START&&ds<=END&&ds<=t&&(ds===t||!marks[ds])}
 function load(){try{const r=JSON.parse(localStorage.getItem(LS)||"null");if(r)marks=r}catch(e){}}
+function ymd(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function monOf(ds){const d=new Date(ds+"T12:00:00");const g=d.getDay();d.setDate(d.getDate()-(g===0?6:g-1));return ymd(d)}
+function addD(ds,n){const d=new Date(ds+"T12:00:00");d.setDate(d.getDate()+n);return ymd(d)}
+const sdm=ds=>ds.slice(8,10)+"/"+ds.slice(5,7);
+function weekInfo(mon){const a=mon<START?START:mon,fri=addD(mon,4),b=fri>END?END:fri;const total=wdCount(a,b);let w=0,l=0;Object.keys(marks).forEach(k=>{if(k>=a&&k<=b&&isWd(k)){if(marks[k]==="w")w++;else if(marks[k]==="l")l++}});const p=total?Math.max(0,100-l/total*100):100;return{a,b,total,w,l,p}}
+const okW=x=>x.p>=80||x.l<=1;
+const pf=p=>p.toLocaleString("pt-BR",{maximumFractionDigits:1})+"%";
 function stats(){
   const keys=Object.keys(marks).filter(k=>isWd(k)&&k>=START&&k<=END).sort();
-  let w=0,l=0,best=0,run=0;
-  keys.forEach(k=>{if(marks[k]==="w"){w++;run++;best=Math.max(best,run)}else{l++;run=0}});
+  let best=0,run=0;
+  keys.forEach(k=>{if(marks[k]==="w"){run++;best=Math.max(best,run)}else{run=0}});
   let seq=0; for(let i=keys.length-1;i>=0;i--){if(marks[keys[i]]==="w")seq++;else break}
-  const total=wdCount(START,END);
-  const p=Math.max(0,100-l/total*100);
-  $("sPct").textContent=p.toLocaleString("pt-BR",{maximumFractionDigits:1})+"%";
-  $("sPct").className="big "+(p>=90?"pos":"neg");$("sBar").style.background=p>=90?"var(--win)":"var(--loss)";
+  let t=today();if(t<START)t=START;if(t>END)t=END;
+  const curMon=monOf(t), W=weekInfo(curMon), p=W.p;
+  $("sPctLbl").textContent="% da semana · "+sdm(W.a)+" a "+sdm(W.b);
+  $("sPct").textContent=pf(p);
+  $("sPct").className="big "+(okW(W)?"pos":"neg");$("sBar").style.background=okW(W)?"var(--win)":"var(--loss)";
   $("sBar").style.width=p+"%";
-  $("sPctTxt").textContent="Começa em 100% e cada \"errei\" tira "+(100/total).toLocaleString("pt-BR",{maximumFractionDigits:2})+"% ("+total+" dias úteis, seg a sex, até 17/12). "+(l?l+(l===1?" erro":" erros")+" até agora.":"Nenhum erro até agora.");
-  $("sW").textContent=w;$("sL").textContent=l;$("sSeq").textContent=seq;$("sBest").textContent=best;
+  $("sPctTxt").textContent="Começa em 100% toda segunda. Cada \"errei\" tira "+pf(100/W.total)+" ("+W.total+" dias úteis nesta semana). Aceita 1 erro por semana: abaixo de 80% fica vermelho. "+(W.l?W.l+(W.l===1?" erro":" erros")+" nesta semana.":"Nenhum erro nesta semana.");
+  $("sW").textContent=W.w;$("sL").textContent=W.l;$("sSeq").textContent=seq;$("sBest").textContent=best;
+  let gw=0,gl=0;keys.forEach(k=>{if(marks[k]==="w")gw++;else if(marks[k]==="l")gl++});
+  const gt=wdCount(START,END),gp=Math.max(0,100-gl/gt*100);
+  $("gPct").textContent=pf(gp);$("gPct").className="big "+(gp>=80?"pos":"neg");
+  $("gBar").style.width=gp+"%";$("gBar").style.background=gp>=80?"var(--win)":"var(--loss)";
+  $("gPctTxt").textContent="Período todo: cada \"errei\" tira "+(100/gt).toLocaleString("pt-BR",{maximumFractionDigits:2})+"% ("+gt+" dias úteis até 17/12). Abaixo de 80% fica vermelho. "+gw+" acertos e "+gl+(gl===1?" erro":" erros")+" no total.";
+  const box=$("weeks");box.innerHTML="";
+  for(let m=curMon;m>=monOf(START);m=addD(m,-7)){const x=weekInfo(m);const r=document.createElement("div");r.className="wk "+(okW(x)?"good":"bad")+(m===curMon?" cur":"");r.innerHTML="<span>"+sdm(x.a)+" a "+sdm(x.b)+(m===curMon?" · atual":"")+"</span><small>"+x.w+"✓ "+x.l+"✗</small><b>"+pf(x.p)+"</b>";box.appendChild(r)}
 }
 function pick(ds){sel=ds;draft=marks[ds]||null;drawCheck();drawCal()}
 function drawCheck(){
