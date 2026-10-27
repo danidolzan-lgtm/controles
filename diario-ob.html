@@ -31,6 +31,10 @@ h2{font-family:var(--f-display);font-weight:700;font-size:1.05rem;margin:0}
 .kpi .row b{color:var(--fg);font-family:var(--f-num);font-weight:600}
 .pos{color:var(--win)} .neg{color:var(--loss)}
 .cfg{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
+.cfg .metas{flex-basis:100%;order:9;font-size:.78rem;color:var(--muted);display:flex;align-items:center;gap:6px}
+.cfg .metas::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none}
+.cfg .metas:empty{display:none}
+
 label{display:grid;gap:3px;font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
 input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-width:0;width:100%;text-transform:none;letter-spacing:0}
 input[type=number]{font-family:var(--f-num)}
@@ -117,9 +121,10 @@ td:first-child{font-family:var(--f-body);white-space:normal}
   </div>
 
   <div class="panel cfg">
-    <label for="cBase">Mão base (R$)<input id="cBase" type="number" min="0" step="0.5" inputmode="decimal"><span class="hint" id="cMetas" style="text-transform:none;letter-spacing:0"></span></label>
+    <label for="cBase">Mão base (R$)<input id="cBase" type="number" min="0" step="0.5" inputmode="decimal"></label>
     <label for="cPay">Payout (%)<input id="cPay" type="number" min="1" max="100" step="1" inputmode="numeric"></label>
     <span class="hint" id="cHint"></span>
+    <span class="metas" id="cMetas"></span>
   </div>
 
   <div class="panel" style="display:grid;gap:16px">
@@ -363,7 +368,7 @@ function aplicaMetas(p){if(!p)return;if(!cfgOk){maoPend=p;return}
   if(cfg.baseMetas!==p.mao){cfg.base=p.mao;cfg.baseMetas=p.mao;if(document.activeElement!==$("cBase"))$("cBase").value=cfg.base;saveCfg();renderKpis();renderHint();window.ui&&ui.toast&&ui.toast("Mão base atualizada pelo Progresso: R$ "+p.mao.toLocaleString("pt-BR",{minimumFractionDigits:2}))}
   metasTxt(p)}
 function metasTxt(p){p=p||window._pm;if(!p)return;window._pm=p;const cur=document.activeElement===$("cBase")?parseFloat($("cBase").value)||0:+cfg.base||0, igual=Math.abs(cur-p.mao)<.005;
-  $("cMetas").textContent=(igual?"✓ do Progresso":"mudada à mão · Progresso: R$ "+p.mao.toLocaleString("pt-BR",{minimumFractionDigits:2}))+(p.nivel?" (nível R$ "+p.nivel.toLocaleString("pt-BR")+")":" (início)")}
+  $("cMetas").textContent="Mão base "+(igual?"puxada do Progresso":"mudada à mão · no Progresso é R$ "+p.mao.toLocaleString("pt-BR",{minimumFractionDigits:2}))+(p.nivel?" (nível R$ "+p.nivel.toLocaleString("pt-BR")+")":" (início)")}
 $("cBase").addEventListener("input",()=>metasTxt());$("cBase").addEventListener("change",()=>metasTxt());
 try{const r=JSON.parse(localStorage.getItem("progressoOB2.v1")||"null");if(r){cfgOk=true;aplicaMetas(maoDoProg(r));cfgOk=false}}catch(e){}
 (async()=>{
