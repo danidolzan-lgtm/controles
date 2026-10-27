@@ -105,7 +105,7 @@ td:first-child{font-family:var(--f-body);white-space:normal}
   </div>
 
   <div class="panel cfg">
-    <label for="cCt">Contratos padrão<input id="cCt" type="number" min="1" step="1" inputmode="numeric"></label>
+    <label for="cCt">Contratos padrão<input id="cCt" type="number" min="1" step="1" inputmode="numeric"><span class="hint" id="cMetas" style="text-transform:none;letter-spacing:0"></span></label>
     <span class="hint">Toque em Meta (lucro, entra positivo) ou Stop (perda, entra negativo) e digite o valor em R$ que deu na operação.</span>
   </div>
 
@@ -315,10 +315,25 @@ $("cCt").addEventListener("change",e=>{const v=parseInt(e.target.value);if(v>0&&
 
 
 lsLoad();$("cCt").value=cfg.ct;render();setStatus("Conectando…");
+/* Contratos padrão puxados do Progresso B3 (contratos do nível conquistado). Toda vez que o nível muda lá, acompanha;
+   ainda dá pra mudar à mão aqui até o próximo nível. */
+const PLV=[500,1000,3000,5000,7000,10000,12000,15000,20000,25000,30000,35000,40000,50000,60000,70000,80000,90000,100000];
+const PCT=[1,2,3,5,7,10,12,15,20,25,30,35,40,50,60,70,80,90,100];
+let cfgOk=false, ctPend=null;
+function ctDoProg(d){const c=new Set((d&&d.conquistados)||[]);let last=-1;PLV.forEach((v,i)=>{if(c.has(i))last=i});return {ct:last>=0?PCT[last]:1,nivel:last>=0?PLV[last]:null}}
+function aplicaMetas(p){if(!p)return;if(!cfgOk){ctPend=p;return}
+  if(cfg.ctMetas!==p.ct){cfg.ct=p.ct;cfg.ctMetas=p.ct;if(document.activeElement!==$("cCt"))$("cCt").value=cfg.ct;saveCfg();window.ui&&ui.toast&&ui.toast("Contratos atualizados pelo Progresso: "+p.ct)}
+  metasTxt(p)}
+function metasTxt(p){p=p||window._pm;if(!p)return;window._pm=p;const cur=document.activeElement===$("cCt")?parseInt($("cCt").value)||0:+cfg.ct||0, igual=cur===p.ct;
+  $("cMetas").textContent=(igual?"✓ do Progresso":"mudado à mão · Progresso: "+p.ct)+(p.nivel?" (nível R$ "+p.nivel.toLocaleString("pt-BR")+")":" (início)")}
+$("cCt").addEventListener("input",()=>metasTxt());$("cCt").addEventListener("change",()=>metasTxt());
+try{const r=JSON.parse(localStorage.getItem("progressoB3m.v1")||"null");if(r){cfgOk=true;aplicaMetas(ctDoProg(r));cfgOk=false}}catch(e){}
 (async()=>{
   try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
   if(!db){setStatus("Salvando neste aparelho");return}
-  db.doc("config/geral").onSnapshot(s=>{if(s.exists){cfg=Object.assign(cfg,s.data());if(document.activeElement!==$("cCt"))$("cCt").value=cfg.ct}},()=>{});
+  db.doc("config/geral").onSnapshot(s=>{if(s.exists){cfg=Object.assign(cfg,s.data());if(document.activeElement!==$("cCt"))$("cCt").value=cfg.ct}
+    if(!cfgOk){cfgOk=true;if(ctPend){aplicaMetas(ctPend);ctPend=null}}metasTxt()},()=>{cfgOk=true});
+  if(db.app)db.app("progresso-b3m").doc("estado/progresso").onSnapshot(s=>{aplicaMetas(ctDoProg(s.exists?s.data():null))},()=>{});
   db.collection("dias").onSnapshot(q=>{const m={};q.docs.forEach(d=>{m[d.id]=d.data()});days=m;lsSave();render();setStatus("Sincronizado")},()=>setStatus("Sem conexão com o salvamento"));
 })();
 </script>

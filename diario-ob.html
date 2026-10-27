@@ -117,7 +117,7 @@ td:first-child{font-family:var(--f-body);white-space:normal}
   </div>
 
   <div class="panel cfg">
-    <label for="cBase">Mão base (R$)<input id="cBase" type="number" min="0" step="0.5" inputmode="decimal"></label>
+    <label for="cBase">Mão base (R$)<input id="cBase" type="number" min="0" step="0.5" inputmode="decimal"><span class="hint" id="cMetas" style="text-transform:none;letter-spacing:0"></span></label>
     <label for="cPay">Payout (%)<input id="cPay" type="number" min="1" max="100" step="1" inputmode="numeric"></label>
     <span class="hint" id="cHint"></span>
   </div>
@@ -354,10 +354,24 @@ $("cBase").addEventListener("change",e=>{const v=parseFloat(e.target.value);if(!
 $("cPay").addEventListener("change",e=>{const v=parseFloat(e.target.value);if(!isNaN(v)&&v!==cfg.payout){cfg.payout=v;saveCfg();renderKpis();renderHint();ui_.toast("✓ Payout salvo")}});
 
 lsLoad();$("cBase").value=cfg.base;$("cPay").value=cfg.payout;render();setStatus("Conectando…");
+/* Mão base puxada do Progresso OB (nível conquistado ÷ 5). Toda vez que o nível muda lá, a mão base daqui acompanha;
+   se quiser, ainda dá pra mudar à mão aqui até o próximo nível. */
+const PLV=[50,100,150,250,350,500,750,1000,1500,2500,3500,5000,7500,10000];
+let cfgOk=false, maoPend=null;
+function maoDoProg(d){const c=new Set((d&&d.conquistados)||[]);let last=-1;PLV.forEach((v,i)=>{if(c.has(i))last=i});return {mao:(last>=0?PLV[last]:PLV[0])/5,nivel:last>=0?PLV[last]:null}}
+function aplicaMetas(p){if(!p)return;if(!cfgOk){maoPend=p;return}
+  if(cfg.baseMetas!==p.mao){cfg.base=p.mao;cfg.baseMetas=p.mao;if(document.activeElement!==$("cBase"))$("cBase").value=cfg.base;saveCfg();renderKpis();renderHint();window.ui&&ui.toast&&ui.toast("Mão base atualizada pelo Progresso: R$ "+p.mao.toLocaleString("pt-BR",{minimumFractionDigits:2}))}
+  metasTxt(p)}
+function metasTxt(p){p=p||window._pm;if(!p)return;window._pm=p;const cur=document.activeElement===$("cBase")?parseFloat($("cBase").value)||0:+cfg.base||0, igual=Math.abs(cur-p.mao)<.005;
+  $("cMetas").textContent=(igual?"✓ do Progresso":"mudada à mão · Progresso: R$ "+p.mao.toLocaleString("pt-BR",{minimumFractionDigits:2}))+(p.nivel?" (nível R$ "+p.nivel.toLocaleString("pt-BR")+")":" (início)")}
+$("cBase").addEventListener("input",()=>metasTxt());$("cBase").addEventListener("change",()=>metasTxt());
+try{const r=JSON.parse(localStorage.getItem("progressoOB2.v1")||"null");if(r){cfgOk=true;aplicaMetas(maoDoProg(r));cfgOk=false}}catch(e){}
 (async()=>{
   try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
   if(!db){setStatus("Salvando neste aparelho");return}
-  db.doc("config/geral").onSnapshot(s=>{if(s.exists){cfg=Object.assign(cfg,s.data());if(document.activeElement!==$("cBase"))$("cBase").value=cfg.base;if(document.activeElement!==$("cPay"))$("cPay").value=cfg.payout;renderKpis();renderHint()}},()=>{});
+  db.doc("config/geral").onSnapshot(s=>{if(s.exists){cfg=Object.assign(cfg,s.data());if(document.activeElement!==$("cBase"))$("cBase").value=cfg.base;if(document.activeElement!==$("cPay"))$("cPay").value=cfg.payout;renderKpis();renderHint()}
+    if(!cfgOk){cfgOk=true;if(maoPend){aplicaMetas(maoPend);maoPend=null}}metasTxt()},()=>{cfgOk=true});
+  if(db.app)db.app("progresso-ob2").doc("estado/progresso").onSnapshot(s=>{aplicaMetas(maoDoProg(s.exists?s.data():null))},()=>{});
   db.collection("dias").onSnapshot(q=>{const m={};q.docs.forEach(d=>{m[d.id]=d.data()});days=m;lsSave();render();setStatus("Sincronizado")},()=>setStatus("Sem conexão com o salvamento"));
 })();
 </script>

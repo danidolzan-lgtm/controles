@@ -343,7 +343,9 @@
 
   function adapter(uid) {
     var base = "users/" + uid + "/apps/" + APP + "/";
-    return { doc: function (p) { return fs.doc(base + p); }, collection: function (p) { return fs.collection(base + p); } };
+    return { doc: function (p) { return fs.doc(base + p); }, collection: function (p) { return fs.collection(base + p); },
+      // ler outro controle da mesma conta (ex.: o Diário lendo as Metas do Progresso)
+      app: function (name) { var b2 = "users/" + uid + "/apps/" + name + "/"; return { doc: function (p) { return fs.doc(b2 + p); } }; } };
   }
 
   function showLogin() {
