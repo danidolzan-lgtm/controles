@@ -131,7 +131,9 @@ function monOf(ds){const d=new Date(ds+"T12:00:00");const g=d.getDay();d.setDate
 function addD(ds,n){const d=new Date(ds+"T12:00:00");d.setDate(d.getDate()+n);return ymd(d)}
 const sdm=ds=>ds.slice(8,10)+"/"+ds.slice(5,7);
 function weekInfo(mon){const a=mon<START?START:mon,fri=addD(mon,4),b=fri>END?END:fri;const total=wdCount(a,b);let w=0,l=0;Object.keys(marks).forEach(k=>{if(k>=a&&k<=b&&isWd(k)){if(marks[k]==="w")w++;else if(marks[k]==="l")l++}});const p=total?Math.max(0,100-l/total*100):100;return{a,b,total,w,l,p}}
-const okW=x=>x.p>=80||x.l<=1;
+const okW=x=>x.l===0; // semana: 1 erro já deixa vermelho
+// geral: 100% = verde cheio, vai perdendo o verde e chega no vermelho em 0%
+const grad=p=>"color-mix(in oklab, var(--win) "+Math.max(0,Math.min(100,p)).toFixed(1)+"%, var(--loss))";
 const pf=p=>p.toLocaleString("pt-BR",{maximumFractionDigits:1})+"%";
 function stats(){
   const keys=Object.keys(marks).filter(k=>isWd(k)&&k>=START&&k<=END).sort();
@@ -144,13 +146,13 @@ function stats(){
   $("sPct").textContent=pf(p);
   $("sPct").className="big "+(okW(W)?"pos":"neg");$("sBar").style.background=okW(W)?"var(--win)":"var(--loss)";
   $("sBar").style.width=p+"%";
-  $("sPctTxt").textContent="Começa em 100% toda segunda. Cada \"errei\" tira "+pf(100/W.total)+" ("+W.total+" dias úteis nesta semana). Aceita 1 erro por semana: abaixo de 80% fica vermelho. "+(W.l?W.l+(W.l===1?" erro":" erros")+" nesta semana.":"Nenhum erro nesta semana.");
+  $("sPctTxt").textContent="Começa em 100% toda segunda. Cada \"errei\" tira "+pf(100/W.total)+" ("+W.total+" dias úteis nesta semana). Saiu de 100% já fica vermelho. "+(W.l?W.l+(W.l===1?" erro":" erros")+" nesta semana.":"Nenhum erro nesta semana.");
   $("sW").textContent=W.w;$("sL").textContent=W.l;$("sSeq").textContent=seq;$("sBest").textContent=best;
   let gw=0,gl=0;keys.forEach(k=>{if(marks[k]==="w")gw++;else if(marks[k]==="l")gl++});
   const gt=wdCount(START,END),gp=Math.max(0,100-gl/gt*100);
-  $("gPct").textContent=pf(gp);$("gPct").className="big "+(gp>=80?"pos":"neg");
-  $("gBar").style.width=gp+"%";$("gBar").style.background=gp>=80?"var(--win)":"var(--loss)";
-  $("gPctTxt").textContent="Período todo: cada \"errei\" tira "+(100/gt).toLocaleString("pt-BR",{maximumFractionDigits:2})+"% ("+gt+" dias úteis até 17/12). Abaixo de 80% fica vermelho. "+gw+" acertos e "+gl+(gl===1?" erro":" erros")+" no total.";
+  $("gPct").textContent=pf(gp);$("gPct").className="big";$("gPct").style.color=grad(gp);
+  $("gBar").style.width=gp+"%";$("gBar").style.background=grad(gp);
+  $("gPctTxt").textContent="Período todo: cada \"errei\" tira "+(100/gt).toLocaleString("pt-BR",{maximumFractionDigits:2})+"% ("+gt+" dias úteis até 17/12). Em 100% fica verde e vai puxando para o vermelho conforme cai. "+gw+" acertos e "+gl+(gl===1?" erro":" erros")+" no total.";
   const box=$("weeks");box.innerHTML="";
   for(let m=curMon;m>=monOf(START);m=addD(m,-7)){const x=weekInfo(m);const r=document.createElement("div");r.className="wk "+(okW(x)?"good":"bad")+(m===curMon?" cur":"");r.innerHTML="<span>"+sdm(x.a)+" a "+sdm(x.b)+(m===curMon?" · atual":"")+"</span><small>"+x.w+"✓ "+x.l+"✗</small><b>"+pf(x.p)+"</b>";box.appendChild(r)}
 }

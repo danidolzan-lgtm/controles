@@ -59,6 +59,10 @@ ul,ol{margin:0;padding-left:20px;display:grid;gap:4px}
 figure{margin:0;display:grid;gap:6px}
 figure svg{width:100%;height:auto;display:block;background:var(--bg);border-radius:8px}
 figcaption{font-size:.84rem;color:var(--muted)}
+.anim{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.anim .play{appearance:none;font:inherit;font-size:.8rem;font-weight:600;border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:7px;padding:6px 12px;cursor:pointer;flex:none}
+.anim .amsg{font-size:.8rem;color:var(--fg);flex:1;min-width:160px}
+
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}
 .legend i{display:inline-block;width:16px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
 table{width:100%;border-collapse:collapse;font-size:.9rem}
@@ -506,11 +510,11 @@ const EX={
     e21:[53.7,54.1,54.4,54.4,54.3,53.9,53.3,52.5,51.7,51.1,50.9,50.8,50.9,51.2,51.6,52.2],
     e9:[56.0,56.4,56.5,56.2,55.5,54.4,53.0,51.4,49.7,48.9,48.8,49.0,49.6,50.5,51.6,52.9],
     c:[[54,57,53,56],[56,59,55,58],[58,60,56.5,57],[57,58,54.5,55],[55,55.5,52,52.5],[52.5,53,49.5,50],[50,50.5,47,47.5],[47.5,48,44.6,45],[45,45.3,42.3,42.8],[42.6,46.5,42.4,46],[46,48.5,45.5,48],[48,50.5,47.5,50],[50,52.5,49.5,52],[52,54.5,51.5,54],[54,56.5,53.5,56],[56,58.5,55.5,58]]},
-  armadilha:{vol:[1,1,.9,1,1.1,1.1,1,1,1.4,1.6,1.5,1.2,1.1,1,1,.9],signal:10,entry:11,stop:40.7,
-    e50:[41.2,41.9,42.6,43.1,43.5,43.7,43.9,43.9,43.8,43.8,44.0,44.3,44.7,45.1,45.7,46.2],
-    e21:[54.4,54.8,55.2,55.2,55.0,54.6,53.9,53.0,52.0,51.4,51.2,51.2,51.4,51.8,52.4,53.1],
-    e9:[57.2,57.7,57.8,57.5,56.6,55.3,53.6,51.8,49.7,48.8,48.9,49.3,50.1,51.3,52.8,54.3],
-    c:[[56,58.5,55.5,58],[58,60,57.5,59.5],[59.5,60.5,58,58.5],[58.5,59,55.5,56],[56,56.5,52.5,53],[53,53.5,49.5,50],[50,50.5,46.5,47],[47,47.5,44,44.5],[44.5,45,41,41.5],[41.5,45.5,41.2,45],[45,49.5,44.6,49.3],[49.3,51.5,48.8,51],[51,54,50.5,53.5],[53.5,56.5,53,56],[56,59,55.5,58.5],[58.5,61,58,60.5]]},
+  armadilha:{vol:[1,1,.9,1,1.1,1.1,1,1,1.4,1.6,1.5,1.2,1.1,1,1,.9,1,1,1.1],signal:10,entry:11,stop:40.7,
+    e50:[41.2,41.9,42.6,43.1,43.5,43.7,43.9,43.9,43.8,43.8,44.0,44.3,44.7,45.1,45.7,46.2,46.9,47.6,48.4],
+    e21:[54.4,54.8,55.2,55.2,55.0,54.6,53.9,53.0,52.0,51.4,51.2,51.2,51.4,51.8,52.4,53.1,54.0,55.0,56.1],
+    e9:[57.2,57.7,57.8,57.5,56.6,55.3,53.6,51.8,49.7,48.8,48.9,49.3,50.1,51.3,52.8,54.3,56.2,58.2,60.3],
+    c:[[56,58.5,55.5,58],[58,60,57.5,59.5],[59.5,60.5,58,58.5],[58.5,59,55.5,56],[56,56.5,52.5,53],[53,53.5,49.5,50],[50,50.5,46.5,47],[47,47.5,44,44.5],[44.5,45,41,41.5],[41.5,45.5,41.2,45],[45,49.5,44.6,49.3],[49.3,51.5,48.8,51],[51,54,50.5,53.5],[53.5,56.5,53,56],[56,59,55.5,58.5],[58.5,61,58,60.5],[60.5,63.5,60,63],[63,65.5,62.5,65],[65,67.5,64.5,67]]},
   giro:{vol:[1,1,1,.9,.9,.8,1,1.1,1.2,2.2,.8,1.5,1.3,1.1,1,1,.9],signal:11,entry:12,stop:54.5,
     e50:[62,61,60,59,58,57.2,56.5,56,55.6,55.3,55.1,55,55,55.1,55.3,55.6,56],
     e21:[56,54.5,53,51.5,50,49,48.3,48,48.2,49,50,51,52,53,54,55,56],
@@ -519,36 +523,98 @@ const EX={
 };
 const MULT=2;
 function mirror(d){const f=v=>100-v;return {...d,stop:f(d.stop),e50:d.e50.map(f),e21:d.e21.map(f),e9:d.e9.map(f),c:d.c.map(([o,h,l,c])=>[f(o),f(l),f(h),f(c)])}}
-function draw(el){
+function dados(el){
   const side=el.dataset.side, base=EX[el.dataset.chart], d=side==="put"?mirror(base):base;
-  const ent=d.c[d.entry][0], alvo=ent+MULT*(ent-d.stop);
+  const ent=d.c[d.entry][0], alvo=ent+MULT*(ent-d.stop), up=side!=="put";
+  let fim=d.c.length-1, res=null;
+  for(let i=d.entry;i<d.c.length;i++){const [o,h,l]=d.c[i];
+    const bateStop=up?l<=d.stop:h>=d.stop, bateAlvo=up?h>=alvo:l<=alvo;
+    if(bateStop){fim=i;res="stop";break} if(bateAlvo){fim=i;res="alvo";break}}
+  return {...d,side,ent,alvo,fim,res};
+}
+function draw(el,t){
+  const d=dados(el), side=d.side, full=t==null, ent=d.ent, alvo=d.alvo;
   const W=340,H=210,pl=8,pr=34,pt=30,pb=44,n=d.c.length,step=(W-pl-pr)/n,cw=step*.58;
   const all=[...d.e50,...d.e21,...d.e9,...d.c.flat(),d.stop,alvo],mn=Math.min(...all)-2,mx=Math.max(...all)+2;
   const y=v=>pt+(mx-v)/(mx-mn)*(H-pt-pb), x=i=>pl+step*i+step/2;
-  const line=(a,col,w)=>`<polyline fill="none" stroke="${col}" stroke-width="${w}" stroke-linejoin="round" points="${a.map((v,i)=>x(i).toFixed(1)+","+y(v).toFixed(1)).join(" ")}"/>`;
+  if(full)t=n;
+  const k=Math.min(n,Math.floor(t)), f=t-k;
+  const upto=a=>{const p=a.slice(0,Math.min(k,a.length));if(k<a.length&&f>0&&k>0)p.push(a[k-1]+(a[k]-a[k-1])*f);else if(k<a.length&&k===0&&f>0)p.push(a[0]);return p};
+  const line=(a,col,w)=>a.length<2?"":`<polyline fill="none" stroke="${col}" stroke-width="${w}" stroke-linejoin="round" points="${a.map((v,i)=>x(i).toFixed(1)+","+y(v).toFixed(1)).join(" ")}"/>`;
   let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Exemplo de ${side==="put"?"venda":"compra"} no ${el.dataset.chart}, com stop e alvo">`;
+  const x0=x(d.entry)-step/2, x1=full?W-pr:Math.min(W-pr,Math.max(x0,pl+step*Math.min(t,d.fim+1)));
+  const emOp=t>=d.entry;
   // faixas de stop e alvo
-  const x0=x(d.entry)-step/2, x1=W-pr;
-  const zone=(a,b,col)=>`<rect x="${x0}" y="${Math.min(y(a),y(b))}" width="${x1-x0}" height="${Math.abs(y(a)-y(b))}" fill="${col}" opacity=".12"/>`;
-  s+=zone(ent,d.stop,"var(--loss)")+zone(ent,alvo,"var(--win)");
-  const hl=(v,col,txt)=>`<line x1="${x0}" x2="${x1}" y1="${y(v)}" y2="${y(v)}" stroke="${col}" stroke-width="1.4" stroke-dasharray="4 3"/><text x="${x1+3}" y="${y(v)+3.5}" font-size="10" font-weight="600" fill="${col}" font-family="IBM Plex Sans,sans-serif">${txt}</text>`;
-  s+=line(d.e50,"var(--m50)",2)+line(d.e21,"var(--accent)",2)+line(d.e9,"var(--warm)",2);
-  d.c.forEach(([o,h,l,c],i)=>{const up=c>=o,col=up?"var(--win)":"var(--loss)",top=y(Math.max(o,c)),bh=Math.max(1.5,Math.abs(y(o)-y(c)));
+  const zone=(a,b,col)=>`<rect x="${x0}" y="${Math.min(y(a),y(b))}" width="${Math.max(0,x1-x0)}" height="${Math.abs(y(a)-y(b))}" fill="${col}" opacity=".12"/>`;
+  if(emOp)s+=zone(ent,d.stop,"var(--loss)")+zone(ent,alvo,"var(--win)");
+  const hl=(v,col,txt)=>`<line x1="${x0}" x2="${x1}" y1="${y(v)}" y2="${y(v)}" stroke="${col}" stroke-width="1.4" stroke-dasharray="4 3"/><text x="${W-pr+3}" y="${y(v)+3.5}" font-size="10" font-weight="600" fill="${col}" font-family="IBM Plex Sans,sans-serif">${txt}</text>`;
+  s+=line(upto(d.e50),"var(--m50)",2)+line(upto(d.e21),"var(--accent)",2)+line(upto(d.e9),"var(--warm)",2);
+  const vis=i=>!(i>k||(i===k&&f<=0));
+  d.c.forEach(([o,h,l,c],i)=>{
+    if(!vis(i))return;
+    if(i===k){const c2=o+(c-o)*f;h=Math.max(o,c2)+(h-Math.max(o,c))*f;l=Math.min(o,c2)-(Math.min(o,c)-l)*f;c=c2}
+    const up=c>=o,col=up?"var(--win)":"var(--loss)",top=y(Math.max(o,c)),bh=Math.max(1.5,Math.abs(y(o)-y(c)));
     s+=`<line x1="${x(i)}" x2="${x(i)}" y1="${y(h)}" y2="${y(l)}" stroke="${col}" stroke-width="1.3"/><rect x="${x(i)-cw/2}" y="${top}" width="${cw}" height="${bh}" fill="${col}" rx="1"/>`});
-  // barras de volume
+  // barras de volume (crescem junto com a vela)
   const vmax=Math.max(...d.vol), vb=H-6, vh=26;
   s+=`<line x1="${pl}" x2="${W-pr}" y1="${vb+.5}" y2="${vb+.5}" stroke="var(--line)"/>`;
-  d.vol.forEach((v,i)=>{const hh=v/vmax*vh, up=d.c[i][3]>=d.c[i][0];s+=`<rect x="${x(i)-cw/2}" y="${vb-hh}" width="${cw}" height="${hh}" fill="${up?"var(--win)":"var(--loss)"}" opacity="${i===d.signal?.9:.35}" rx="1"/>`});
+  d.vol.forEach((v,i)=>{if(!vis(i))return;const hh=v/vmax*vh*(i===k?f:1), up=d.c[i][3]>=d.c[i][0];s+=`<rect x="${x(i)-cw/2}" y="${vb-hh}" width="${cw}" height="${hh}" fill="${up?"var(--win)":"var(--loss)"}" opacity="${i===d.signal&&t>=d.signal+1?.9:.35}" rx="1"/>`});
   const vm=d.vol.slice(0,d.signal).slice(-10), avg=vm.reduce((a,b)=>a+b,0)/vm.length, ya=vb-avg/vmax*vh;
   s+=`<line x1="${pl}" x2="${W-pr}" y1="${ya}" y2="${ya}" stroke="var(--muted)" stroke-dasharray="2 3"/><text x="${W-pr+3}" y="${ya+3.5}" font-size="9" fill="var(--muted)" font-family="IBM Plex Sans,sans-serif">média</text>`;
-  s+=hl(d.stop,"var(--loss)","stop")+hl(alvo,"var(--win)","alvo");
-  const sg=d.c[d.signal], markY=y(sg[1])-9;
-  s+=`<text x="${x(d.signal)}" y="${Math.max(12,markY)}" text-anchor="middle" font-size="10" font-weight="600" fill="var(--fg)" font-family="IBM Plex Sans,sans-serif">sinal</text>`;
-  const tag=side==="put"?"VENDA":"COMPRA",col=side==="put"?"var(--loss)":"var(--win)";
-  s+=`<g><rect x="${x(d.entry)-25}" y="6" width="50" height="15" rx="4" fill="${col}"/><text x="${x(d.entry)}" y="17" text-anchor="middle" font-size="10" font-weight="600" fill="var(--surface)" font-family="IBM Plex Mono,monospace">${tag}</text><line x1="${x(d.entry)}" x2="${x(d.entry)}" y1="21" y2="${y(ent)}" stroke="${col}" stroke-dasharray="3 3"/></g>`;
+  if(emOp)s+=hl(d.stop,"var(--loss)","stop")+hl(alvo,"var(--win)","alvo");
+  if(t>=d.signal+1){const sg=d.c[d.signal], markY=y(sg[1])-9;
+    s+=`<text x="${x(d.signal)}" y="${Math.max(12,markY)}" text-anchor="middle" font-size="10" font-weight="600" fill="var(--fg)" font-family="IBM Plex Sans,sans-serif">sinal</text>`}
+  if(emOp){const tag=side==="put"?"VENDA":"COMPRA",col=side==="put"?"var(--loss)":"var(--win)";
+    s+=`<g><rect x="${x(d.entry)-25}" y="6" width="50" height="15" rx="4" fill="${col}"/><text x="${x(d.entry)}" y="17" text-anchor="middle" font-size="10" font-weight="600" fill="var(--surface)" font-family="IBM Plex Mono,monospace">${tag}</text><line x1="${x(d.entry)}" x2="${x(d.entry)}" y1="21" y2="${y(ent)}" stroke="${col}" stroke-dasharray="3 3"/></g>`}
+  if(!full&&t>=d.fim+1&&d.res){const g=d.res==="alvo",col=g?"var(--win)":"var(--loss)",xx=Math.min(W-pr-28,x(d.fim)+30),yy=y(g?alvo:d.stop);
+    s+=`<circle cx="${x(d.fim)}" cy="${yy}" r="4" fill="${col}"/><g><rect x="${xx-28}" y="${Math.max(24,yy-(g===(side!=="put")?20:-6))}" width="56" height="15" rx="4" fill="var(--surface)" stroke="${col}" stroke-width="1.5"/><text x="${xx}" y="${Math.max(24,yy-(g===(side!=="put")?20:-6))+11}" text-anchor="middle" font-size="10" font-weight="700" fill="${col}" font-family="IBM Plex Mono,monospace">${g?"GAIN ✓":"STOP"}</text></g>`}
   s+=`</svg>`; el.innerHTML=s;
 }
-document.querySelectorAll("[data-chart]").forEach(draw);
+function msgAnim(el,d,t){
+  const m=el.parentNode.querySelector(".amsg");if(!m)return;
+  const dir=d.side==="put"?"venda":"compra";
+  const vs=d.vol[d.signal], vm=d.vol.slice(0,d.signal).slice(-10), avg=vm.reduce((a,b)=>a+b,0)/vm.length;
+  let txt;
+  if(t<d.signal)txt="As velas vão se formando, com as médias e o volume embaixo…";
+  else if(t<d.signal+1)txt="Vela de sinal se formando: espera ela fechar e olha o volume.";
+  else if(t<d.entry+.01)txt="Sinal fechou"+(vs>avg?" com volume acima da média":"")+". Entrada de "+dir+" na abertura da próxima vela, stop e alvo "+MULT+"x marcados.";
+  else if(t<d.fim+1)txt="Dentro da operação: esperando bater o alvo ou o stop…";
+  else txt=d.res==="alvo"?"Fim da operação: bateu o alvo ("+MULT+"x o stop). GAIN.":d.res==="stop"?"Fim da operação: bateu o stop. LOSS.":"Fim do exemplo.";
+  m.textContent=txt;
+}
+// ---- gráfico andando: toque no exemplo e as velas vão se formando até a entrada e o fim da entrada ----
+const SPEED=420; // ms por vela
+function animar(el){
+  if(el._raf){cancelAnimationFrame(el._raf);el._raf=null;if(el._t<el._end){el._paused=true;setBtn(el,"▶ Continuar");return}}
+  const info=dados(el);el._end=info.fim+1;
+  if(!el._paused||el._t==null||el._t>=el._end)el._t=0;
+  el._paused=false;el._hold=0;setBtn(el,"⏸ Pausar");
+  let last=performance.now();
+  const tick=now=>{
+    const dt=now-last;last=now;
+    if(el._hold>0){el._hold-=dt}
+    else{
+      const prev=el._t;let t=prev+dt/SPEED;
+      // pausas: quando a vela de sinal fecha e quando a entrada abre
+      if(prev<info.signal+1&&t>=info.signal+1){t=info.signal+1;el._hold=1100}
+      else if(prev<info.entry+.001&&t>=info.entry+.001){t=info.entry+.001;el._hold=1000}
+      el._t=Math.min(t,el._end);
+    }
+    draw(el,el._t);msgAnim(el,info,el._t);
+    if(el._t>=el._end&&el._hold<=0){el._raf=null;setBtn(el,"↻ Ver de novo");return}
+    el._raf=requestAnimationFrame(tick);
+  };
+  el._raf=requestAnimationFrame(tick);
+}
+function setBtn(el,txt){const b=el.parentNode.querySelector(".play");if(b)b.textContent=txt}
+function prepAnim(el){
+  const fig=el.closest("figure");const bar=document.createElement("div");bar.className="anim";
+  bar.innerHTML="<button type='button' class='play'>▶ Ver andando</button><span class='amsg'>Toque para ver o gráfico se formando até a entrada.</span>";
+  el.after(bar);
+  bar.querySelector(".play").addEventListener("click",()=>animar(el));
+  el.addEventListener("click",()=>animar(el));el.style.cursor="pointer";el.title="Toque para ver o gráfico andando";
+}
+document.querySelectorAll("[data-chart]").forEach(el=>{draw(el);prepAnim(el)});
 
 // ---- calculadora de risco ----
 const PV={WIN:0.2,WDO:10}, LIM={WIN:150,WDO:5}, DEF={WIN:150,WDO:5};

@@ -67,6 +67,9 @@ tfoot td{font-weight:600}
 .warn{color:var(--warn);font-size:.82rem}
 @media (max-width:420px){th,td{padding:6px 3px}table{font-size:.74rem}th{letter-spacing:0;white-space:normal;vertical-align:bottom}}
 img,svg{max-width:100%}
+.pull{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--accent-soft);border-radius:8px;padding:8px 10px}
+.pull .hint{color:var(--fg)}
+.btn2{appearance:none;font:inherit;font-size:.82rem;font-weight:600;border:1px solid var(--accent);background:var(--surface);color:var(--accent);border-radius:7px;padding:6px 10px;cursor:pointer}
 </style>
 <div class="wrap">
   <div class="top">
@@ -101,6 +104,7 @@ img,svg{max-width:100%}
         <label>Custo por contrato (R$)<input id="sCusto" type="number" min="0" step="0.01" inputmode="decimal" placeholder="ida e volta"></label>
       </div>
       <div class="hint" id="sCtTxt">Contratos em branco = o degrau da escada para essa banca.</div>
+      <div class="pull"><span class="hint" id="sPullTxt"></span><button type="button" class="btn2" id="sPull">↺ Puxar das Metas</button></div>
     </div>
     <div class="panel sim">
       <h2>Por operação</h2>
@@ -172,14 +176,14 @@ function render(){
       b.innerHTML="<span class='n'>"+String(i+1).padStart(2,"0")+"</span><span class='b'>"+brl(v)+"</span><span class='e'><small>contratos</small>"+CT[i]+"</span>";
       b.addEventListener("click",()=>{
         const s=new Set(st.conquistados); s.has(i)?s.delete(i):s.add(i);
-        st.conquistados=[...s].sort((a,c)=>a-c); render(); save();window.ui&&ui.toast(s.has(i)?"✓ Degrau conquistado":"Degrau desmarcado");
+        st.conquistados=[...s].sort((a,c)=>a-c); render(); save();puxarMetas();window.ui&&ui.toast(s.has(i)?"✓ Degrau conquistado":"Degrau desmarcado");
       });
       L.appendChild(b);
     });
   }
   [...L.children].forEach((b,i)=>{b.className="step"+(done.has(i)?" done":"")+(i===nextI?" next":"");b.setAttribute("aria-pressed",done.has(i))});
 }
-$("banca").addEventListener("change",e=>{const v=parseFloat(e.target.value),n=isNaN(v)?null:v;if(n===st.banca)return;st.banca=n;render();save();window.ui&&ui.toast("✓ Banca salva")});
+$("banca").addEventListener("change",e=>{const v=parseFloat(e.target.value),n=isNaN(v)?null:v;if(n===st.banca)return;st.banca=n;render();save();puxarMetas();window.ui&&ui.toast("✓ Banca salva")});
 load(); if(st.banca!=null) $("banca").value=st.banca; render(); $("status").textContent="Conectando…";
 /* ---------- Simulador B3 ---------- */
 const PT={WIN:0.2,WDO:10}, STOPDEF={WIN:150,WDO:5}, LIM={WIN:150,WDO:5};
@@ -191,9 +195,19 @@ const brl2=v=>"R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFra
 const n2=v=>v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}), sgn=v=>(v>0?"+":v<0?"−":"")+n2(Math.abs(r2(v)));
 const sg=v=>(v>0?"+":v<0?"−":"")+brl2(Math.abs(r2(v)));
 const nf=v=>v.toLocaleString("pt-BR",{maximumFractionDigits:1});
-function fillSim(){for(const id in F){if(document.activeElement!==$(id))$(id).value=sim[F[id]]??""}
+// o que está selecionado nas Metas: banca atual (ou o nível, se não informou) e os contratos do nível
+function daMetas(){const done=new Set(st.conquistados);let last=-1;LV.forEach((v,i)=>{if(done.has(i))last=i});
+  const nivel=last>=0?LV[last]:LV[0], ct=last>=0?CT[last]:1, banca=(st.banca!=null&&!isNaN(st.banca)&&st.banca>0)?st.banca:nivel;
+  return {banca,ct}}
+// toda vez que mexe nas Metas (degrau ou banca), o simulador já puxa; no simulador ainda dá pra mudar à mão
+function puxarMetas(quiet){const m=daMetas();sim.banca=m.banca;sim.ct=m.ct;fillSim();calcSim();saveSim(quiet)}
+function fillSim(){
+  if((sim.banca==null||sim.banca==="")){const m=daMetas();sim.banca=m.banca;if(sim.ct==null)sim.ct=m.ct}
+  for(const id in F){if(document.activeElement!==$(id))$(id).value=sim[F[id]]??""}
   if(document.activeElement!==$("sAtivo"))$("sAtivo").value=sim.ativo;
-  if((sim.banca==null||sim.banca==="")&&st.banca!=null&&document.activeElement!==$("sBanca"))$("sBanca").value=st.banca;
+  const m=daMetas(), igual=Math.abs((+sim.banca||0)-m.banca)<.005&&(+sim.ct||0)===m.ct;
+  $("sPullTxt").textContent=igual?"✓ Usando as Metas: banca "+brl2(m.banca)+" · "+ctTxt(m.ct)+".":"Você mudou à mão. Nas Metas: banca "+brl2(m.banca)+" · "+ctTxt(m.ct)+".";
+  $("sPull").hidden=igual;
   [...$("sModo").children].forEach(b=>b.classList.toggle("on",b.dataset.m===sim.modo))}
 function semana(banca,ctFix){
   const ct=ctFix||(+sim.ct||ctDaBanca(banca)), risco=(+sim.stopPts||0)*PT[sim.ativo]*ct, custo=(+sim.custo||0)*ct;
@@ -224,11 +238,12 @@ function calcSim(){
 }
 $("sAtivo").addEventListener("change",e=>{sim.ativo=e.target.value;sim.stopPts=STOPDEF[sim.ativo];fillSim();calcSim();saveSim()});
 let simT=null;
-function saveSim(){clearTimeout(simT);simT=setTimeout(async()=>{
+function saveSim(quiet){clearTimeout(simT);simT=setTimeout(async()=>{
   try{localStorage.setItem(SLS,JSON.stringify(sim))}catch(e){}
   if(sref){try{await sref.set(sim);$("status").textContent="Salvo"}catch(e){$("status").textContent="Não salvou. Tente de novo."}}
-  window.ui&&ui.toast("✓ Simulação salva")},700)}
-for(const id in F){$(id).addEventListener("input",e=>{const v=e.target.value===""?null:parseFloat(e.target.value);sim[F[id]]=isNaN(v)?null:v;calcSim()});$(id).addEventListener("change",saveSim)}
+  if(quiet!==true)window.ui&&ui.toast("✓ Simulação salva")},700)}
+for(const id in F){$(id).addEventListener("input",e=>{const v=e.target.value===""?null:parseFloat(e.target.value);sim[F[id]]=isNaN(v)?null:v;calcSim();fillSim()});$(id).addEventListener("change",()=>saveSim())}
+$("sPull").addEventListener("click",()=>{puxarMetas(true);window.ui&&ui.toast("✓ Valores das Metas no simulador")});
 $("sModo").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;sim.modo=b.dataset.m;fillSim();calcSim();saveSim()});
 document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
   document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("on",x===b));

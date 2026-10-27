@@ -67,6 +67,9 @@ tfoot td{font-weight:600}
 .warn{color:var(--warn);font-size:.82rem}
 @media (max-width:420px){th,td{padding:6px 3px}table{font-size:.74rem}th{letter-spacing:0;white-space:normal;vertical-align:bottom}}
 img,svg{max-width:100%}
+.pull{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--accent-soft);border-radius:8px;padding:8px 10px}
+.pull .hint{color:var(--fg)}
+.btn2{appearance:none;font:inherit;font-size:.82rem;font-weight:600;border:1px solid var(--accent);background:var(--surface);color:var(--accent);border-radius:7px;padding:6px 10px;cursor:pointer}
 </style>
 <div class="wrap">
   <div class="top">
@@ -94,10 +97,12 @@ img,svg{max-width:100%}
       <h2>Seus números</h2>
       <div class="fields">
         <label>Banca (R$)<input id="sBanca" type="number" min="0" step="0.01" inputmode="decimal"></label>
-        <label>Entrada (% da banca)<input id="sPct" type="number" min="1" max="100" step="1" inputmode="decimal"></label>
+        <label>Mão base (R$)<input id="sMao" type="number" min="0" step="0.01" inputmode="decimal"></label>
+        <label>Entrada (% da banca)<input id="sPct" type="number" min="0.1" max="100" step="any" inputmode="decimal"></label>
         <label>Payout (%)<input id="sPay" type="number" min="1" max="100" step="1" inputmode="decimal"></label>
       </div>
       <div class="hint">Entrada = <b id="sPctTxt">20%</b> da banca. Soros nível 1: a 2ª entrada é a 1ª + o lucro dela.</div>
+      <div class="pull"><span class="hint" id="sPullTxt"></span><button type="button" class="btn2" id="sPull">↺ Puxar das Metas</button></div>
     </div>
     <div class="panel sim">
       <h2>Por sessão</h2>
@@ -169,14 +174,14 @@ function render(){
       b.innerHTML="<span class='n'>"+String(i+1).padStart(2,"0")+"</span><span class='b'>"+brl(v)+"</span><span class='e'><small>mão base</small>"+brl(v/5)+"</span>";
       b.addEventListener("click",()=>{
         const s=new Set(st.conquistados); s.has(i)?s.delete(i):s.add(i);
-        st.conquistados=[...s].sort((a,c)=>a-c); render(); save();window.ui&&ui.toast(s.has(i)?"✓ Degrau conquistado":"Degrau desmarcado");
+        st.conquistados=[...s].sort((a,c)=>a-c); render(); save();puxarMetas();window.ui&&ui.toast(s.has(i)?"✓ Degrau conquistado":"Degrau desmarcado");
       });
       L.appendChild(b);
     });
   }
   [...L.children].forEach((b,i)=>{b.className="step"+(done.has(i)?" done":"")+(i===nextI?" next":"");b.setAttribute("aria-pressed",done.has(i))});
 }
-$("banca").addEventListener("change",e=>{const v=parseFloat(e.target.value),n=isNaN(v)?null:v;if(n===st.banca)return;st.banca=n;render();save();window.ui&&ui.toast("✓ Banca salva")});
+$("banca").addEventListener("change",e=>{const v=parseFloat(e.target.value),n=isNaN(v)?null:v;if(n===st.banca)return;st.banca=n;render();save();puxarMetas();window.ui&&ui.toast("✓ Banca salva")});
 load(); if(st.banca!=null) $("banca").value=st.banca; render(); $("status").textContent="Conectando…";
 /* ---------- Simulador ---------- */
 const SLS="simuladorOB.v1", DEF={banca:null,pct:20,pay:87,dias:5,ses:4,meta:12,stop:8,parc:0,modo:"fixo",v4:1};
@@ -189,8 +194,19 @@ const F={sBanca:"banca",sPct:"pct",sPay:"pay",sDias:"dias",sSes:"ses",sMeta:"met
 const brl2=v=>"R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}), r2=v=>Math.round(v*100)/100, pc=v=>(v*100).toLocaleString("pt-BR",{maximumFractionDigits:1})+"%";
 const n2=v=>v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}), sgn=v=>(v>0?"+":v<0?"−":"")+n2(Math.abs(r2(v)));
 const sg=v=>(v>0?"+":v<0?"−":"")+brl2(Math.abs(r2(v)));
+// o que está selecionado nas Metas: banca atual (ou o nível, se não informou) e a mão base do nível
+function daMetas(){const done=new Set(st.conquistados);let last=-1;LV.forEach((v,i)=>{if(done.has(i))last=i});
+  const nivel=last>=0?LV[last]:LV[0], mao=nivel/5, banca=(st.banca!=null&&!isNaN(st.banca)&&st.banca>0)?st.banca:nivel;
+  return {banca,mao,pct:mao/banca*100}}
+// toda vez que mexe nas Metas (degrau ou banca), o simulador já puxa; no simulador ainda dá pra mudar à mão
+function puxarMetas(quiet){const m=daMetas();sim.banca=m.banca;sim.pct=m.pct;sim.deMetas=1;fillSim();calcSim();saveSim(quiet)}
 function fillSim(){for(const id in F){if(document.activeElement!==$(id))$(id).value=sim[F[id]]??""}
-  if((sim.banca==null||sim.banca==="")&&st.banca!=null&&document.activeElement!==$("sBanca"))$("sBanca").value=st.banca;
+  if((sim.banca==null||sim.banca==="")&&document.activeElement!==$("sBanca")){const m=daMetas();sim.banca=m.banca;sim.pct=m.pct;$("sBanca").value=m.banca;$("sPct").value=m.pct}
+  if(document.activeElement!==$("sPct")&&sim.pct!=null)$("sPct").value=Math.round(sim.pct*100)/100;
+  const bb=parseFloat($("sBanca").value);if(document.activeElement!==$("sMao"))$("sMao").value=bb>0&&sim.pct>0?r2(bb*sim.pct/100):"";
+  const m=daMetas(), igual=Math.abs((+sim.banca||0)-m.banca)<.005&&Math.abs((+sim.pct||0)-m.pct)<.01;
+  $("sPullTxt").textContent=igual?"✓ Usando as Metas: banca "+brl2(m.banca)+" · mão base "+brl2(m.mao)+".":"Você mudou à mão. Nas Metas: banca "+brl2(m.banca)+" · mão base "+brl2(m.mao)+".";
+  $("sPull").hidden=igual;
   [...$("sModo").children].forEach(b=>b.classList.toggle("on",b.dataset.m===sim.modo))}
 function semana(banca){
   const p=(+sim.pay||0)/100, E=banca*(+sim.pct||0)/100;
@@ -199,7 +215,7 @@ function semana(banca){
 }
 function calcSim(){
   const banca=parseFloat($("sBanca").value), p=(+sim.pay||0)/100, pct=(+sim.pct||0)/100;
-  $("sPctTxt").textContent=(sim.pct||0)+"%";
+  $("sPctTxt").textContent=(+sim.pct||0).toLocaleString("pt-BR",{maximumFractionDigits:2})+"%";
   if(!(banca>0)||!(p>0)||!(pct>0)){["oE","oS","oM","oL","oSem","oMes","oFim"].forEach(i=>$(i).textContent="–");$("tMes").innerHTML="";$("fMes").innerHTML="";$("oPaga").textContent="Informe banca, entrada e payout.";return}
   const E=banca*pct, l1=E*p, S=E+l1, l2=S*p, M=l1+l2;
   $("oE").textContent=brl2(r2(E)); $("oE1").textContent="win paga "+sg(l1);
@@ -226,11 +242,15 @@ function calcSim(){
   $("oFim").textContent=brl2(r2(Math.max(0,b)));
 }
 let simT=null;
-function saveSim(){clearTimeout(simT);simT=setTimeout(async()=>{
+function saveSim(quiet){clearTimeout(simT);simT=setTimeout(async()=>{
   try{localStorage.setItem(SLS,JSON.stringify(sim))}catch(e){}
   if(sref){try{await sref.set(sim);$("status").textContent="Salvo"}catch(e){$("status").textContent="Não salvou. Tente de novo."}}
-  window.ui&&ui.toast("✓ Simulação salva")},700)}
-for(const id in F){$(id).addEventListener("input",e=>{const v=e.target.value===""?null:parseFloat(e.target.value);sim[F[id]]=isNaN(v)?null:v;calcSim()});$(id).addEventListener("change",saveSim)}
+  if(quiet!==true)window.ui&&ui.toast("✓ Simulação salva")},700)}
+for(const id in F){$(id).addEventListener("input",e=>{const v=e.target.value===""?null:parseFloat(e.target.value);sim[F[id]]=isNaN(v)?null:v;calcSim();fillSim()});$(id).addEventListener("change",()=>saveSim())}
+// mão base em R$: muda o % da banca
+$("sMao").addEventListener("input",e=>{const v=parseFloat(e.target.value),bb=parseFloat($("sBanca").value);if(v>0&&bb>0){sim.pct=v/bb*100;fillSim();calcSim()}});
+$("sMao").addEventListener("change",()=>saveSim());
+$("sPull").addEventListener("click",()=>{puxarMetas(true);window.ui&&ui.toast("✓ Valores das Metas no simulador")});
 $("sModo").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;sim.modo=b.dataset.m;fillSim();calcSim();saveSim()});
 document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
   document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("on",x===b));

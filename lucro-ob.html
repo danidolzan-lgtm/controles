@@ -89,9 +89,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,label.drop:focus-w
 .bar .val{font-family:var(--f-num);font-size:.8rem;text-align:right;min-width:5.6rem}
 
 /* horas */
-.hours{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px}
-.hours div{border-radius:6px;padding:6px 2px;text-align:center;font-family:var(--f-num);font-size:.7rem;border:1px solid var(--line);min-width:0;cursor:default}
-.hours div b{display:block;font-size:.78rem}
+/* só as horas que têm operação (do 1º ao último horário); quadrados largos para o valor caber no celular */
+.hours{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px}
+.hours div{border-radius:7px;padding:7px 4px;text-align:center;font-family:var(--f-num);font-size:.74rem;border:1px solid var(--line);min-width:0;cursor:default;display:grid;gap:1px;line-height:1.2;overflow:hidden}
+.hours div b{display:block;font-size:.8rem}
+.hours div span{white-space:nowrap;font-weight:600;font-size:clamp(.66rem,2.9vw,.78rem)}
+.hours div small{font-size:.62rem;color:var(--muted)}
 .hours div.empty{opacity:.35}
 
 /* direção */
@@ -513,9 +516,15 @@ function assets(L){
 function hours(L){
   const h=Array.from({length:24},()=>({v:0,n:0,w:0,l:0}));L.forEach(o=>{const e=h[+o.t.slice(11,13)];e.v+=luc(o);e.n++;const rr=res(o);if(rr==="w")e.w++;if(rr==="l")e.l++});
   const m=Math.max(1,...h.map(e=>Math.abs(e.v)));
-  $("hours").innerHTML=h.map((e,i)=>{if(!e.n)return "<div class='empty'><b>"+pad(i)+"h</b>·</div>";
+  const usadas=h.map((e,i)=>e.n?i:-1).filter(i=>i>=0);
+  if(!usadas.length){$("hours").innerHTML="";return}
+  const ini=usadas[0],fim=usadas[usadas.length-1];
+  let out="";
+  for(let i=ini;i<=fim;i++){const e=h[i];
+    if(!e.n){out+="<div class='empty'><b>"+pad(i)+"h</b><span>·</span><small>sem op</small></div>";continue}
     const a=.12+.6*Math.abs(e.v)/m;const c=e.v>=0?"21,128,61":"225,29,72";
-    return "<div style='background:rgba("+c+","+a.toFixed(2)+")' title='"+pad(i)+"h: "+sbrl(r2(e.v))+" · "+e.n+" op · "+e.w+" acertos, "+e.l+" erros'><b>"+pad(i)+"h</b>"+kbrl(r2(e.v)).replace("R$ ","")+"</div>"}).join("");
+    out+="<div style='background:rgba("+c+","+a.toFixed(2)+")' title='"+pad(i)+"h: "+sbrl(r2(e.v))+" · "+e.n+" op · "+e.w+" acertos, "+e.l+" erros'><b>"+pad(i)+"h</b><span>"+(e.v>0?"+":"")+kbrl(r2(e.v)).replace("R$ ","")+"</span><small>"+e.n+" op</small></div>"}
+  $("hours").innerHTML=out;
 }
 
 function dirs(L){
