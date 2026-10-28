@@ -65,6 +65,15 @@ button[disabled]{cursor:default}
 .jan .ag{font-weight:600;border-radius:999px;padding:2px 10px;font-size:.78rem}
 .jan .ag{border:1px solid var(--line)}
 .jan .ag.in{background:var(--win);color:var(--surface)} .jan .ag.out{background:var(--loss-soft);color:var(--loss)}
+.fora{flex-basis:100%;display:grid;gap:4px;margin-top:4px}
+.fora .fh{font-weight:600}
+.fora .fr{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:baseline;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-size:.82rem}
+.fora .fr b{font-family:var(--f-num)}
+.fora .fr small{color:var(--muted);white-space:nowrap}
+.fora .fr.in{border-color:var(--loss);background:var(--loss-soft)}
+.fora .fr.in small{color:var(--loss);font-weight:600}
+.fora .fr.now{outline:2px solid var(--loss)}
+@media (max-width:520px){.fora .fr{grid-template-columns:auto 1fr}.fora .fr small{grid-column:1/-1;white-space:normal}}
 .wrap>*{min-width:0}
 img,svg{max-width:100%}
 </style>
@@ -103,8 +112,50 @@ const EVT={
   "2026-12-09":[{n:"FOMC, juros dos EUA",de:"15:00",ate:"16:00",pula:{s4:"FOMC 16:00"}}],
   "2026-12-17":[{n:"juros da Inglaterra (BoE): pare às 08:50",de:"08:50",ate:"09:15"},{n:"juros da Zona do Euro (BCE) e coletiva",de:"10:10",ate:"11:00",pula:{manha:"BCE 10:15"}}]
 };
-function pausas(ds){return (EVT[ds]||[]).filter(e=>!(e.de==="00:00"))}
 function pulos(ds){const o={};(EVT[ds]||[]).forEach(e=>Object.assign(o,e.pula||{}));if(new Date(ds+"T12:00:00").getDay()===5){if(!o.s4)o.s4="sexta à tarde";if(!o.s5)o.s5="OTC só seg–qui"}return o}
+
+// ---- Agenda do dia: notícias de alto impacto já no horário de Brasília (até 17/12/2026) ----
+// Fontes: calendários oficiais (BLS, BEA, Census, Fed, BCE, BoE). Janela padrão: 5 min antes até 15 min depois.
+// x:1 = já tratada no EVT acima (pula a sessão ou pausa), só aparece na lista.
+const AG={
+  "2026-10-28":[{t:"15:00",n:"FOMC: juros dos EUA + coletiva 15:30",ate:"16:00",x:1}],
+  "2026-10-29":[{t:"09:30",n:"PIB (3º tri) e PCE dos EUA"},{t:"10:15",n:"BCE: juros da Zona do Euro + coletiva 10:45",ate:"11:00",x:1}],
+  "2026-11-02":[{t:"12:00",n:"ISM industrial dos EUA"}],
+  "2026-11-03":[{t:"12:00",n:"JOLTS (vagas de emprego dos EUA)"}],
+  "2026-11-04":[{t:"10:15",n:"ADP (emprego privado dos EUA)"},{t:"12:00",n:"ISM de serviços dos EUA"}],
+  "2026-11-05":[{t:"09:00",n:"BoE: juros da Inglaterra",x:1}],
+  "2026-11-06":[{t:"10:30",n:"Payroll (emprego dos EUA)"}],
+  "2026-11-10":[{t:"10:30",n:"CPI (inflação dos EUA)"}],
+  "2026-11-13":[{t:"10:30",n:"PPI (inflação do produtor dos EUA)"}],
+  "2026-11-17":[{t:"10:30",n:"Vendas no varejo dos EUA"}],
+  "2026-11-18":[{t:"16:00",n:"Ata do FOMC"}],
+  "2026-11-25":[{t:"10:30",n:"PIB (2ª prévia), PCE e seguro-desemprego dos EUA"},{t:"16:00",n:"Livro Bege do Fed"}],
+  "2026-11-26":[{t:"00:00",n:"Feriado nos EUA (Ação de Graças): mercado aberto parado",ate:"23:59",x:1}],
+  "2026-11-27":[{t:"13:00",n:"EUA em meio período: tarde parada",ate:"23:59",x:1}],
+  "2026-12-01":[{t:"12:00",n:"ISM industrial e JOLTS dos EUA"}],
+  "2026-12-02":[{t:"10:15",n:"ADP (emprego privado dos EUA)"}],
+  "2026-12-03":[{t:"12:00",n:"ISM de serviços dos EUA"}],
+  "2026-12-04":[{t:"10:30",n:"Payroll (emprego dos EUA)"}],
+  "2026-12-09":[{t:"16:00",n:"FOMC: juros dos EUA + coletiva 16:30",ate:"17:00",x:1}],
+  "2026-12-10":[{t:"10:30",n:"CPI (inflação dos EUA)"}],
+  "2026-12-15":[{t:"10:30",n:"PPI (inflação do produtor dos EUA)"}],
+  "2026-12-16":[{t:"10:30",n:"Vendas no varejo dos EUA"}],
+  "2026-12-17":[{t:"09:00",n:"BoE: juros da Inglaterra",x:1},{t:"10:15",n:"BCE: juros da Zona do Euro + coletiva 10:45",ate:"11:00",x:1}]
+};
+const hm=m=>String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0");
+const mi=t=>{const [h,m]=t.split(":").map(Number);return h*60+m};
+function agenda(ds){
+  if(isWE(ds))return [];
+  const g=new Date(ds+"T12:00:00").getDay(), dst=ds<"2026-11-02"; // EUA saem do horário de verão em 01/11
+  let L=(AG[ds]||[]).map(e=>({...e}));
+  if(g===4&&ds!=="2026-11-26")L.push({t:dst?"09:30":"10:30",n:"Pedidos de seguro-desemprego dos EUA"}); // toda quinta (no feriado, sai na quarta)
+  if(ds!=="2026-11-26")L.push({t:dst?"10:30":"11:30",n:"Abertura de Nova York"});
+  const seen={};L=L.filter(e=>{const k=e.t+e.n;if(seen[k])return false;seen[k]=1;return true});
+  L.forEach(e=>{const t=mi(e.t);e.de=e.t==="00:00"?"00:00":hm(Math.max(0,t-5));e.ate=e.ate||hm(t+15);
+    e.ses=SESS.filter(s=>s.id!=="s5"&&mi(e.de)<mi(JAN[s.id][1])&&mi(e.ate)>mi(JAN[s.id][0])).map(s=>s.id)});
+  return L.sort((a,b)=>mi(a.de)-mi(b.de));
+}
+function pausas(ds){const pl=pulos(ds);return (EVT[ds]||[]).filter(e=>!(e.de==="00:00")).concat(agenda(ds).filter(e=>!e.x&&e.ses.some(s=>!pl[s])).map(e=>({n:e.n,de:e.de,ate:e.ate})))}
 const pausasTxt=ds=>pausas(ds).map(p=>p.de+"–"+p.ate+" ("+p.n+")").join(" e ");
 const sessTxt=()=>SESS.map(s=>s.nome+" "+JAN[s.id].join("–")).join(" · ");
 const QS=[
@@ -157,7 +208,11 @@ function drawJan(){
     h+="<span class='ag "+(pu?"out":dentro?(pz?"out":"in"):"")+"' style='"+(pu||dentro?"":"background:var(--surface);color:var(--fg)")+"'>"+s.nome+" <b>"+a+"–"+b+"</b>"+(pu?" · PULAR ("+pu+")":dentro?(pz?" · ⛔ PAUSA até "+pz.ate:" · agora"):"")+"</span>"});
   const pt=pausasTxt(sel);
   if(pt)h+="<span style='flex-basis:100%;color:var(--loss);font-weight:600;font-size:.82rem'>⛔ Pausa dentro das sessões hoje: "+pt+"</span>";
-  h+="<span class='hint' style='flex-basis:100%;color:var(--muted);font-size:.78rem'>Fora das sessões ficam as notícias fixas: dados dos EUA 09:30 (10:30 a partir de 02/11), abertura de Nova York 10:30 (11:30) e dados das 11:00 (12:00). A sessão 2 tem 40 min e acaba às 10:25 por causa delas. Sexta: sem a sessão 4 e sem a 5. A sessão 5 é OTC (seg–qui): não depende de notícia, mas mantém todos os filtros do gráfico.</span>";
+  const AGs=agenda(sel), nm=id=>SESS.find(s=>s.id===id).nome;
+  if(AGs.length){h+="<div class='fora'><span class='fh'>🚫 Ficar de fora hoje (5 min antes até 15 min depois):</span>"+AGs.map(e=>{const now=hoje&&m>=mi(e.de)&&m<mi(e.ate);
+    const tag=e.ses.length?(e.ses.every(s=>pl[s])?"sessão já pulada":"⛔ dentro da "+e.ses.map(nm).join(" e ")):"fora das sessões";
+    return "<div class='fr"+(e.ses.length?" in":"")+(now?" now":"")+"'><b>"+(e.de==="00:00"?"dia todo":e.de+"–"+e.ate)+"</b><span>"+e.n+(now?" · agora":"")+"</span><small>"+tag+"</small></div>"}).join("")+"</div>"}
+  h+="<span class='hint' style='flex-basis:100%;color:var(--muted);font-size:.78rem'>A lista já traz as notícias marcadas de alto impacto (EUA, Zona do Euro e Inglaterra) até 17/12. Fala surpresa do Fed, BCE ou BoE não aparece: dê uma olhada rápida no Investing de manhã. A sessão 2 tem 40 min e acaba às 10:25 por causa dos dados dos EUA. Sexta: sem a sessão 4 e sem a 5. A sessão 5 é OTC (seg–qui): não depende de notícia, mas mantém todos os filtros do gráfico.</span>";
   $("jan").innerHTML=h;
 }
 setInterval(()=>{if($("jan"))drawJan()},60000);
