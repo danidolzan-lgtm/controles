@@ -118,11 +118,12 @@ img,svg{max-width:100%}
       <h2>Por semana</h2>
       <div class="fields">
         <label>Dias na semana<input id="sDias" type="number" min="1" max="7" step="1" inputmode="numeric"></label>
-        <label>Sessões por dia<input id="sSes" type="number" min="1" max="4" step="1" inputmode="numeric"></label>
+        <label>Sessões por dia<input id="sSes" type="number" min="1" max="5" step="1" inputmode="numeric"></label>
         <label>Metas (mão completa)<input id="sMeta" type="number" min="0" step="1" inputmode="numeric"></label>
         <label>Stops<input id="sStop" type="number" min="0" step="1" inputmode="numeric"></label>
         <label>Parei no 1º win<input id="sParc" type="number" min="0" step="1" inputmode="numeric"></label>
       </div>
+      <div class="hint">Seg a qui: 5 sessões (a 5ª à noite, em OTC). Sexta: 3 (sem a 4 e a 5). Semana cheia = 23 sessões. A meta é 50% de aproveitamento e 66,7% de assertividade: 1 mão completa para cada stop.</div>
       <div class="warn" id="oWarn" hidden></div>
       <div class="cards">
         <div class="card" id="cSem"><span class="lbl">Resultado da semana</span><span class="v" id="oSem">–</span><span class="hint" id="oSem1">–</span></div>
@@ -184,11 +185,12 @@ function render(){
 $("banca").addEventListener("change",e=>{const v=parseFloat(e.target.value),n=isNaN(v)?null:v;if(n===st.banca)return;st.banca=n;render();save();puxarMetas();window.ui&&ui.toast("✓ Banca salva")});
 load(); if(st.banca!=null) $("banca").value=st.banca; render(); $("status").textContent="Conectando…";
 /* ---------- Simulador ---------- */
-const SLS="simuladorOB.v1", DEF={banca:null,pct:20,pay:87,dias:5,ses:4,meta:12,stop:8,parc:0,modo:"fixo",v4:1};
+const SLS="simuladorOB.v1", DEF={banca:null,pct:20,pay:87,dias:5,ses:5,meta:11,stop:11,parc:0,modo:"fixo",v4:1,v5:1};
 // 16/10/2026: passou a 4 sessões por dia. Quem tinha 2 salvo vai para 4 uma vez.
-const mig4=o=>{if(!o.v4){o.v4=1;if(+o.ses===2)o.ses=4;return true}return false};
+// 28/10/2026: + sessão 5 (OTC, seg–qui). Quem tinha 4 salvo vai para 5 uma vez.
+const mig4=o=>{let m=false;if(!o.v4){o.v4=1;if(+o.ses===2)o.ses=4;m=true}if(!o.v5){o.v5=1;if(+o.ses===4)o.ses=5;m=true}return m};
 let sim=Object.assign({},DEF), sref=null;
-try{const r=JSON.parse(localStorage.getItem(SLS)||"null");if(r){sim=Object.assign({},DEF,{v4:0},r);mig4(sim)}}catch(e){}
+try{const r=JSON.parse(localStorage.getItem(SLS)||"null");if(r){sim=Object.assign({},DEF,{v4:0,v5:0},r);mig4(sim)}}catch(e){}
 try{if(sim.pay===DEF.pay){const p=parseFloat(localStorage.getItem("sPay"));if(p>0)sim.pay=p}}catch(e){}
 const F={sBanca:"banca",sPct:"pct",sPay:"pay",sDias:"dias",sSes:"ses",sMeta:"meta",sStop:"stop",sParc:"parc"};
 const brl2=v=>"R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}), r2=v=>Math.round(v*100)/100, pc=v=>(v*100).toLocaleString("pt-BR",{maximumFractionDigits:1})+"%";
@@ -225,8 +227,9 @@ function calcSim(){
   const paga=1/(p*(2+p));
   $("oPaga").textContent="Uma mão completa paga "+(M/E).toLocaleString("pt-BR",{maximumFractionDigits:2})+" stops. Para empatar, a cada stop você precisa de "+paga.toLocaleString("pt-BR",{maximumFractionDigits:2})+" mão completa.";
   // semana
-  const ses=(+sim.dias||0)*(+sim.ses||0), usadas=(+sim.meta||0)+(+sim.stop||0)+(+sim.parc||0);
-  $("oWarn").hidden=usadas<=ses; $("oWarn").textContent="Você colocou "+usadas+" resultados, mas a semana tem só "+ses+" sessões ("+sim.dias+" dias × "+sim.ses+").";
+  const sxt=(+sim.dias||0)>=5?Math.max(0,(+sim.ses||0)-3):0; // sexta sem a sessão 4 e sem a 5 (OTC só seg–qui)
+  const ses=(+sim.dias||0)*(+sim.ses||0)-sxt, usadas=(+sim.meta||0)+(+sim.stop||0)+(+sim.parc||0);
+  $("oWarn").hidden=usadas<=ses; $("oWarn").textContent="Você colocou "+usadas+" resultados, mas a semana tem só "+ses+" sessões ("+sim.dias+" dias × "+sim.ses+(sxt?", sexta com "+((+sim.ses||0)-sxt):"")+").";
   const w=semana(banca);
   $("oSem").textContent=sg(w.res); $("oSem1").textContent=pc(w.res/banca)+" da banca · "+ses+" sessões"+(ses>usadas?" ("+(ses-usadas)+" sem operar)":"");
   $("cSem").className="card "+(w.res>0?"g":w.res<0?"r":"");
@@ -265,7 +268,7 @@ fillSim();calcSim();
   if(!db){$("status").textContent="Salvando neste aparelho";return}
   ref=db.doc("estado/progresso");
   sref=db.doc("estado/simulador");
-  sref.onSnapshot(s=>{if(s.exists){sim=Object.assign({},DEF,{v4:0},s.data());if(mig4(sim))sref.set(sim).catch(()=>{});fillSim();calcSim()}else if(localStorage.getItem(SLS)){sref.set(sim).catch(()=>{})}},()=>{});
+  sref.onSnapshot(s=>{if(s.exists){sim=Object.assign({},DEF,{v4:0,v5:0},s.data());if(mig4(sim))sref.set(sim).catch(()=>{});fillSim();calcSim()}else if(localStorage.getItem(SLS)){sref.set(sim).catch(()=>{})}},()=>{});
   ref.onSnapshot(s=>{
     if(s.exists){const d=s.data(); st={conquistados:[...(d.conquistados||[])],banca:d.banca??null};
       if(document.activeElement!==$("banca")) $("banca").value=st.banca??"";}

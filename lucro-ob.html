@@ -243,7 +243,7 @@ const r2=v=>Math.round(v*100)/100;
 let ops=[], db=null, showDays=10, allAssets=false;
 let F={per:"mes",ses:"all",de:"",ate:""};
 try{Object.assign(F,JSON.parse(localStorage.getItem(LSF)||"{}"))}catch(e){}
-if(!["all","s1","manha","tarde","s4","fora"].includes(F.ses))F.ses="all";
+if(!["all","s1","manha","tarde","s4","s5","fora"].includes(F.ses))F.ses="all";
 
 /* ---------- leitura do Excel ---------- */
 function loadScript(src){return new Promise((ok,no)=>{if(window.XLSX)return ok();const s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=()=>no(new Error("Não carregou o leitor de Excel (sem internet?)"));document.head.appendChild(s)})}
@@ -375,8 +375,8 @@ function applySnap(q){
 /* ---------- filtros ---------- */
 const PER=[["hoje","Hoje"],["semana","Esta semana"],["7d","7 dias"],["mes","Este mês"],["mesant","Mês passado"],["30d","30 dias"],["ano","Este ano"],["tudo","Tudo"],["custom","Período…"]];
 // 4 sessões fixas (pelo horário de abertura da operação); o que abriu fora delas cai em "Fora do horário"
-const SES=[["all","Todas as sessões"],["s1","Sessão 1 · 08:00"],["manha","Sessão 2 · 09:45"],["tarde","Sessão 3 · 13:30"],["s4","Sessão 4 · 15:00"],["fora","Fora do horário"]];
-const SJ={s1:[480,540],manha:[585,625],tarde:[810,870],s4:[900,960]};
+const SES=[["all","Todas as sessões"],["s1","Sessão 1 · 08:00"],["manha","Sessão 2 · 09:45"],["tarde","Sessão 3 · 13:30"],["s4","Sessão 4 · 15:00"],["s5","Sessão 5 · OTC 19:30"],["fora","Fora do horário"]];
+const SJ={s1:[480,540],manha:[585,625],tarde:[810,870],s4:[900,960],s5:[1170,1230]};
 const ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 function bounds(){
   const now=new Date(),t=ymd(now);

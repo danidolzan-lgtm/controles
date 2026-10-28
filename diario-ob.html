@@ -1,7 +1,7 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="diario-ob2"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Diário OB</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: resumo, mão base/payout, calendário seg–sex 13/10–17/12, tabelas. Janela do dia com 4 sessões (08:00, 09:45, 13:30, 15:00); cada sessão tem no máximo 2 entradas (mão base + Soros) e para no 1º loss. */
+/* Layout: resumo, mão base/payout, calendário seg–sex 13/10–17/12, tabelas. Janela do dia com 5 sessões (08:00, 09:45, 13:30, 15:00 e 19:30 OTC seg–qui); cada sessão tem no máximo 2 entradas (mão base + Soros) e para no 1º loss. */
 :root{
   --bg:#EEF3FC; --surface:#FFFFFF; --line:#DDE4F2; --fg:#13203B; --muted:#58668A;
   --accent:#2563EB; --accent-soft:#DCE7FF; --soros:#7C3AED; --soros-soft:#EDE9FE;
@@ -73,8 +73,8 @@ td:first-child{font-family:var(--f-body);white-space:normal}
 @media (min-width:640px){.modal{border-radius:14px}}
 .mhead{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .mhead h2::first-letter{text-transform:uppercase}
-.stabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-@media (max-width:520px){.stabs{grid-template-columns:repeat(2,1fr)}}
+.stabs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+@media (max-width:620px){.stabs{grid-template-columns:repeat(3,1fr)}}
 .stabs button{flex:1;appearance:none;font:inherit;font-weight:600;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:8px;padding:8px 10px;cursor:pointer;display:grid;gap:1px}
 .stabs button small{font-family:var(--f-num);font-weight:400;font-size:.75rem;opacity:.85}
 .stabs button.on{background:var(--accent);border-color:var(--accent);color:var(--surface)}
@@ -103,7 +103,7 @@ td:first-child{font-family:var(--f-body);white-space:normal}
 
 <div class="wrap">
   <div class="top">
-    <div><h1>Diário OB</h1><div class="sub">M1 · expiração 5 min · Respiro, Virada, Muralha, Giro e Armadilha · Soros nível 1 · 4 sessões por dia · máx. 2 entradas por sessão · parou no 1º loss</div></div>
+    <div><h1>Diário OB</h1><div class="sub">M1 · expiração 5 min · Respiro, Virada, Muralha, Giro e Armadilha · Soros nível 1 · 5 sessões por dia (a 5ª à noite em OTC, seg–qui) · máx. 2 entradas por sessão · parou no 1º loss</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
 
@@ -144,8 +144,8 @@ td:first-child{font-family:var(--f-body);white-space:normal}
 const START="2026-10-13", END="2026-12-17", LS="diarioOB2.v1";
 const OPS=[{id:"respiro",nome:"Respiro"},{id:"virada",nome:"Virada"},{id:"muralha",nome:"Muralha"},{id:"giro",nome:"Giro"},{id:"armadilha",nome:"Armadilha"}];
 // 4 sessões por dia. Os ids "manha" e "tarde" ficaram para as sessões 2 e 3 para não perder os dias já lançados.
-const SESS=[{id:"s1",nome:"Sessão 1"},{id:"manha",nome:"Sessão 2"},{id:"tarde",nome:"Sessão 3"},{id:"s4",nome:"Sessão 4"}];
-const JAN={s1:["08:00","09:00"],manha:["09:45","10:25"],tarde:["13:30","14:30"],s4:["15:00","16:00"]};
+const SESS=[{id:"s1",nome:"Sessão 1"},{id:"manha",nome:"Sessão 2"},{id:"tarde",nome:"Sessão 3"},{id:"s4",nome:"Sessão 4"},{id:"s5",nome:"Sessão 5 · OTC"}];
+const JAN={s1:["08:00","09:00"],manha:["09:45","10:25"],tarde:["13:30","14:30"],s4:["15:00","16:00"],s5:["19:30","20:30"]};
 function janelas(ds){const o={};for(const k in JAN)o[k]=JAN[k].join("–");return o} // horário fixo (não muda em 02/11)
 function sessAgora(){const d=new Date(),m=d.getHours()*60+d.getMinutes(),mm=t=>{const [h,x]=t.split(":").map(Number);return h*60+x};let id=SESS[0].id;SESS.forEach(s=>{if(m>=mm(JAN[s.id][0])-30)id=s.id});return id}
 let days={}, cfg={base:10,payout:85}, db=null;
