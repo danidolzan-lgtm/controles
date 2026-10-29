@@ -109,6 +109,7 @@
       ".site-btn{margin-left:auto;flex:none;appearance:none;display:inline-flex;align-items:center;gap:8px;font:600 .9rem 'IBM Plex Sans',system-ui,sans-serif;color:var(--fg,#13203B);background:var(--surface,#fff);border:1px solid var(--line,#DDE4F2);border-radius:10px;padding:8px 14px;cursor:pointer}" +
       ".site-btn:hover,.site-btn[aria-expanded=true]{border-color:var(--accent,#2563EB);color:var(--accent,#2563EB)}" +
       ".site-btn svg{width:18px;height:18px}" +
+      ".site-mp+.site-btn{margin-left:6px}.site-h a.site-mp{display:inline-flex!important;align-items:center;gap:8px;padding:8px 14px!important;border:1px solid var(--line,#DDE4F2)!important;border-radius:10px!important;background:var(--surface,#fff)!important;color:var(--fg,#13203B)}.site-h a.site-mp:hover{border-color:var(--gc,var(--accent,#2563EB))!important;color:var(--gc,var(--accent,#2563EB))}@media (max-width:560px){.site-h a.site-mp{padding:8px 10px!important}}" +
       ".site-btn{position:relative}.site-btn.on-line::after{content:'';position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;background:#22C55E;box-shadow:0 0 0 2px var(--surface,#fff)}" +
       ".site-acct{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:nowrap;border:1px solid var(--line,#DDE4F2);border-radius:10px;padding:10px 12px;background:var(--bg,#EEF3FC)}.site-acct .who{flex:1}" +
       ".site-acct .who{display:flex;align-items:center;gap:10px;min-width:0}.site-acct .who i{width:10px;height:10px;border-radius:50%;background:#22C55E;flex:none}" +
@@ -148,6 +149,7 @@
       ".site-back{margin-left:0;padding:8px 12px 8px 8px}.site-back svg{width:18px;height:18px}" +
       "@media (max-width:560px){.site-back .t{display:inline!important}.site-crumb .tag,.site-crumb .sep:first-child{display:none}}" +
       "@media (min-width:1180px){.site-quick{display:flex}.site-quick~.site-btn{margin-left:6px}}" +
+      "@media (min-width:1180px) and (max-width:1500px){html[data-group] .site-brand .t{display:none}}" +
       "@media (max-width:560px){.site-brand .t{display:none}.site-btn .t{display:none}.site-btn{padding:8px 10px}}" +
       "@media (orientation:landscape) and (max-height:500px){:root{--site-h:48px;--stick:0px}.site-h{position:relative}}" +
       /* listas e cartões mais largos aproveitando a tela */
@@ -219,11 +221,15 @@
         cur.g.items.forEach(function (it) { var a = el("a", it[0] === file ? "on" : "", esc(it[1])); a.href = it[0] + ".html"; if (it[0] === file) a.setAttribute("aria-current", "page"); q.appendChild(a); });
         inn.appendChild(q);
       }
-      var btn = el("button", "site-btn", "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='3' width='7' height='7' rx='2'/><rect x='14' y='3' width='7' height='7' rx='2'/><rect x='3' y='14' width='7' height='7' rx='2'/><rect x='14' y='14' width='7' height='7' rx='2'/></svg><span class='t'>Menu principal</span>");
+      var mp = el("a", "site-btn site-mp", "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='3' width='7' height='7' rx='2'/><rect x='14' y='3' width='7' height='7' rx='2'/><rect x='3' y='14' width='7' height='7' rx='2'/><rect x='14' y='14' width='7' height='7' rx='2'/></svg><span class='t'>Menu principal</span>");
+      mp.href = "index.html#inicio"; mp.setAttribute("aria-label", "Menu principal"); mp.style.textDecoration = "none";
+      mp.addEventListener("click", function (e) { try { sessionStorage.removeItem("index.tab"); } catch (x) {} if (file === "index") { e.preventDefault(); location.hash = "inicio"; } });
+      inn.appendChild(mp);
+      var btn = el("button", "site-btn", "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round'><path d='M4 7h16M4 12h16M4 17h16'/></svg><span class='t'>Menu</span>");
       btn.type = "button"; btn.setAttribute("aria-expanded", "false"); btn.setAttribute("aria-label", "Abrir menu");
       inn.appendChild(btn); h.appendChild(inn);
       var drop = el("div", "site-drop"); drop.hidden = true; var di = el("div", "site-drop-in");
-      var home = el("div", "site-top"); var ha = el("a", "site-home", P("<path d='M3 11l9-7 9 7'/><path d='M5 10v10h14V10'/><path d='M10 20v-6h4v6'/>") + "Início"); ha.href = "index.html#inicio"; home.appendChild(ha); di.appendChild(home);
+      var home = el("div", "site-top"); var ha = el("a", "site-home", P("<rect x='3' y='3' width='7' height='7' rx='2'/><rect x='14' y='3' width='7' height='7' rx='2'/><rect x='3' y='14' width='7' height='7' rx='2'/><rect x='14' y='14' width='7' height='7' rx='2'/>") + "Menu principal"); ha.href = "index.html#inicio"; ha.addEventListener("click", function () { try { sessionStorage.removeItem("index.tab"); } catch (x) {} }); home.appendChild(ha); di.appendChild(home);
       GROUPS.forEach(function (g) {
         var col = el("section", "site-g"); col.style.setProperty("--gc", g.c);
         col.appendChild(el("div", "site-gh", "<span class='gi'>" + esc(g.s === "Pessoal" ? "EU" : g.s) + "</span><span><b>" + esc(g.g) + "</b><small>" + g.items.length + " páginas</small></span>"));
@@ -232,7 +238,7 @@
         col.appendChild(its); di.appendChild(col);
       });
       /* conta (e-mail e Sair) dentro do menu */
-      var acct = el("div", "site-acct"); acct.hidden = true; var slot = document.getElementById("acctSlot"); (slot || home).appendChild(acct);
+      var acct = el("div", "site-acct"); acct.hidden = true; home.appendChild(acct);
       window.__siteAcct = function (u, sair) {
         if (!u) { acct.hidden = true; btn.classList.remove("on-line"); return; }
         acct.hidden = false; btn.classList.add("on-line");
@@ -245,9 +251,7 @@
       var veil = el("div", "site-veil"); veil.hidden = true; document.body.appendChild(veil);
       veil.addEventListener("click", function () { setOpen(false); });
       function setOpen(o) { drop.hidden = !o; veil.hidden = !o; btn.setAttribute("aria-expanded", o ? "true" : "false"); document.documentElement.style.overflow = o ? "hidden" : ""; }
-      /* botão de menu: sempre volta para a tela dos 3 módulos (OB, B3 e Pessoal) */
-      btn.setAttribute("aria-label", "Menu principal");
-      btn.addEventListener("click", function (e) { e.stopPropagation(); try { sessionStorage.removeItem("index.tab"); } catch (x) {} if (file === "index") { location.hash = "inicio"; } else { location.href = "index.html#inicio"; } });
+      btn.addEventListener("click", function (e) { e.stopPropagation(); setOpen(drop.hidden); });
       document.addEventListener("click", function (e) { if (!drop.hidden && !h.contains(e.target)) setOpen(false); });
       document.addEventListener("keydown", function (e) { if (e.key === "Escape") setOpen(false); });
       var tag = crumb.querySelector("[data-k]"); if (tag) tag.addEventListener("click", function () { goTab(tag.dataset.k); });
