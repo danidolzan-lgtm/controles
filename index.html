@@ -4,118 +4,99 @@
 <meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="geral" data-show-user="1"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-:root{--bg:#EEF3FC;--surface:#FFFFFF;--line:#DDE4F2;--fg:#13203B;--muted:#58668A;--accent:#2563EB;
+:root{--bg:#EEF3FC;--surface:#FFFFFF;--line:#DDE4F2;--fg:#13203B;--muted:#58668A;--accent:#2563EB;--gc:#2563EB;
   --f-display:"Archivo",system-ui,sans-serif;--f-body:"IBM Plex Sans",system-ui,sans-serif}
 @media (prefers-color-scheme: dark){:root{--bg:#0B1220;--surface:#16213A;--line:#2A3A5C;--fg:#E6EDFA;--muted:#9AA9C7;--accent:#60A5FA;color-scheme:dark}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
-.wrap{max-width:640px;margin:0 auto;padding-inline:16px;padding-block:24px 48px;display:grid;gap:18px}
-h1{font-family:var(--f-display);font-weight:800;font-size:1.7rem;margin:0}
-h2{font-family:var(--f-display);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:6px 0 0}
-.sub{color:var(--muted);font-size:.88rem;margin:4px 0 0}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-@media (max-width:360px){.grid{grid-template-columns:1fr}}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);transition:background-color .3s;min-height:100dvh;background-attachment:fixed!important}
+html[data-g] body{background-image:radial-gradient(1000px 520px at 0% -10%,color-mix(in srgb,var(--gc) 22%,transparent),transparent 62%),radial-gradient(900px 460px at 100% 0%,color-mix(in srgb,var(--gc) 12%,transparent),transparent 60%)!important}
+.wrap{max-width:1100px;margin:0 auto;padding-inline:16px;padding-block:24px 48px;display:grid;gap:18px}
 .wrap>*{min-width:0}
-a{display:grid;gap:3px;align-content:start;text-decoration:none;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
-a:hover,a:focus-visible{border-color:var(--accent);outline:none}
-a b{font-family:var(--f-display);font-size:1rem}
-a span{font-size:.8rem;color:var(--muted)}
-a{position:relative;overflow:hidden;transition:transform .12s ease,border-color .12s}
-a::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c,var(--accent))}
-a:hover{transform:translateY(-2px)}
-.grid.b3 a{--c:#2563EB}.grid.pes a{--c:#7C3AED}
-.grid.b3 a:nth-child(2){--c:#0EA5E9}.grid.b3 a:nth-child(3){--c:#16A34A}.grid.b3 a:nth-child(4){--c:#F59E0B}.grid.b3 a:nth-child(5){--c:#E11D48}.grid.b3 a:nth-child(6){--c:#7C3AED}.grid.b3 a:nth-child(7){--c:#0D9488}.grid.b3 a:nth-child(8){--c:#64748B}
-.grid.bolsa a{--c:#0F766E}.grid.bolsa a:nth-child(2){--c:#0284C7}.grid.bolsa a:nth-child(3){--c:#4F46E5}.grid.bolsa a:nth-child(4){--c:#D97706}.grid.bolsa a:nth-child(5){--c:#DB2777}.grid.bolsa a:nth-child(6){--c:#9333EA}.grid.bolsa a:nth-child(7){--c:#059669}.grid.bolsa a:nth-child(8){--c:#E11D48}
-.grid.lnk a{--c:#16A34A}.grid.lnk a:nth-child(2){--c:#F59E0B}
-.grid.pes a:nth-child(2){--c:#B7791F}.grid.pes a:nth-child(3){--c:#EA580C}.grid.pes a:nth-child(4){--c:#0D9488}.grid.pes a:nth-child(5){--c:#16A34A}.grid.pes a:nth-child(6){--c:#DC2626}
-.app{display:grid;gap:16px}
-.side{display:flex;gap:6px;position:sticky;top:52px;z-index:5;background:var(--bg);padding-block:6px}
-.side button{appearance:none;font:inherit;font-weight:600;font-size:.9rem;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;flex:1;display:flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap}
-.side button i{width:10px;height:10px;border-radius:50%;flex:none}
-.side button.on{background:var(--accent);border-color:var(--accent);color:#fff}
-.side button.on i{background:#fff!important}
-.content{display:grid;gap:18px;min-width:0}
-.content section{display:grid;gap:14px;min-width:0}
 [hidden]{display:none!important}
-@media (max-width:380px){.side button{font-size:.82rem;padding:9px 6px;gap:5px}}
-@media (min-width:900px){
-  .wrap{max-width:1000px}
-  .app{grid-template-columns:210px 1fr;align-items:start}
-  .side{flex-direction:column;top:60px;padding:0}
-  .side button{justify-content:flex-start;padding:12px 14px}
-  .grid{grid-template-columns:repeat(3,1fr);grid-auto-rows:1fr}
-}
+h1{font-family:var(--f-display);font-weight:800;font-size:1.8rem;margin:0}
+.sub{color:var(--muted);font-size:.9rem;margin:4px 0 0}
+@keyframes up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+/* tela inicial: os 3 módulos no meio */
+.home{min-height:calc(100dvh - 150px);display:grid;align-content:center;gap:22px;text-align:center}
+.mods{display:grid;gap:16px;grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:760px){.mods{grid-template-columns:minmax(0,1fr)}.home{text-align:left;min-height:calc(100dvh - 120px)}}
+.mod{--gc:#2563EB;appearance:none;font:inherit;color:var(--fg);text-align:left;cursor:pointer;position:relative;overflow:hidden;border:1px solid var(--line);border-radius:20px;padding:22px;background:var(--surface);display:grid;gap:14px;box-shadow:0 14px 30px -22px var(--gc);transition:transform .16s ease,box-shadow .16s,border-color .16s;animation:up .35s ease both}
+.mod:nth-child(2){animation-delay:.05s}.mod:nth-child(3){animation-delay:.1s}
+.mod::before{content:"";position:absolute;inset:0;background:linear-gradient(160deg,color-mix(in srgb,var(--gc) 24%,transparent),transparent 70%);pointer-events:none}
+.mod:hover,.mod:focus-visible{transform:translateY(-4px);border-color:color-mix(in srgb,var(--gc) 50%,transparent);box-shadow:0 20px 36px -20px var(--gc);outline:none}
+.mod .gi{position:relative;width:58px;height:58px;border-radius:16px;display:grid;place-items:center;color:#fff;font:800 1.1rem var(--f-display);background:linear-gradient(135deg,var(--gc),color-mix(in srgb,var(--gc) 55%,#7C3AED));box-shadow:0 10px 20px -8px var(--gc)}
+.mod b{position:relative;font:800 1.3rem var(--f-display)}
+.mod small{position:relative;color:var(--muted);font-size:.85rem}
+.mod .go{position:relative;display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:.88rem;color:var(--gc)}
+.mod .go i{font-style:normal;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--gc) 14%,transparent)}
+@media (max-width:760px){.mod{grid-template-columns:auto minmax(0,1fr);align-items:center;padding:16px;gap:4px 14px}.mod .gi{grid-row:1 / span 2;width:50px;height:50px}.mod .go{grid-column:1/-1;margin-top:8px}}
+/* dentro de um módulo */
+.bar{position:sticky;top:calc(var(--site-h,58px) + env(safe-area-inset-top,0px));z-index:5;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:6px 0}
+.btn-home{appearance:none;font:600 .92rem var(--f-body);color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:9px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.btn-home:hover{border-color:var(--gc);color:var(--gc)}
+.btn-home svg{width:18px;height:18px}
+.gh{display:flex;align-items:center;gap:14px;animation:up .3s ease both}
+.gh .gi{width:52px;height:52px;border-radius:15px;display:grid;place-items:center;color:#fff;font:800 1rem var(--f-display);background:linear-gradient(135deg,var(--gc),color-mix(in srgb,var(--gc) 55%,#7C3AED));box-shadow:0 10px 20px -8px var(--gc);flex:none}
+.gh h1{background:linear-gradient(90deg,var(--gc),color-mix(in srgb,var(--gc) 50%,#7C3AED));-webkit-background-clip:text;background-clip:text;color:transparent!important}
+h2{font-family:var(--f-display);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:4px 0 0}
+.tiles{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr))}
+@media (max-width:560px){.tiles{grid-template-columns:1fr 1fr;gap:10px}}
+a.tile{display:grid;gap:10px;align-content:start;text-decoration:none;color:var(--fg);background:color-mix(in srgb,var(--gc) 6%,var(--surface));border:1px solid color-mix(in srgb,var(--gc) 16%,var(--line));border-radius:16px;padding:16px;box-shadow:0 10px 22px -20px var(--gc);transition:transform .14s ease,box-shadow .14s,border-color .14s;animation:up .3s ease both}
+a.tile:hover,a.tile:focus-visible{transform:translateY(-3px);border-color:color-mix(in srgb,var(--gc) 50%,transparent);box-shadow:0 16px 28px -16px var(--gc);outline:none}
+a.tile .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--gc) 16%,transparent);color:var(--gc)}
+a.tile .ic svg{width:22px;height:22px}
+a.tile b{font:800 1.02rem var(--f-display)}
+a.tile small{color:var(--muted);font-size:.8rem;line-height:1.3}
+@media (max-width:560px){a.tile{padding:12px;gap:8px}a.tile .ic{width:36px;height:36px}}
+.links{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr))}
+a.lnk{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+a.lnk:hover{border-color:var(--gc)}
+a.lnk b{font-weight:600}a.lnk span{color:var(--muted);font-size:.8rem;display:block}
+a.lnk .ar{margin-left:auto;color:var(--gc);font-weight:700}
 </style></head><body>
 <div class="wrap">
-  <div><h1>Meus Controles</h1><p class="sub">Seus dados ficam salvos na sua conta e aparecem iguais no celular e no PC.</p></div>
-  <div class="app">
-  <nav class="side" role="tablist" aria-label="Áreas">
-    <button type="button" role="tab" data-tab="ob"><i style="background:#2563EB"></i>Opções binárias</button>
-    <button type="button" role="tab" data-tab="b3"><i style="background:#0F766E"></i>B3</button>
-    <button type="button" role="tab" data-tab="pes"><i style="background:#7C3AED"></i>Pessoal</button>
-  </nav>
-  <div class="content">
-  <section data-sec="ob">
-    <h2>Opções binárias</h2>
-    <div class="grid b3">
-      <a href="checklist-ob.html"><b>Check-list OB</b><span>Uma vez por dia, de manhã</span></a>
-      <a href="diario-ob.html"><b>Diário OB</b><span>5 sessões por dia</span></a>
-      <a href="manual-ob.html"><b>Manual OB</b><span>Os 5 operacionais</span></a>
-      <a href="progresso-ob.html"><b>Progresso OB</b><span>Metas e simulador do Soros</span></a>
-      <a href="dopamina.html"><b>Dopamina OB</b><span>Acertei ou errei</span></a>
-      <a href="ir-ob.html"><b>IR OB</b><span>Resultado mensal</span></a>
-      <a href="analise-ob.html"><b>Análise de entrada OB</b><span>Print e seta na vela</span></a>
-      <a href="lucro-ob.html"><b>Lucro OB</b><span>Excel da Quotex</span></a>
-    </div>
-    <h2>Links</h2>
-    <div class="grid lnk">
-      <a href="https://quotex.com/pt/trade" target="_blank" rel="noopener"><b>Quotex ↗</b><span>Corretora · operar</span></a>
-      <a href="https://br.investing.com/economic-calendar" target="_blank" rel="noopener"><b>Notícias ↗</b><span>Calendário econômico (Investing)</span></a>
-      <a data-claude="analiseOB.claudeUrl" data-cfg="analise-ob.html#cfgBox" href="analise-ob.html#cfgBox"><b>Claude · conversa OB ↗</b><span>Prints e dúvidas de OB</span></a>
-    </div>
+  <section class="home" id="home">
+    <div><h1>Meus Controles</h1><p class="sub">Escolha o módulo. Seus dados ficam salvos na sua conta e aparecem iguais no celular e no PC.</p></div>
+    <div class="mods" id="mods"></div>
   </section>
-  <section data-sec="b3">
-    <h2>B3 · mini índice e mini dólar</h2>
-    <div class="grid bolsa">
-      <a href="checklist-b3.html"><b>Check-list B3</b><span>Uma vez por dia, de manhã</span></a>
-      <a href="diario-b3.html"><b>Diário B3</b><span>Pontos, contratos e R$</span></a>
-      <a href="manual-b3.html"><b>Manual B3</b><span>M2 · stop e alvo 2x</span></a>
-      <a href="progresso-b3.html"><b>Progresso B3</b><span>Contratos e simulador</span></a>
-      <a href="dopamina-b3.html"><b>Dopamina B3</b><span>Acertei ou errei</span></a>
-      <a href="ir-b3.html"><b>IR B3</b><span>Day trade · DARF</span></a>
-      <a href="analise-b3.html"><b>Análise de entrada B3</b><span>Print e seta na vela</span></a>
-      <a href="lucro-b3.html"><b>Lucro B3</b><span>Extrato Santander · com taxas</span></a>
-    </div>
-    <h2>Links</h2>
-    <div class="grid lnk">
-      <a href="https://br.investing.com/economic-calendar" target="_blank" rel="noopener"><b>Notícias ↗</b><span>Calendário econômico (Investing)</span></a>
-      <a data-claude="analiseB3.claudeUrl" href="analise-b3.html#cfgBox"><b>Claude · conversa B3 ↗</b><span>Prints e dúvidas de B3</span></a>
-    </div>
+  <section id="grupo" hidden style="display:grid;gap:16px">
+    <div class="bar"><button type="button" class="btn-home" id="bHome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>Menu principal</button></div>
+    <div class="gh"><span class="gi" id="gIc"></span><div><h1 id="gTit"></h1><p class="sub" id="gSub"></p></div></div>
+    <div class="tiles" id="tiles"></div>
+    <div id="links"></div>
   </section>
-  <section data-sec="pes">
-    <h2>Pessoal</h2>
-    <div class="grid pes">
-      <a href="salario.html"><b>Salário</b><span>Danrlei e Cristiane</span></a>
-      <a href="oracao.html"><b>Oração</b><span>Noite e consagração</span></a>
-      <a href="receitas.html"><b>Receitas</b><span>Caderno de receitas</span></a>
-      <a href="limpeza.html"><b>Limpeza de peças</b><span>Lotes, quantidade e valor</span></a>
-      <a href="consorcio.html"><b>Consórcios</b><span>Simular, comparar e acompanhar</span></a>
-      <a href="exercicios.html"><b>Exercícios</b><span>3 sessões de 15 min · 5 degraus</span></a>
-    </div>
-  </section>
-  </div>
-  </div>
 </div>
 <script>
 (function(){
-  const tabs=[...document.querySelectorAll(".side button")], secs=[...document.querySelectorAll("[data-sec]")];
-  function abrir(t){tabs.forEach(b=>{const on=b.dataset.tab===t;b.classList.toggle("on",on);b.setAttribute("aria-selected",on)});secs.forEach(s=>s.hidden=s.dataset.sec!==t);try{sessionStorage.setItem("index.tab",t)}catch(e){}}
-  tabs.forEach(b=>b.addEventListener("click",()=>abrir(b.dataset.tab)));
-  let t="ob";try{t=sessionStorage.getItem("index.tab")||"ob"}catch(e){}
-  abrir(tabs.some(b=>b.dataset.tab===t)?t:"ob");
-  // conversas do Claude salvas nas páginas de análise
-  document.querySelectorAll("[data-claude]").forEach(a=>{let u="";try{u=localStorage.getItem(a.dataset.claude)||""}catch(e){}
-    if(u){a.href=u;a.target="_blank";a.rel="noopener"}else{a.querySelector("span").textContent="Configure na Análise de entrada"}});
+  const MC=window.__MC||{GROUPS:[],ICO:{},DESC:{}};
+  const SUB={ob:"Quotex · M1 · os 5 operacionais",b3:"Mini índice e mini dólar",pes:"Rotina, casa e finanças"};
+  const LINKS={
+    ob:[["https://quotex.com/pt/trade","Quotex","Corretora · operar"],["https://br.investing.com/economic-calendar","Notícias","Calendário econômico (Investing)"],["analise-ob.html#cfgBox","Claude · conversa OB","Prints e dúvidas de OB","analiseOB.claudeUrl"]],
+    b3:[["https://br.investing.com/economic-calendar","Notícias","Calendário econômico (Investing)"],["analise-b3.html#cfgBox","Claude · conversa B3","Prints e dúvidas de B3","analiseB3.claudeUrl"]]};
+  const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const sigla=g=>g.s==="Pessoal"?"EU":g.s;
+  const $=id=>document.getElementById(id);
+  $("mods").innerHTML=MC.GROUPS.map(g=>"<button type='button' class='mod' data-k='"+g.k+"' style='--gc:"+g.c+"'><span class='gi'>"+esc(sigla(g))+"</span><b>"+esc(g.g)+"</b><small>"+esc(SUB[g.k]||"")+" · "+g.items.length+" páginas</small><span class='go'>Abrir<i>→</i></span></button>").join("");
+  function abrir(k){
+    const g=MC.GROUPS.find(x=>x.k===k);
+    if(!g){document.documentElement.removeAttribute("data-g");document.documentElement.style.removeProperty("--gc");$("home").hidden=false;$("grupo").hidden=true;try{sessionStorage.removeItem("index.tab")}catch(e){}return}
+    document.documentElement.setAttribute("data-g",k);document.documentElement.style.setProperty("--gc",g.c);
+    $("home").hidden=true;$("grupo").hidden=false;
+    $("gIc").textContent=sigla(g);$("gTit").textContent=g.g;$("gSub").textContent=(SUB[k]||"")+" · "+g.items.length+" páginas";
+    $("tiles").innerHTML=g.items.map((it,i)=>"<a class='tile' href='"+it[0]+".html' style='animation-delay:"+(i*.03)+"s'><span class='ic'>"+(MC.ICO[it[1]]||"")+"</span><span><b>"+esc(it[1])+"</b><br><small>"+esc(MC.DESC[it[0]]||"")+"</small></span></a>").join("");
+    const L=LINKS[k]||[];
+    $("links").innerHTML=L.length?"<h2>Links</h2><div class='links' style='margin-top:10px'>"+L.map(l=>{let u=l[0],ext=/^https?:/.test(u),sp=l[2];
+      if(l[3]){let s="";try{s=localStorage.getItem(l[3])||""}catch(e){}if(s){u=s;ext=true}else sp="Configure na Análise de entrada"}
+      return "<a class='lnk' href='"+esc(u)+"'"+(ext?" target='_blank' rel='noopener'":"")+"><span><b>"+esc(l[1])+"</b><span>"+esc(sp)+"</span></span><span class='ar'>"+(ext?"↗":"→")+"</span></a>"}).join("")+"</div>":"";
+    try{sessionStorage.setItem("index.tab",k)}catch(e){}
+    window.scrollTo({top:0});
+  }
+  $("mods").addEventListener("click",e=>{const b=e.target.closest(".mod");if(b)abrir(b.dataset.k)});
+  $("bHome").addEventListener("click",()=>abrir(null));
+  let t=null;try{t=sessionStorage.getItem("index.tab")}catch(e){}
+  if(location.hash==="#inicio"){t=null;history.replaceState(null,"",location.pathname)}
+  abrir(t);
+  window.addEventListener("hashchange",()=>{if(location.hash==="#inicio"){history.replaceState(null,"",location.pathname);abrir(null)}});
 })();
 </script>
 </body></html>

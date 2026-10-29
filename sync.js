@@ -79,9 +79,15 @@
       "Dopamina": P("<path d='M13 2L4 14h7l-1 8 9-12h-7z'/>"), "IR": P("<path d='M6 2h12v20l-3-2-3 2-3-2-3 2z'/><path d='M9 8h6M9 12h6M9 16h3'/>"), "Análise": P("<circle cx='12' cy='12' r='8'/><circle cx='12' cy='12' r='3.5'/><path d='M12 2v3M12 19v3M2 12h3M19 12h3'/>"),
       "Lucro": P("<path d='M3 20h18'/><path d='M4 16l5-5 4 3 7-8'/><path d='M15 6h5v5'/>"), "Salário": P("<rect x='3' y='6' width='18' height='13' rx='3'/><path d='M16 12.5h2M3 10h18'/>"), "Oração": P("<path d='M12 3v18M7 8h10'/>"),
       "Receitas": P("<path d='M6 13a6 6 0 1112 0v6H6z'/><path d='M6 16h12'/>"), "Limpeza de peças": P("<path d='M14 3l7 7-9 9H5v-7z'/><path d='M10 7l7 7'/>"), "Consórcios": P("<circle cx='9' cy='9' r='5'/><circle cx='15' cy='15' r='5'/>"), "Exercícios": P("<path d='M6 8v8M18 8v8M3 10v4M21 10v4M6 12h12'/>") };
+    window.__MC = { GROUPS: GROUPS, ICO: ICO, DESC: DESC };
     var cur = null;
     GROUPS.forEach(function (g) { g.items.forEach(function (it) { if (it[0] === file) cur = { g: g, it: it }; }); });
+    if (cur) { document.documentElement.setAttribute("data-group", cur.g.k); document.documentElement.style.setProperty("--gc", cur.g.c); }
     var css =
+      /* cores do módulo (OB azul, B3 verde-azulado, Pessoal roxo) no fundo, no título e no logo */
+      "html[data-group] body{background-image:radial-gradient(1000px 480px at 0% -8%,color-mix(in srgb,var(--gc) 20%,transparent),transparent 62%),radial-gradient(900px 420px at 100% 0%,color-mix(in srgb,var(--gc) 11%,transparent),transparent 60%)!important}" +
+      "html[data-group] h1{background:linear-gradient(90deg,var(--gc),color-mix(in srgb,var(--gc) 50%,#7C3AED))!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important}" +
+      "html[data-group] .site-logo{background:linear-gradient(135deg,var(--gc),color-mix(in srgb,var(--gc) 55%,#7C3AED))!important}" +
       ":root{--site-max:1680px;--site-pad:clamp(16px,2.6vw,40px);--site-h:58px;--stick:58px}" +
       "html[data-page] .wrap{max-width:var(--site-max)!important;width:100%!important;padding-inline:var(--site-pad)!important;padding-top:20px!important}" +
       ".site-h{position:sticky;top:0;z-index:80;background:rgba(255,255,255,.86);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--line,#DDE4F2);font-family:'IBM Plex Sans',system-ui,sans-serif;padding-top:env(safe-area-inset-top,0px)}" +
@@ -217,7 +223,7 @@
       btn.type = "button"; btn.setAttribute("aria-expanded", "false"); btn.setAttribute("aria-label", "Abrir menu");
       inn.appendChild(btn); h.appendChild(inn);
       var drop = el("div", "site-drop"); drop.hidden = true; var di = el("div", "site-drop-in");
-      var home = el("div", "site-top"); var ha = el("a", "site-home", P("<path d='M3 11l9-7 9 7'/><path d='M5 10v10h14V10'/><path d='M10 20v-6h4v6'/>") + "Início"); ha.href = "index.html"; home.appendChild(ha); di.appendChild(home);
+      var home = el("div", "site-top"); var ha = el("a", "site-home", P("<path d='M3 11l9-7 9 7'/><path d='M5 10v10h14V10'/><path d='M10 20v-6h4v6'/>") + "Início"); ha.href = "index.html#inicio"; home.appendChild(ha); di.appendChild(home);
       GROUPS.forEach(function (g) {
         var col = el("section", "site-g"); col.style.setProperty("--gc", g.c);
         col.appendChild(el("div", "site-gh", "<span class='gi'>" + esc(g.s === "Pessoal" ? "EU" : g.s) + "</span><span><b>" + esc(g.g) + "</b><small>" + g.items.length + " páginas</small></span>"));
