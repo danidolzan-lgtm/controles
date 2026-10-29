@@ -478,7 +478,7 @@ function bars(L){
   const W=Math.max(320,Math.round(box.clientWidth||900)),H=W<600?190:220,pl=W<600?48:58,pr=12,pt=14,pb=24;
   let mn=Math.min(0,...arr.map(e=>e.v)),mx=Math.max(0,...arr.map(e=>e.v));const py=(mx-mn)*.08||1;mn-=py;mx+=py;
   const Y=v=>pt+(H-pt-pb)*(mx-v)/(mx-mn),y0=Y(0);
-  const bw=Math.min((W-pl-pr)/arr.length,W<600?44:62),gap=Math.max(1,bw*.3),ox=pl+((W-pl-pr)-bw*arr.length)/2; // poucos dias: barras largas no meio; com mais dias vão afinando para caber
+  const bw=Math.min((W-pl-pr)/arr.length,(W-pl-pr)*(W<600?.26:.2)/Math.sqrt(arr.length)),gap=Math.max(1,bw*.3),ox=pl+((W-pl-pr)-bw*arr.length)/2; // 1 dia: barra grande no meio; 2 dias: um pouco menores; vai afinando conforme aumenta (estilo Profit)
   const ticks=niceTicks(mn,mx,4),lab=e=>byMonth?new Date(e.k+"-15T12:00").toLocaleDateString("pt-BR",{month:"short",year:"2-digit"}).replace(". de ","/").replace(".",""):fmtDia(e.k);
   const step=Math.max(Math.ceil(arr.length/(W<600?5:10)),Math.ceil((byMonth?44:40)/bw));
   box.innerHTML="<svg viewBox='0 0 "+W+" "+H+"' role='img' aria-label='Lucro líquido por "+(byMonth?"mês":"dia")+"'>"+
