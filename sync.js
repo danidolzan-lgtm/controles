@@ -151,7 +151,7 @@
       "@media (min-width:1180px){.site-quick{display:flex}.site-quick~.site-btn{margin-left:6px}}" +
       "@media (min-width:1180px) and (max-width:1500px){html[data-group] .site-brand .t{display:none}}" +
       "@media (max-width:560px){.site-brand .t{display:none}.site-btn .t{display:none}.site-btn{padding:8px 10px}}" +
-      "@media (orientation:landscape) and (max-height:500px){:root{--site-h:48px;--stick:0px}.site-h{position:relative}}" +
+      "@media (orientation:landscape) and (max-height:500px){:root{--site-h:48px;--stick:48px}}" +
       /* listas e cartões mais largos aproveitando a tela */
       "@media (min-width:900px){" +
         "html[data-page=index] .app{grid-template-columns:230px minmax(0,1fr)!important}" +
@@ -229,7 +229,7 @@
       btn.type = "button"; btn.setAttribute("aria-expanded", "false"); btn.setAttribute("aria-label", "Abrir menu");
       inn.appendChild(btn); h.appendChild(inn);
       var drop = el("div", "site-drop"); drop.hidden = true; var di = el("div", "site-drop-in");
-      var home = el("div", "site-top"); var ha = el("a", "site-home", P("<rect x='3' y='3' width='7' height='7' rx='2'/><rect x='14' y='3' width='7' height='7' rx='2'/><rect x='3' y='14' width='7' height='7' rx='2'/><rect x='14' y='14' width='7' height='7' rx='2'/>") + "Menu principal"); ha.href = "index.html#inicio"; ha.addEventListener("click", function () { try { sessionStorage.removeItem("index.tab"); } catch (x) {} }); home.appendChild(ha); di.appendChild(home);
+      var home = el("div", "site-top"); di.appendChild(home);
       GROUPS.forEach(function (g) {
         var col = el("section", "site-g"); col.style.setProperty("--gc", g.c);
         col.appendChild(el("div", "site-gh", "<span class='gi'>" + esc(g.s === "Pessoal" ? "EU" : g.s) + "</span><span><b>" + esc(g.g) + "</b><small>" + g.items.length + " páginas</small></span>"));

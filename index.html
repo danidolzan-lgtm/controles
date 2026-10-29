@@ -60,7 +60,6 @@ a.lnk .ar{margin-left:auto;color:var(--gc);font-weight:700}
     <div class="mods" id="mods"></div>
   </section>
   <section id="grupo" hidden style="display:grid;gap:16px">
-    <div class="bar"><button type="button" class="btn-home" id="bHome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>Menu principal</button></div>
     <div class="gh"><span class="gi" id="gIc"></span><div><h1 id="gTit"></h1><p class="sub" id="gSub"></p></div></div>
     <div class="tiles" id="tiles"></div>
     <div id="links"></div>
@@ -92,7 +91,6 @@ a.lnk .ar{margin-left:auto;color:var(--gc);font-weight:700}
     window.scrollTo({top:0});
   }
   $("mods").addEventListener("click",e=>{const b=e.target.closest(".mod");if(b)abrir(b.dataset.k)});
-  $("bHome").addEventListener("click",()=>abrir(null));
   let t=null;try{t=sessionStorage.getItem("index.tab")}catch(e){}
   if(location.hash==="#inicio"){t=null;history.replaceState(null,"",location.pathname)}
   abrir(t);
