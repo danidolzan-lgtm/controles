@@ -73,6 +73,21 @@ img,svg{max-width:100%}
     <div><h1>Check-list B3</h1><div class="sub">WIN e WDO · M2 · uma vez por dia, de manhã, antes da 1ª sessão. Quatro "sim" liberam o dia.</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
+  <div class="lembrete" role="note">
+  <style>.lembrete{position:relative;overflow:hidden;border-radius:14px;padding:16px 16px 14px;background:linear-gradient(135deg,#0F172A,#1E3A8A 60%,#2563EB);color:#fff;display:grid;gap:10px;box-shadow:0 12px 26px -16px rgba(30,58,138,.9)}
+  .lembrete::after{content:"";position:absolute;right:-40px;top:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.07)}
+  .lembrete .lk{font:700 .68rem system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;opacity:.75}
+  .lembrete .lt{font:800 1.12rem/1.25 "Archivo",system-ui,sans-serif}
+  .lembrete ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+  .lembrete li{font:600 .82rem system-ui,sans-serif;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:4px 10px}
+  .lembrete .lf{font:700 .95rem/1.35 "Archivo",system-ui,sans-serif;border-left:3px solid #FBBF24;padding-left:10px}
+  .lembrete .la{font-size:.7rem;opacity:.6}</style>
+  <span class="lk">Lembrete</span>
+  <div class="lt">6 meses é tudo que você precisa.</div>
+  <ul><li>disciplina</li><li>constância</li><li>rotina</li><li>padronização</li><li>silêncio</li></ul>
+  <div class="lf">O mercado não apareceu na sua vida por acaso. Não desperdice isso.</div>
+  <span class="la">— @aulastrader</span>
+</div>
   <div class="panel">
     <h2 id="dTitle">Hoje</h2>
     <div class="jan" id="jan"></div>
@@ -128,7 +143,7 @@ function pulos(ds){const o={};(EVT[ds]||[]).forEach(e=>Object.assign(o,e.pula||{
 const pausasTxt=ds=>pausas(ds).map(p=>p.de+"–"+p.ate+" ("+p.n+")").join(" e ");
 const sessTxt=()=>SESS.map(s=>s.nome+" "+JAN[s.id].join("–")).join(" · ");
 const QS=[
-  {id:"hor",k:"Horários e notícias",t:ds=>{const pl=pulos(ds),k=Object.keys(pl);return "Abri o calendário (alto impacto · USD e BRL: IPCA, Copom, Payroll, CPI, FOMC), vou operar só nas sessões ("+sessTxt()+"), respeitando a pausa das "+pausasTxt(ds)+(k.length?", vou PULAR "+k.map(x=>SESS.find(s=>s.id===x).nome+" ("+pl[x]+")").join(", "):"")+" e, em dia de Payroll ou CPI, só começo 30 min depois da notícia?"}},
+  {id:"hor",k:"Horários e notícias",t:ds=>{const pl=pulos(ds),k=Object.keys(pl);return "Vou operar só nas sessões ("+sessTxt()+"), respeitando a pausa das "+pausasTxt(ds)+(k.length?", vou PULAR "+k.map(x=>SESS.find(s=>s.id===x).nome+" ("+pl[x]+")").join(", "):"")+" e, em dia de Payroll ou CPI, só começo 30 min depois da notícia?"}},
   {id:"op",k:"Operacional",t:"Vou entrar só em Respiro, Virada, Muralha (pavio ou engolfo), Giro ou Armadilha no M2, com médias 9, 21 e 50 espaçadas, volume da vela de sinal acima da média, stop técnico dentro do limite (WIN 150 pts · WDO 5 pts), o outro ativo não indo forte no mesmo sentido (WIN × WDO) e todos os filtros do manual conferidos?"},
   {id:"ger",k:"Gerenciamento",t:"Contratos do meu degrau no Progresso, ordem com stop e alvo de 2x o stop junto (OCO), no máximo 2 operações em cada sessão (manhã e tarde), uma aberta por vez (nunca WIN e WDO juntos), e encerro a sessão no 1º loss?"},
   {id:"men",k:"Mentalidade",t:"Estou calmo, sem vontade de recuperar nada, e aceito o stop se ele vier?"}

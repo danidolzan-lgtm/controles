@@ -36,6 +36,8 @@ h3{font-family:var(--f-display);font-size:.95rem;margin:0}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .sess{border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:8px;background:var(--bg)}
 .sess.ok{border-color:var(--win);background:var(--win-soft)}
+.como-treino{border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:var(--surface)}.como-treino summary{font-weight:700}
+.tl td:first-child{font-family:var(--f-num);white-space:nowrap;color:var(--muted)}.tl tr.rd td{background:var(--accent-soft);font-weight:700;color:var(--accent);font-size:.78rem;text-transform:uppercase;letter-spacing:.05em}
 .exb{display:grid;gap:4px;padding:10px 12px;border-radius:9px;background:var(--surface);border:1px solid var(--line)}
 .sess .h{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
 .sess .tag{font-size:.75rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.05em}
@@ -213,6 +215,16 @@ function renderDia(){
     h+="<div class='exb'><span class='tag' style='font-size:.68rem'>Minuto "+(i+1)+" · "+SLOT[i]+"</span><div class='ex'>"+esc(ex)+"</div><div class='rx'>"+esc(rx)+"</div><div class='hint'>"+esc(dica)+"</div>"+
       "<div class='row'><button type='button' class='btn' data-como='"+id+"'>👁 Como fazer</button></div><div data-cbox='"+id+"' data-ex='"+esc(ex)+"' hidden></div></div>"});
   h+="<ol><li><b>2 min aquecimento:</b> "+esc(AQ2)+"</li><li><b>12 min EMOM (4 rodadas):</b> no começo de cada minuto faz as repetições e descansa o resto. Minuto 1 "+esc(exs[0][0].toLowerCase())+", minuto 2 "+esc(exs[1][0].toLowerCase())+", minuto 3 "+esc(exs[2][0].toLowerCase())+", e repete 4 vezes.</li><li><b>1 min alongamento:</b> "+esc(AL2)+"</li></ol>"+
+    "<details class='como-treino' open><summary>📖 Entenda o treino de hoje</summary>"+
+      "<p class='hint' style='margin:6px 0'>São <b>4 rodadas</b>. Em cada rodada você faz os <b>3 exercícios uma vez</b>, um em cada minuto. O número de repetições de cada exercício é para <b>uma vez só</b> (não é o total do treino).</p>"+
+      "<p class='hint' style='margin:6px 0'><b>Como funciona o minuto (EMOM):</b> quando o minuto começa, faz as repetições. O que sobrar até virar o minuto é <b>descanso</b>. Virou o minuto, começa o próximo exercício.</p>"+
+      "<div class='tw'><table class='tl'><thead><tr><th>Tempo</th><th>O que fazer</th></tr></thead><tbody>"+
+      "<tr><td>0:00 – 2:00</td><td>Aquecimento</td></tr>"+
+      [0,1,2,3].map(rd=>"<tr class='rd'><td colspan='2'>Rodada "+(rd+1)+"</td></tr>"+exs.map(([ex,rx],i)=>{const m=2+rd*3+i;return "<tr><td>"+m+":00</td><td><b>"+esc(rx)+"</b> de "+esc(ex.toLowerCase())+" e descansa até "+(m+1)+":00</td></tr>"}).join("")).join("")+
+      "<tr><td>14:00 – 15:00</td><td>Alongamento</td></tr></tbody></table></div>"+
+      "<p class='hint' style='margin:6px 0'><b>No total do dia:</b> "+exs.map(([ex,rx])=>"4× "+esc(rx)+" de "+esc(ex.toLowerCase())).join(" · ")+".</p>"+
+      "<p class='hint' style='margin:6px 0'>Se terminar as repetições em 20 a 30 s e sobrar descanso, está no ponto certo. Se não der para fazer dentro do minuto, fique no degrau atual até ficar mais fácil. Não precisa contar o tempo: aperte <b>▶ Iniciar timer</b> que ele mostra a rodada, o minuto, o exercício e apita a cada troca.</p>"+
+    "</details>"+
     "<div id='tm_t'></div>"+
     "<div class='row'>"+(futuro?"":(can&&!ok?"<button type='button' class='btn' data-a='timer' data-s='t'>▶ Iniciar timer</button>":"")+"<button type='button' class='btn "+(ok?"win":"primary")+"' data-a='ok' data-s='t'>"+(ok?"✓ Feito":"Marcar como feito")+"</button>")+"</div>"+
     (ok?"<div class='row'><span class='hint'>Como foi?</span><div class='chips'>"+[["facil","Fácil"],["ok","Ok"],["pesado","Pesado"]].map(([v,l])=>"<button type='button' data-a='sens' data-s='t' data-v='"+v+"' class='"+(x.sens===v?"on":"")+"'>"+l+"</button>").join("")+"</div></div>":"")+"</div>";
