@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="lucro-ob"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="lucro-ob2"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style>
 <title>Lucro OB</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
@@ -228,9 +228,10 @@ tr.day td.num{font-family:var(--f-num);text-transform:none;text-align:right}
 </div>
 
 <script>
+try{localStorage.removeItem("lucroOB.v1")}catch(e){} // zerado em 29/10/2026
 (function(){
 const $=id=>document.getElementById(id);
-const LS="lucroOB.v1", LSF="lucroOB.filtro";
+const LS="lucroOB2.v1", LSF="lucroOB.filtro";
 const brl=v=>(v<0?"-":"")+"R$ "+Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
 const sbrl=v=>(v>0?"+":"")+brl(v);
 const kbrl=v=>{const a=Math.abs(v);const s=v<0?"-":"";return a>=1000?s+"R$ "+(a/1000).toLocaleString("pt-BR",{maximumFractionDigits:1})+" mil":s+"R$ "+Math.round(a)};
@@ -468,9 +469,9 @@ function bars(L){
   const pos=arr.filter(e=>e.v>0).length;$("barsSub").textContent=pos+" de "+arr.length+(byMonth?" meses":" dias")+" no positivo";
   const W=Math.max(320,Math.round(box.clientWidth||900)),H=W<600?190:220,pl=W<600?48:58,pr=12,pt=14,pb=24;
   let mn=Math.min(0,...arr.map(e=>e.v)),mx=Math.max(0,...arr.map(e=>e.v));const py=(mx-mn)*.08||1;mn-=py;mx+=py;
-  const Y=v=>pt+(H-pt-pb)*(mx-v)/(mx-mn),y0=Y(0);const bw=(W-pl-pr)/arr.length;const gap=Math.min(6,bw*.25);
+  const Y=v=>pt+(H-pt-pb)*(mx-v)/(mx-mn),y0=Y(0);const bw=Math.min((W-pl-pr)/arr.length,W<600?26:34);const gap=Math.min(8,bw*.3); // barra com largura padrão, com 1 dia ou com 50
   const ticks=niceTicks(mn,mx,4);const lab=e=>byMonth?new Date(e.k+"-15T12:00").toLocaleDateString("pt-BR",{month:"short",year:"2-digit"}).replace(". de ","/").replace(".",""):fmtDia(e.k);
-  const step=Math.ceil(arr.length/(W<600?5:10));
+  const step=Math.max(Math.ceil(arr.length/(W<600?5:10)),Math.ceil((byMonth?44:40)/bw));
   box.innerHTML="<svg viewBox='0 0 "+W+" "+H+"' role='img' aria-label='Lucro por "+(byMonth?"mês":"dia")+"'>"+
    ticks.map(v=>"<line x1='"+pl+"' x2='"+(W-pr)+"' y1='"+Y(v)+"' y2='"+Y(v)+"' stroke='var(--line)' stroke-dasharray='"+(v===0?"0":"3 4")+"'/><text class='axis' x='"+(pl-6)+"' y='"+(Y(v)+3)+"' text-anchor='end'>"+kbrl(v)+"</text>").join("")+
    arr.map((e,i)=>{const x=pl+i*bw+gap/2,y=Math.min(Y(e.v),y0),h=Math.max(1.5,Math.abs(Y(e.v)-y0));

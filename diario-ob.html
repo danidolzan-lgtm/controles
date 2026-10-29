@@ -1,7 +1,7 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="diario-ob2"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Diário OB</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="diario-ob3"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Diário OB</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: resumo, mão base/payout, calendário seg–sex 13/10–17/12, tabelas. Janela do dia com 5 sessões (08:00, 09:45, 13:30, 15:00 e 19:30 OTC seg–qui); cada sessão tem no máximo 2 entradas (mão base + Soros) e para no 1º loss. */
+/* Layout: resumo, mão base/payout, calendário seg–sex 29/10–17/12/2026 e 11/01–15/12/2027, tabelas. Janela do dia com 5 sessões (08:00, 09:45, 13:30, 15:00 e 19:30 OTC seg–qui); cada sessão tem no máximo 2 entradas (mão base + Soros) e para no 1º loss. */
 :root{
   --bg:#EEF3FC; --surface:#FFFFFF; --line:#DDE4F2; --fg:#13203B; --muted:#58668A;
   --accent:#2563EB; --accent-soft:#DCE7FF; --soros:#7C3AED; --soros-soft:#EDE9FE;
@@ -128,7 +128,7 @@ td:first-child{font-family:var(--f-body);white-space:normal}
   </div>
 
   <div class="panel" style="display:grid;gap:16px">
-    <h2>Calendário</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2>Calendário</h2><div class="per" id="per"></div></div>
     <div id="cal" style="display:grid;gap:20px"></div>
   </div>
 
@@ -140,8 +140,20 @@ td:first-child{font-family:var(--f-body);white-space:normal}
 
 <div class="ov" id="ov" hidden><div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"></div></div>
 
+<style>.per{display:flex;gap:6px;flex-wrap:wrap}.per button{appearance:none;font:inherit;font-size:.82rem;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:6px 12px;cursor:pointer;white-space:nowrap}.per button b{font-weight:700}.per button.on{background:var(--accent);border-color:var(--accent);color:#fff}</style>
 <script>
-const START="2026-10-13", END="2026-12-17", LS="diarioOB2.v1";
+// 29/10/2026: tudo zerado. Dois períodos: 29/10 a 17/12/2026 e 11/01 a 15/12/2027 (botões em cima do calendário).
+const PER=[{y:"2026",a:"2026-10-29",b:"2026-12-17",t:"29/10 a 17/12/2026"},{y:"2027",a:"2027-01-11",b:"2027-12-15",t:"11/01 a 15/12/2027"}];
+const _hj=(()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")})();
+let PI=PER.findIndex(p=>_hj<=p.b);if(PI<0)PI=PER.length-1;
+let START=PER[PI].a, END=PER[PI].b;
+const inPer=ds=>ds>=START&&ds<=END;
+const usDst=ds=>ds<"2026-11-02"||(ds>="2027-03-14"&&ds<"2027-11-07"); // horário de verão dos EUA
+function perUI(cb){const box=document.getElementById("per");if(box){box.innerHTML=PER.map((p,i)=>"<button type='button' data-i='"+i+"' class='"+(i===PI?"on":"")+"' aria-pressed='"+(i===PI)+"'><b>"+p.y+"</b> · "+p.t.slice(0,13)+"</button>").join("");box.querySelectorAll("button").forEach(b=>b.onclick=()=>{PI=+b.dataset.i;START=PER[PI].a;END=PER[PI].b;perUI(cb);cb()})}const s=document.getElementById("perSub");if(s)s.textContent=PER[PI].t+" · segunda a sexta"}
+perUI(()=>render());
+try{}catch(e){} // dados antigos (zerado em 29/10/2026)
+const LS="diarioOB3.v1";
+function pDays(){return Object.keys(days).filter(inPer).map(k=>days[k])} // só o período escolhido
 const OPS=[{id:"respiro",nome:"Respiro"},{id:"virada",nome:"Virada"},{id:"muralha",nome:"Muralha"},{id:"giro",nome:"Giro"},{id:"armadilha",nome:"Armadilha"}];
 // 4 sessões por dia. Os ids "manha" e "tarde" ficaram para as sessões 2 e 3 para não perder os dias já lançados.
 const SESS=[{id:"s1",nome:"Sessão 1"},{id:"manha",nome:"Sessão 2"},{id:"tarde",nome:"Sessão 3"},{id:"s4",nome:"Sessão 4"},{id:"s5",nome:"Sessão 5 · OTC"}];
@@ -185,7 +197,7 @@ function nextStake(s){ // mão base ou mão base + lucro da anterior (Soros)
 const calcValor=o=>o.res==="win"?r2((+o.entrada||0)*(+cfg.payout||0)/100):r2(+o.entrada||0);
 
 /* ---------- salvar ---------- */
-function lsLoad(){try{const r=JSON.parse(localStorage.getItem(LS)||"null");if(r){days=r.days||{};cfg=Object.assign(cfg,r.cfg||{})}}catch(e){}}
+function lsLoad(){try{const r=JSON.parse(localStorage.getItem(LS)||"null");if(r){days=r.days||{};cfg=Object.assign(cfg,r.cfg||{})}else{const o=JSON.parse(localStorage.getItem("diarioOB2.v1")||"null");if(o&&o.cfg)cfg=Object.assign(cfg,o.cfg)}}catch(e){}}
 function lsSave(){try{localStorage.setItem(LS,JSON.stringify({days,cfg}))}catch(e){}}
 async function saveDay(d){
   days[d.date]=d;lsSave();render();
@@ -196,7 +208,7 @@ let cfgT=null;
 function saveCfg(){lsSave();clearTimeout(cfgT);cfgT=setTimeout(async()=>{if(db){try{await db.doc("config/geral").set(cfg)}catch(e){}}},500)}
 
 /* ---------- tela ---------- */
-function allOps(){const out=[];Object.values(days).forEach(d=>SESS.forEach(s=>{const I=sessInfo(d[s.id]);I.ops.forEach((o,i)=>out.push({...o,kind:I.k[i],sess:s.id}))}));return out.filter(o=>o.res)}
+function allOps(){const out=[];pDays().forEach(d=>SESS.forEach(s=>{const I=sessInfo(d[s.id]);I.ops.forEach((o,i)=>out.push({...o,kind:I.k[i],sess:s.id}))}));return out.filter(o=>o.res)}
 function render(){renderKpis();renderCal();renderTables();renderHint()}
 function renderHint(){const b=+cfg.base||0,p=(+cfg.payout||0)/100;$("cHint").textContent="Win na mão base = +"+(b*p).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})+" · entrada do Soros = R$ "+(b+b*p).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}
 function renderKpis(){
@@ -204,14 +216,14 @@ function renderKpis(){
   const t=todayStr(), hoje=days[t]?dayNet(days[t]):0;
   $("kRes").textContent=brl(tot);$("kRes").className="big "+(tot>0?"pos":tot<0?"neg":"");
   $("kHoje").textContent=n2(hoje);$("kHoje").className=hoje>0?"pos":hoje<0?"neg":"";
-  $("kDias").textContent=Object.values(days).filter(d=>dayOps(d).length).length;
+  $("kDias").textContent=pDays().filter(d=>dayOps(d).length).length;
   const be=100/(1+(+cfg.payout||0)/100), rate=ops.length?w/ops.length*100:null;
   $("kAss").textContent=pct(w,ops.length);$("kAss").className="big "+(rate==null?"":rate>=be?"pos":"neg");
   $("kTot").textContent=ops.length;$("kW").textContent=w;$("kL").textContent=l;
   $("kBe").innerHTML="Empate com payout "+cfg.payout+"%: <b class='num'>"+be.toLocaleString("pt-BR",{maximumFractionDigits:1})+"%</b>";
   const so=ops.filter(o=>o.kind==="soros"), sw=so.filter(o=>o.res==="win").length;
   $("kSor").textContent=pct(sw,so.length);$("kSorN").textContent=so.length;$("kCic").textContent=sw;
-  let ses=0,meta=0,stp=0,cheia=0;Object.values(days).forEach(d=>SESS.forEach(s=>{const I=sessInfo(d[s.id]);if(!I.fim)return;ses++;if(I.fim==="stop")stp++;else{meta++;if(I.fim==="cheia")cheia++}}));
+  let ses=0,meta=0,stp=0,cheia=0;pDays().forEach(d=>SESS.forEach(s=>{const I=sessInfo(d[s.id]);if(!I.fim)return;ses++;if(I.fim==="stop")stp++;else{meta++;if(I.fim==="cheia")cheia++}}));
   $("kApr").textContent=pct(meta,ses);$("kApr").className="big "+(ses?(meta/ses>=.5?"pos":"neg"):"");
   $("kMeta").textContent=meta;$("kStop").textContent=stp;$("kSes").textContent=ses;
   $("kAprTxt").textContent=ses?"sessões que fecharam no positivo · "+cheia+" com meta cheia (2 wins)":"sessões que fecharam no positivo";

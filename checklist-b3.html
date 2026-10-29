@@ -1,7 +1,7 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="checklist-b3m"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Check-list B3</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="checklist-b3n"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Check-list B3</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: check-list único do dia (feito de manhã), janelas das sessões, 4 perguntas, veredito, calendário seg–sex 13/10–17/12. */
+/* Layout: check-list único do dia (feito de manhã), janelas das sessões, 4 perguntas, veredito, calendário seg–sex 29/10–17/12/2026 e 11/01–15/12/2027. */
 :root{
   --bg:#EEF3FC; --surface:#FFFFFF; --line:#DDE4F2; --fg:#13203B; --muted:#58668A;
   --accent:#2563EB; --accent-soft:#DCE7FF; --win:#15803D; --win-soft:#DCFCE7; --loss:#E11D48; --loss-soft:#FFE4EA; --part:#D97706; --part-soft:#FEF3C7;
@@ -82,12 +82,24 @@ img,svg{max-width:100%}
     <div class="actions" id="acts"><button type="button" class="btn primary" id="bSave">Salvar</button><button type="button" class="btn" id="bCancel">Fechar sem salvar</button></div>
   </div>
   <div class="panel">
+    <div class="per" id="per"></div>
     <div id="cal" style="display:grid;gap:18px"></div>
     <div class="legend"><span><i style="background:var(--win)"></i>dia liberado</span><span><i style="background:var(--loss-soft)"></i>não liberado</span></div>
   </div>
 </div>
+<style>.per{display:flex;gap:6px;flex-wrap:wrap}.per button{appearance:none;font:inherit;font-size:.82rem;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:6px 12px;cursor:pointer;white-space:nowrap}.per button b{font-weight:700}.per button.on{background:var(--accent);border-color:var(--accent);color:#fff}</style>
 <script>
-const START="2026-10-14", END="2026-12-17", LS="checklistB3m.v1";
+// 29/10/2026: tudo zerado. Dois períodos: 29/10 a 17/12/2026 e 11/01 a 15/12/2027 (botões em cima do calendário).
+const PER=[{y:"2026",a:"2026-10-29",b:"2026-12-17",t:"29/10 a 17/12/2026"},{y:"2027",a:"2027-01-11",b:"2027-12-15",t:"11/01 a 15/12/2027"}];
+const _hj=(()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")})();
+let PI=PER.findIndex(p=>_hj<=p.b);if(PI<0)PI=PER.length-1;
+let START=PER[PI].a, END=PER[PI].b;
+const inPer=ds=>ds>=START&&ds<=END;
+const usDst=ds=>ds<"2026-11-02"||(ds>="2027-03-14"&&ds<"2027-11-07"); // horário de verão dos EUA
+function perUI(cb){const box=document.getElementById("per");if(box){box.innerHTML=PER.map((p,i)=>"<button type='button' data-i='"+i+"' class='"+(i===PI?"on":"")+"' aria-pressed='"+(i===PI)+"'><b>"+p.y+"</b> · "+p.t.slice(0,13)+"</button>").join("");box.querySelectorAll("button").forEach(b=>b.onclick=()=>{PI=+b.dataset.i;START=PER[PI].a;END=PER[PI].b;perUI(cb);cb()})}const s=document.getElementById("perSub");if(s)s.textContent=PER[PI].t+" · segunda a sexta"}
+perUI(()=>{const t=today();pick(t<START?START:t>END?END:t)});
+try{localStorage.removeItem("checklistB3m.v1");}catch(e){} // dados antigos (zerado em 29/10/2026)
+const LS="checklistB3n.v1";
 // check-list feito UMA vez por dia, de manhã, antes da 1ª sessão. Horários fixos (não mudam em 02/11).
 const SESS=[{id:"manha",nome:"Manhã"},{id:"tarde",nome:"Tarde"}];
 const JAN={manha:["09:45","11:15"],tarde:["14:00","15:30"]};
@@ -98,9 +110,20 @@ const EVT={
   "2026-11-02":[{n:"Finados, B3 fechada",de:"00:00",ate:"23:59",pula:{manha:"B3 fechada",tarde:"B3 fechada"}}],
   "2026-11-20":[{n:"Consciência Negra, B3 fechada",de:"00:00",ate:"23:59",pula:{manha:"B3 fechada",tarde:"B3 fechada"}}],
   "2026-11-26":[{n:"feriado nos EUA",de:"00:00",ate:"23:59",pula:{tarde:"EUA fechado, volume fraco"}}],
-  "2026-12-09":[{n:"FOMC, juros dos EUA",de:"15:00",ate:"16:00",pula:{tarde:"FOMC 16:00"}}]
+  "2026-12-09":[{n:"FOMC, juros dos EUA",de:"15:00",ate:"16:00",pula:{tarde:"FOMC 16:00"}}],
+  "2027-02-08":[{n:"Carnaval, B3 fechada",de:"00:00",ate:"23:59",pula:{manha:"B3 fechada",tarde:"B3 fechada"}}],
+  "2027-02-09":[{n:"Carnaval, B3 fechada",de:"00:00",ate:"23:59",pula:{manha:"B3 fechada",tarde:"B3 fechada"}}],
+  "2027-02-10":[{n:"Quarta de Cinzas, B3 abre às 13:00",de:"00:00",ate:"13:00",pula:{manha:"B3 abre às 13:00"}}],
+  "2027-03-26":[{n:"Sexta-feira Santa, B3 fechada",de:"00:00",ate:"23:59",pula:{manha:"B3 fechada",tarde:"B3 fechada"}}],
+  "2027-04-21":[{n:"Tiradentes, B3 fechada",de:"00:00",ate:"23:59",pula:{manha:"B3 fechada",tarde:"B3 fechada"}}],
+  "2027-05-27":[{n:"Corpus Christi, B3 fechada",de:"00:00",ate:"23:59",pula:{manha:"B3 fechada",tarde:"B3 fechada"}}],
+  "2027-09-07":[{n:"Independência, B3 fechada",de:"00:00",ate:"23:59",pula:{manha:"B3 fechada",tarde:"B3 fechada"}}],
+  "2027-10-12":[{n:"Nossa Senhora Aparecida, B3 fechada",de:"00:00",ate:"23:59",pula:{manha:"B3 fechada",tarde:"B3 fechada"}}],
+  "2027-11-02":[{n:"Finados, B3 fechada",de:"00:00",ate:"23:59",pula:{manha:"B3 fechada",tarde:"B3 fechada"}}],
+  "2027-11-15":[{n:"Proclamação da República, B3 fechada",de:"00:00",ate:"23:59",pula:{manha:"B3 fechada",tarde:"B3 fechada"}}],
+  "2027-11-25":[{n:"feriado nos EUA",de:"00:00",ate:"23:59",pula:{tarde:"EUA fechado, volume fraco"}}]
 };
-function pausas(ds){const p=[{n:ds>="2026-11-02"?"dados dos EUA":"abertura de Nova York",de:"10:25",ate:"10:45"}];if(ds<"2026-11-02")p.push({n:"dados dos EUA das 11:00, só se houver notícia forte",de:"10:55",ate:"11:15"});return p.concat((EVT[ds]||[]).filter(e=>e.de!=="00:00"))}
+function pausas(ds){const p=[{n:!usDst(ds)?"dados dos EUA":"abertura de Nova York",de:"10:25",ate:"10:45"}];if(usDst(ds))p.push({n:"dados dos EUA das 11:00, só se houver notícia forte",de:"10:55",ate:"11:15"});return p.concat((EVT[ds]||[]).filter(e=>e.de!=="00:00"))}
 function pulos(ds){const o={};(EVT[ds]||[]).forEach(e=>Object.assign(o,e.pula||{}));return o}
 const pausasTxt=ds=>pausas(ds).map(p=>p.de+"–"+p.ate+" ("+p.n+")").join(" e ");
 const sessTxt=()=>SESS.map(s=>s.nome+" "+JAN[s.id].join("–")).join(" · ");

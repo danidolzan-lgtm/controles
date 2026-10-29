@@ -1,7 +1,7 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="dopamina-b3m"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Dopamina B3</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="dopamina-b3n"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Dopamina B3</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: placar no topo, check-in de hoje, % semanal (reinicia toda segunda), calendário seg–sex (só dias de operar) de 14/10 a 17/12. */
+/* Layout: placar no topo, check-in de hoje, % semanal (reinicia toda segunda), calendário seg–sex (só dias de operar): 29/10 a 17/12/2026 e 11/01 a 15/12/2027. Card de cima: nota 0 a 10 do período. */
 :root{
   --bg:#EEF3FC; --surface:#FFFFFF; --line:#DDE4F2; --fg:#13203B; --muted:#58668A;
   --accent:#2563EB; --win:#15803D; --win-soft:#DCFCE7; --loss:#E11D48; --loss-soft:#FFE4EA;
@@ -82,15 +82,15 @@ img,svg{max-width:100%}
 </style>
 <div class="wrap">
   <aside class="side">
-    <div class="top"><div><h1>Dopamina B3</h1><div class="sub">14/10 a 17/12/2026 · segunda a sexta</div></div><div class="status" id="status">Carregando…</div></div>
+    <div class="top"><div><h1>Dopamina B3</h1><div class="sub" id="perSub"></div><div class="per" id="per" style="margin-top:8px"></div></div><div class="status" id="status">Carregando…</div></div>
 <div class="panel pctp">
     <div class="pcth"><span class="lbl" style="font-size:.8rem" id="sPctLbl">% de disciplina da semana</span><span class="big" id="sPct">100%</span></div>
     <div class="bar" aria-hidden="true"><i id="sBar"></i></div>
     <div class="hint" id="sPctTxt"></div>
   </div>
 <div class="panel pctp">
-    <div class="pcth"><span class="lbl" style="font-size:.8rem">% geral até 17/12</span><span class="big" id="gPct">100%</span></div>
-    <div class="bar" aria-hidden="true"><i id="gBar"></i></div>
+    <div class="pcth"><span class="lbl" style="font-size:.8rem" id="gLbl">Nota do período</span><span class="big" id="gPct">0</span></div>
+    <div class="bar" aria-hidden="true" style="background:var(--bg);border:1px solid var(--line)"><i id="gBar" style="width:0"></i></div>
     <div class="hint" id="gPctTxt"></div>
   </div>
   <div class="panel score">
@@ -115,8 +115,19 @@ img,svg{max-width:100%}
     <div id="cal"></div>
   </main>
 </div>
+<style>.per{display:flex;gap:6px;flex-wrap:wrap}.per button{appearance:none;font:inherit;font-size:.82rem;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:6px 12px;cursor:pointer;white-space:nowrap}.per button b{font-weight:700}.per button.on{background:var(--accent);border-color:var(--accent);color:#fff}</style>
 <script>
-const START="2026-10-14", END="2026-12-17", LS="dopaminaB3m.v1";
+// 29/10/2026: tudo zerado. Dois períodos: 29/10 a 17/12/2026 e 11/01 a 15/12/2027 (botões em cima do calendário).
+const PER=[{y:"2026",a:"2026-10-29",b:"2026-12-17",t:"29/10 a 17/12/2026"},{y:"2027",a:"2027-01-11",b:"2027-12-15",t:"11/01 a 15/12/2027"}];
+const _hj=(()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")})();
+let PI=PER.findIndex(p=>_hj<=p.b);if(PI<0)PI=PER.length-1;
+let START=PER[PI].a, END=PER[PI].b;
+const inPer=ds=>ds>=START&&ds<=END;
+const usDst=ds=>ds<"2026-11-02"||(ds>="2027-03-14"&&ds<"2027-11-07"); // horário de verão dos EUA
+function perUI(cb){const box=document.getElementById("per");if(box){box.innerHTML=PER.map((p,i)=>"<button type='button' data-i='"+i+"' class='"+(i===PI?"on":"")+"' aria-pressed='"+(i===PI)+"'><b>"+p.y+"</b> · "+p.t.slice(0,13)+"</button>").join("");box.querySelectorAll("button").forEach(b=>b.onclick=()=>{PI=+b.dataset.i;START=PER[PI].a;END=PER[PI].b;perUI(cb);cb()})}const s=document.getElementById("perSub");if(s)s.textContent=PER[PI].t+" · segunda a sexta"}
+perUI(()=>{const t=today();sel=lastWd(t<START?START:(t>END?END:t));if(sel<START)sel=START;draft=marks[sel]||null;render()});
+try{localStorage.removeItem("dopaminaB3m.v1");}catch(e){} // dados antigos (zerado em 29/10/2026)
+const LS="dopaminaB3n.v1";
 let marks={}, db=null, sel=null, draft=null;
 const $=id=>document.getElementById(id);
 const isWd=ds=>{const g=new Date(ds+"T12:00:00").getDay();return g>0&&g<6};
@@ -149,10 +160,13 @@ function stats(){
   $("sPctTxt").textContent="Começa em 100% toda segunda. Cada \"errei\" tira "+pf(100/W.total)+" ("+W.total+" dias úteis nesta semana). Saiu de 100% já fica vermelho. "+(W.l?W.l+(W.l===1?" erro":" erros")+" nesta semana.":"Nenhum erro nesta semana.");
   $("sW").textContent=W.w;$("sL").textContent=W.l;$("sSeq").textContent=seq;$("sBest").textContent=best;
   let gw=0,gl=0;keys.forEach(k=>{if(marks[k]==="w")gw++;else if(marks[k]==="l")gl++});
-  const gt=wdCount(START,END),gp=Math.max(0,100-gl/gt*100);
-  $("gPct").textContent=pf(gp);$("gPct").className="big";$("gPct").style.color=grad(gp);
-  $("gBar").style.width=gp+"%";$("gBar").style.background=grad(gp);
-  $("gPctTxt").textContent="Período todo: cada \"errei\" tira "+(100/gt).toLocaleString("pt-BR",{maximumFractionDigits:2})+"% ("+gt+" dias úteis até 17/12). Em 100% fica verde e vai puxando para o vermelho conforme cai. "+gw+" acertos e "+gl+(gl===1?" erro":" erros")+" no total.";
+  const gt=wdCount(START,END)||1,gp=Math.max(0,100-gl/gt*100),nota=gw/gt*10,maxN=(gt-gl)/gt*10;
+  const nf=v=>v.toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1});
+  // nota: começa em 0 e vai a 10 se acertar todos os dias úteis do período; cor: verde sem erro, vermelho se errar todos
+  $("gLbl").textContent="Nota "+PER[PI].y+" · "+sdm(START)+" a "+sdm(END);
+  $("gPct").innerHTML=nf(nota)+"<small style='font-size:.95rem;color:var(--muted)'> / 10</small>";$("gPct").className="big";$("gPct").style.color=grad(gp);
+  $("gBar").style.width=(nota*10)+"%";$("gBar").style.background=grad(gp);
+  $("gPctTxt").textContent="Começa em 0 e chega a 10 se acertar todos os "+gt+" dias úteis até "+sdm(END)+". Cada acerto soma "+(10/gt).toLocaleString("pt-BR",{maximumFractionDigits:2})+" e cada erro desconta essa parte da nota máxima (hoje dá para chegar a "+nf(maxN)+"). A cor sai do verde e vai puxando para o vermelho conforme os erros, vermelho total se errar todos. "+gw+(gw===1?" acerto e ":" acertos e ")+gl+(gl===1?" erro.":" erros.");
   const box=$("weeks");box.innerHTML="";
   for(let m=curMon;m>=monOf(START);m=addD(m,-7)){const x=weekInfo(m);const r=document.createElement("div");r.className="wk "+(okW(x)?"good":"bad")+(m===curMon?" cur":"");r.innerHTML="<span>"+sdm(x.a)+" a "+sdm(x.b)+(m===curMon?" · atual":"")+"</span><small>"+x.w+"✓ "+x.l+"✗</small><b>"+pf(x.p)+"</b>";box.appendChild(r)}
 }

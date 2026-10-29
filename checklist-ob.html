@@ -1,7 +1,7 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="checklist-ob2"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Check-list OB</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="checklist-ob3"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Check-list OB</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: check-list único do dia (feito de manhã), janelas das sessões, 4 perguntas, veredito, calendário seg–sex 13/10–17/12. 28/10/2026: + sessão 5 em OTC 19:30–20:30, só seg–qui. */
+/* Layout: check-list único do dia (feito de manhã), janelas das sessões, 4 perguntas, veredito, calendário seg–sex 29/10–17/12/2026 e 11/01–15/12/2027. 28/10/2026: + sessão 5 em OTC 19:30–20:30, só seg–qui. */
 :root{
   --bg:#EEF3FC; --surface:#FFFFFF; --line:#DDE4F2; --fg:#13203B; --muted:#58668A;
   --accent:#2563EB; --accent-soft:#DCE7FF; --win:#15803D; --win-soft:#DCFCE7; --loss:#E11D48; --loss-soft:#FFE4EA; --part:#D97706; --part-soft:#FEF3C7;
@@ -91,12 +91,25 @@ img,svg{max-width:100%}
     <div class="actions" id="acts"><button type="button" class="btn primary" id="bSave">Salvar</button><button type="button" class="btn" id="bCancel">Fechar sem salvar</button></div>
   </div>
   <div class="panel">
+    <div class="per" id="per"></div>
     <div id="cal" style="display:grid;gap:18px"></div>
     <div class="legend"><span><i style="background:var(--win)"></i>dia liberado</span><span><i style="background:var(--loss-soft)"></i>não liberado</span></div>
   </div>
 </div>
+<style>.per{display:flex;gap:6px;flex-wrap:wrap}.per button{appearance:none;font:inherit;font-size:.82rem;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:6px 12px;cursor:pointer;white-space:nowrap}.per button b{font-weight:700}.per button.on{background:var(--accent);border-color:var(--accent);color:#fff}</style>
 <script>
-const START="2026-10-13", END="2026-12-17", LS="checklistOB2.v1";
+// 29/10/2026: tudo zerado. Dois períodos: 29/10 a 17/12/2026 e 11/01 a 15/12/2027 (botões em cima do calendário).
+const PER=[{y:"2026",a:"2026-10-29",b:"2026-12-17",t:"29/10 a 17/12/2026"},{y:"2027",a:"2027-01-11",b:"2027-12-15",t:"11/01 a 15/12/2027"}];
+const _hj=(()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")})();
+let PI=PER.findIndex(p=>_hj<=p.b);if(PI<0)PI=PER.length-1;
+let START=PER[PI].a, END=PER[PI].b;
+const inPer=ds=>ds>=START&&ds<=END;
+const usDst=ds=>ds<"2026-11-02"||(ds>="2027-03-14"&&ds<"2027-11-07"); // horário de verão dos EUA
+function perUI(cb){const box=document.getElementById("per");if(box){box.innerHTML=PER.map((p,i)=>"<button type='button' data-i='"+i+"' class='"+(i===PI?"on":"")+"' aria-pressed='"+(i===PI)+"'><b>"+p.y+"</b> · "+p.t.slice(0,13)+"</button>").join("");box.querySelectorAll("button").forEach(b=>b.onclick=()=>{PI=+b.dataset.i;START=PER[PI].a;END=PER[PI].b;perUI(cb);cb()})}const s=document.getElementById("perSub");if(s)s.textContent=PER[PI].t+" · segunda a sexta"}
+perUI(()=>{const t=today();pick(t<START?START:t>END?END:t)});
+try{localStorage.removeItem("checklistOB2.v1");}catch(e){} // dados antigos (zerado em 29/10/2026)
+const LS="checklistOB3.v1";
+const USH={"2026-11-26":1,"2027-01-18":1,"2027-02-15":1,"2027-03-26":1,"2027-05-31":1,"2027-06-18":1,"2027-07-05":1,"2027-09-06":1,"2027-11-25":1}; // feriados cheios nos EUA (mercado aberto parado)
 // check-list feito UMA vez por dia, de manhã, antes da 1ª sessão. Horários fixos (não mudam em 02/11).
 const SESS=[{id:"s1",nome:"Sessão 1"},{id:"manha",nome:"Sessão 2"},{id:"tarde",nome:"Sessão 3"},{id:"s4",nome:"Sessão 4"},{id:"s5",nome:"Sessão 5 · OTC"}];
 const JAN={s1:["08:00","09:00"],manha:["09:45","10:25"],tarde:["13:30","14:30"],s4:["15:00","16:00"],s5:["19:30","20:30"]};
@@ -110,7 +123,16 @@ const EVT={
   "2026-11-26":[{n:"feriado nos EUA",de:"00:00",ate:"23:59",pula:{s1:"feriado EUA",manha:"feriado EUA",tarde:"feriado EUA",s4:"feriado EUA"}}],
   "2026-11-27":[{n:"EUA meio período",de:"13:00",ate:"23:59",pula:{tarde:"EUA meio período",s4:"EUA meio período"}}],
   "2026-12-09":[{n:"FOMC, juros dos EUA",de:"15:00",ate:"16:00",pula:{s4:"FOMC 16:00"}}],
-  "2026-12-17":[{n:"juros da Inglaterra (BoE): pare às 08:50",de:"08:50",ate:"09:15"},{n:"juros da Zona do Euro (BCE) e coletiva",de:"10:10",ate:"11:00",pula:{manha:"BCE 10:15"}}]
+  "2026-12-17":[{n:"juros da Inglaterra (BoE): pare às 08:50",de:"08:50",ate:"09:15"},{n:"juros da Zona do Euro (BCE) e coletiva",de:"10:10",ate:"11:00",pula:{manha:"BCE 10:15"}}],
+  "2027-01-18":[{n:"feriado nos EUA",de:"00:00",ate:"23:59",pula:{s1:"feriado EUA",manha:"feriado EUA",tarde:"feriado EUA",s4:"feriado EUA"}}],
+  "2027-02-15":[{n:"feriado nos EUA",de:"00:00",ate:"23:59",pula:{s1:"feriado EUA",manha:"feriado EUA",tarde:"feriado EUA",s4:"feriado EUA"}}],
+  "2027-03-26":[{n:"feriado nos EUA",de:"00:00",ate:"23:59",pula:{s1:"feriado EUA",manha:"feriado EUA",tarde:"feriado EUA",s4:"feriado EUA"}}],
+  "2027-05-31":[{n:"feriado nos EUA",de:"00:00",ate:"23:59",pula:{s1:"feriado EUA",manha:"feriado EUA",tarde:"feriado EUA",s4:"feriado EUA"}}],
+  "2027-06-18":[{n:"feriado nos EUA",de:"00:00",ate:"23:59",pula:{s1:"feriado EUA",manha:"feriado EUA",tarde:"feriado EUA",s4:"feriado EUA"}}],
+  "2027-07-05":[{n:"feriado nos EUA",de:"00:00",ate:"23:59",pula:{s1:"feriado EUA",manha:"feriado EUA",tarde:"feriado EUA",s4:"feriado EUA"}}],
+  "2027-09-06":[{n:"feriado nos EUA",de:"00:00",ate:"23:59",pula:{s1:"feriado EUA",manha:"feriado EUA",tarde:"feriado EUA",s4:"feriado EUA"}}],
+  "2027-11-25":[{n:"feriado nos EUA",de:"00:00",ate:"23:59",pula:{s1:"feriado EUA",manha:"feriado EUA",tarde:"feriado EUA",s4:"feriado EUA"}}],
+  "2027-11-26":[{n:"EUA meio período",de:"13:00",ate:"23:59",pula:{tarde:"EUA meio período",s4:"EUA meio período"}}]
 };
 function pulos(ds){const o={};(EVT[ds]||[]).forEach(e=>Object.assign(o,e.pula||{}));if(new Date(ds+"T12:00:00").getDay()===5){if(!o.s4)o.s4="sexta à tarde";if(!o.s5)o.s5="OTC só seg–qui"}return o}
 
@@ -140,16 +162,25 @@ const AG={
   "2026-12-10":[{t:"10:30",n:"CPI (inflação dos EUA)"}],
   "2026-12-15":[{t:"10:30",n:"PPI (inflação do produtor dos EUA)"}],
   "2026-12-16":[{t:"10:30",n:"Vendas no varejo dos EUA"}],
-  "2026-12-17":[{t:"09:00",n:"BoE: juros da Inglaterra",x:1},{t:"10:15",n:"BCE: juros da Zona do Euro + coletiva 10:45",ate:"11:00",x:1}]
+  "2026-12-17":[{t:"09:00",n:"BoE: juros da Inglaterra",x:1},{t:"10:15",n:"BCE: juros da Zona do Euro + coletiva 10:45",ate:"11:00",x:1}],
+  "2027-01-18":[{t:"00:00",n:"Feriado nos EUA (Martin Luther King): mercado aberto parado",ate:"23:59",x:1}],
+  "2027-02-15":[{t:"00:00",n:"Feriado nos EUA (Presidents Day): mercado aberto parado",ate:"23:59",x:1}],
+  "2027-03-26":[{t:"00:00",n:"Feriado nos EUA (Sexta-feira Santa): mercado aberto parado",ate:"23:59",x:1}],
+  "2027-05-31":[{t:"00:00",n:"Feriado nos EUA (Memorial Day): mercado aberto parado",ate:"23:59",x:1}],
+  "2027-06-18":[{t:"00:00",n:"Feriado nos EUA (Juneteenth): mercado aberto parado",ate:"23:59",x:1}],
+  "2027-07-05":[{t:"00:00",n:"Feriado nos EUA (Independência): mercado aberto parado",ate:"23:59",x:1}],
+  "2027-09-06":[{t:"00:00",n:"Feriado nos EUA (Labor Day): mercado aberto parado",ate:"23:59",x:1}],
+  "2027-11-25":[{t:"00:00",n:"Feriado nos EUA (Ação de Graças): mercado aberto parado",ate:"23:59",x:1}],
+  "2027-11-26":[{t:"13:00",n:"EUA em meio período: tarde parada",ate:"23:59",x:1}]
 };
 const hm=m=>String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0");
 const mi=t=>{const [h,m]=t.split(":").map(Number);return h*60+m};
 function agenda(ds){
   if(isWE(ds))return [];
-  const g=new Date(ds+"T12:00:00").getDay(), dst=ds<"2026-11-02"; // EUA saem do horário de verão em 01/11
+  const g=new Date(ds+"T12:00:00").getDay(), dst=usDst(ds); // EUA: sem horário de verão de 02/11/2026 a 13/03/2027 e a partir de 07/11/2027
   let L=(AG[ds]||[]).map(e=>({...e}));
-  if(g===4&&ds!=="2026-11-26")L.push({t:dst?"09:30":"10:30",n:"Pedidos de seguro-desemprego dos EUA"}); // toda quinta (no feriado, sai na quarta)
-  if(ds!=="2026-11-26")L.push({t:dst?"10:30":"11:30",n:"Abertura de Nova York"});
+  if(g===4&&!USH[ds])L.push({t:dst?"09:30":"10:30",n:"Pedidos de seguro-desemprego dos EUA"}); // toda quinta (no feriado, sai na quarta)
+  if(!USH[ds])L.push({t:dst?"10:30":"11:30",n:"Abertura de Nova York"});
   const seen={};L=L.filter(e=>{const k=e.t+e.n;if(seen[k])return false;seen[k]=1;return true});
   L.forEach(e=>{const t=mi(e.t);e.de=e.t==="00:00"?"00:00":hm(Math.max(0,t-5));e.ate=e.ate||hm(t+15);
     e.ses=SESS.filter(s=>s.id!=="s5"&&mi(e.de)<mi(JAN[s.id][1])&&mi(e.ate)>mi(JAN[s.id][0])).map(s=>s.id)});
@@ -212,7 +243,7 @@ function drawJan(){
   if(AGs.length){h+="<div class='fora'><span class='fh'>🚫 Ficar de fora hoje (5 min antes até 15 min depois):</span>"+AGs.map(e=>{const now=hoje&&m>=mi(e.de)&&m<mi(e.ate);
     const tag=e.ses.length?(e.ses.every(s=>pl[s])?"sessão já pulada":"⛔ dentro da "+e.ses.map(nm).join(" e ")):"fora das sessões";
     return "<div class='fr"+(e.ses.length?" in":"")+(now?" now":"")+"'><b>"+(e.de==="00:00"?"dia todo":e.de+"–"+e.ate)+"</b><span>"+e.n+(now?" · agora":"")+"</span><small>"+tag+"</small></div>"}).join("")+"</div>"}
-  h+="<span class='hint' style='flex-basis:100%;color:var(--muted);font-size:.78rem'>A lista já traz as notícias marcadas de alto impacto (EUA, Zona do Euro e Inglaterra) até 17/12. Fala surpresa do Fed, BCE ou BoE não aparece: dê uma olhada rápida no Investing de manhã. A sessão 2 tem 40 min e acaba às 10:25 por causa dos dados dos EUA. Sexta: sem a sessão 4 e sem a 5. A sessão 5 é OTC (seg–qui): não depende de notícia, mas mantém todos os filtros do gráfico.</span>";
+  h+="<span class='hint' style='flex-basis:100%;color:var(--muted);font-size:.78rem'>A lista já traz as notícias marcadas de alto impacto (EUA, Zona do Euro e Inglaterra) até 17/12/2026. Em 2027, por enquanto, só os feriados dos EUA, o seguro-desemprego de quinta e a abertura de NY: as notícias de cada dia entram quando sair o calendário. Fala surpresa do Fed, BCE ou BoE não aparece: dê uma olhada rápida no Investing de manhã. A sessão 2 tem 40 min e acaba às 10:25 por causa dos dados dos EUA. Sexta: sem a sessão 4 e sem a 5. A sessão 5 é OTC (seg–qui): não depende de notícia, mas mantém todos os filtros do gráfico.</span>";
   $("jan").innerHTML=h;
 }
 setInterval(()=>{if($("jan"))drawJan()},60000);

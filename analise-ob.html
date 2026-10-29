@@ -172,7 +172,8 @@ textarea#ctx,textarea#q,textarea#resp{min-height:52px}
   </div>
 </div>
 <script>
-const LS="analiseOB.v1";
+try{localStorage.removeItem("analiseOB.v1")}catch(e){} // análises antigas apagadas em 29/10/2026
+const LS="analiseOB.v2";
 const $=id=>document.getElementById(id);
 const ui_=window.ui||{toast(){},done(){}};
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -340,7 +341,7 @@ $("salvar").onclick=async()=>{
   const iaV=cur.ia&&cur.ia.veredito;
   const a={id:cur.id,data:new Date().toISOString(),op:cur.op,dir:cur.dir,resp:manual?cur.resp:{},ok:manual?V.ok:iaV==="certo",incerto:!manual&&iaV!=="certo"&&iaV!=="errado",erros:manual?V.erros.map(q=>q.t):[],ia:cur.ia||null,res:cur.res||"",obs:cur.obs||"",img};
   items=items.filter(x=>x.id!==a.id).concat([a]);lsSave();draw();
-  if(db){try{await db.doc("analises/"+a.id).set(a);$("status").textContent="Salvo"}catch(e){$("status").textContent="Não salvou na conta (imagem grande?). Ficou neste aparelho.";ui_.toast("Não salvou na conta",1)}}
+  if(db){try{await db.doc("analises2/"+a.id).set(a);$("status").textContent="Salvo"}catch(e){$("status").textContent="Não salvou na conta (imagem grande?). Ficou neste aparelho.";ui_.toast("Não salvou na conta",1)}}
   else $("status").textContent="Salvo neste aparelho";
   fim();ui_.done($("salvar"),"Análise salva");
   novo();$("file").value="";$("obs").value="";$("ctx").value="";$("resp").value="";$("guia").hidden=true;$("aiRes").innerHTML="";drawShot();drawForm();
@@ -373,7 +374,7 @@ $("lista").addEventListener("click",async e=>{
   const d=e.target.closest("[data-del]");if(!d)return;
   const id=d.dataset.del;if(delArm!==id){delArm=id;draw();return}
   items=items.filter(x=>x.id!==id);delArm=null;openId=null;lsSave();draw();ui_.toast("Análise excluída");
-  if(db){try{await db.doc("analises/"+id).delete()}catch(err){}}
+  if(db){try{await db.doc("analises2/"+id).delete()}catch(err){}}
 });
 
 
@@ -543,9 +544,9 @@ draw();drawForm();$("status").textContent="Conectando…";
     const m=d.exists&&d.data().manual;if(m&&m!==getM()){try{localStorage.setItem(CFGM,m)}catch(e){}cfgState()}
   },()=>{});
   let first=true;
-  db.collection("analises").onSnapshot(q=>{
+  db.collection("analises2").onSnapshot(q=>{
     const remote=q.docs.map(d=>d.data()), ids=new Set(remote.map(x=>x.id));
-    if(first){first=false;items.filter(a=>!ids.has(a.id)).forEach(a=>{remote.push(a);db.doc("analises/"+a.id).set(a).catch(()=>{})})}
+    if(first){first=false;items.filter(a=>!ids.has(a.id)).forEach(a=>{remote.push(a);db.doc("analises2/"+a.id).set(a).catch(()=>{})})}
     items=remote;lsSave();draw();$("status").textContent="Sincronizado";
   },()=>{$("status").textContent="Sem conexão com o salvamento"});
 })();
