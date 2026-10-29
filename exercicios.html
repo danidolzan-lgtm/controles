@@ -1,7 +1,7 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="exercicios"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Exercícios</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="exercicios2"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Exercícios</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: degrau atual e progresso no topo; hoje com as 3 sessões de 15 min (timer guiado); calendário seg–sex; escada dos 5 degraus. */
+/* Layout: degrau atual e progresso no topo; hoje com 1 treino de 15 min às 06:30, corpo todo (timer guiado); calendário seg–sex por período (03/11 a 17/12/2026, 11/01 a 31/03/2027, 01/04 a 30/06/2027); escada dos 5 degraus. */
 :root{
   --bg:#EEF3FC; --surface:#FFFFFF; --line:#DDE4F2; --fg:#13203B; --muted:#58668A;
   --accent:#2563EB; --accent-soft:#DCE7FF; --win:#15803D; --win-soft:#DCFCE7; --loss:#E11D48; --loss-soft:#FFE4EA; --part:#D97706; --part-soft:#FEF3C7;
@@ -36,6 +36,7 @@ h3{font-family:var(--f-display);font-size:.95rem;margin:0}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .sess{border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:8px;background:var(--bg)}
 .sess.ok{border-color:var(--win);background:var(--win-soft)}
+.exb{display:grid;gap:4px;padding:10px 12px;border-radius:9px;background:var(--surface);border:1px solid var(--line)}
 .sess .h{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
 .sess .tag{font-size:.75rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.05em}
 .sess .ex{font-family:var(--f-display);font-weight:800;font-size:1.15rem}
@@ -72,14 +73,14 @@ details summary{cursor:pointer;font-weight:600}
 
 <div class="wrap">
   <div class="top">
-    <div><h1>Exercícios</h1><div class="sub">Corpo todo em casa · 3 sessões de 15 min pela manhã · segunda a sexta · 5 degraus</div></div>
+    <div><h1>Exercícios</h1><div class="sub">Corpo todo em casa · 1 treino de 15 min às 06:30 · segunda a sexta · 5 degraus</div></div>
     <div class="status" id="status">Carregando…</div>
   </div>
 
   <div class="kpis">
     <div class="panel"><div class="lbl">Degrau atual</div><div class="big" id="kNivel">–</div><div class="hint" id="kNivelTxt"></div></div>
     <div class="panel"><div class="lbl">Dias completos no degrau</div><div class="big num" id="kDias">0/10</div><div class="bar"><i id="kBar"></i></div></div>
-    <div class="panel"><div class="lbl">Sessões feitas</div><div class="big num" id="kSess">0</div><div class="hint" id="kSemana"></div></div>
+    <div class="panel"><div class="lbl">Treinos feitos</div><div class="big num" id="kSess">0</div><div class="hint" id="kSemana"></div></div>
   </div>
 
   <div class="panel" id="sobe" hidden></div>
@@ -91,16 +92,16 @@ details summary{cursor:pointer;font-weight:600}
   </div>
 
   <div class="panel">
-    <h2>Calendário</h2>
+    <div class="row" style="justify-content:space-between"><h2>Calendário</h2><div class="chips" id="per"></div></div>
     <div id="cal" style="display:grid;gap:18px"></div>
-    <div class="legend"><span><i style="background:var(--win)"></i>3 sessões</span><span><i style="background:var(--part-soft);border-color:var(--part)"></i>1 ou 2 sessões</span><span><i style="background:var(--loss-soft);border-color:var(--loss)"></i>não treinou</span></div>
+    <div class="legend"><span><i style="background:var(--win)"></i>treino feito</span><span><i style="background:var(--loss-soft);border-color:var(--loss)"></i>não treinou</span></div>
   </div>
 
   <div class="panel">
     <h2>Os 5 degraus</h2>
-    <div class="hint">Dia A (seg, qua, sex) e Dia B (ter, qui). Cada sessão: 3 min de aquecimento, 10 min de EMOM (no início de cada minuto faz as repetições e descansa o resto do minuto) e 2 min de alongamento.</div>
+    <div class="hint">Um treino por dia, às 06:30, trabalhando o corpo todo: 2 min de aquecimento, 12 min de EMOM em 4 rodadas (minuto 1 pernas, minuto 2 superior, minuto 3 core; no início de cada minuto faz as repetições e descansa o resto) e 1 min de alongamento. Dia A (seg, qua, sex) e Dia B (ter, qui) trocam os exercícios.</div>
     <div class="tw"><table id="tLv"></table></div>
-    <div class="note"><b>Quando subir:</b> 10 dias completos no degrau (as 3 sessões) e, nas últimas sessões, as repetições saindo com técnica limpa e marcadas como "fácil" ou "ok". Se um degrau ficar pesado demais, pode voltar um.<br><b>Segurança:</b> dor em articulação (joelho, ombro, lombar) é sinal para parar o exercício, não para insistir. Cansaço muscular é normal.</div>
+    <div class="note"><b>Quando subir:</b> 10 treinos completos no degrau e, nas últimas sessões, as repetições saindo com técnica limpa e marcadas como "fácil" ou "ok". Se um degrau ficar pesado demais, pode voltar um.<br><b>Segurança:</b> dor em articulação (joelho, ombro, lombar) é sinal para parar o exercício, não para insistir. Cansaço muscular é normal.</div>
     <div class="row"><span class="hint">Trocar de degrau manualmente:</span><div class="chips" id="lvPick"></div></div>
   </div>
 
@@ -112,18 +113,24 @@ details summary{cursor:pointer;font-weight:600}
   </div>
 
   <details class="panel">
-    <summary>Horários das sessões</summary>
+    <summary>Horário do treino</summary>
     <div class="cfgf">
-      <label>Sessão 1<input id="h1" type="time"></label>
-      <label>Sessão 2<input id="h2" type="time"></label>
-      <label>Sessão 3<input id="h3" type="time"></label>
+      <label>Treino<input id="h1" type="time"></label>
     </div>
-    <span class="hint">Só para lembrar a ordem do dia. Pode fazer as três em qualquer horário da manhã.</span>
+    <span class="hint">Padrão 06:30, de segunda a sexta.</span>
   </details>
 </div>
 
 <script>
-const START="2026-10-22", LS="exercicios.v1";
+// 29/10/2026: zerado. Começa em 03/11/2026; períodos iguais aos outros controles (botões em cima do calendário).
+const PER=[{y:"2026",a:"2026-11-03",b:"2026-12-17",t:"03/11 a 17/12/2026"},{y:"jan–mar/27",a:"2027-01-11",b:"2027-03-31",t:"11/01 a 31/03/2027"},{y:"abr–jun/27",a:"2027-04-01",b:"2027-06-30",t:"01/04 a 30/06/2027"}];
+const _hj=(()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")})();
+let PI=PER.findIndex(p=>_hj<=p.b);if(PI<0)PI=PER.length-1;
+let START=PER[PI].a, END=PER[PI].b;
+const LS="exercicios2.v1";
+try{localStorage.removeItem("exercicios.v1")}catch(e){}
+function perUI(){const box=document.getElementById("per");if(!box)return;box.innerHTML=PER.map((p,i)=>"<button type='button' data-i='"+i+"' class='"+(i===PI?"on":"")+"'><b>"+p.y+"</b> · "+p.t.slice(0,13)+"</button>").join("");
+  box.querySelectorAll("button").forEach(b=>b.onclick=()=>{PI=+b.dataset.i;START=PER[PI].a;END=PER[PI].b;const t=today();sel=t<START?START:t>END?END:t;perUI();render()})}
 /* ---------- os exercícios (peso do corpo, sem equipamento; mochila com livros como carga) ---------- */
 const SESS=[{id:"s1",nome:"Sessão 1",foco:"Pernas e glúteos"},{id:"s2",nome:"Sessão 2",foco:"Peito, costas e braços"},{id:"s3",nome:"Sessão 3",foco:"Abdômen e condicionamento"}];
 const AQ={s1:"Marcha no lugar 1 min · rotação de quadril e joelhos 1 min · 10 agachamentos leves",s2:"Círculos de braço 1 min · rotação de ombros e punhos 1 min · 10 flexões na parede",s3:"Polichinelo leve 1 min · rotação de tronco 1 min · 10 elevações de joelho"};
@@ -148,7 +155,7 @@ const L=[
 ];
 const DIAS_SUBIR=10;
 /* ---------- estado ---------- */
-let data={}, cfg={nivel:0,desde:START,hist:[],h:["07:00","09:30","11:30"]}, db=null, sel=null;
+let data={}, cfg={nivel:0,desde:START,hist:[],hora:"06:30"}, db=null, sel=null;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
@@ -156,7 +163,9 @@ const wd=ds=>new Date(ds+"T12:00:00").getDay();
 const isWE=ds=>{const g=wd(ds);return g===0||g===6};
 const tipo=ds=>[1,3,5].includes(wd(ds))?"A":"B";
 const fmt=ds=>new Date(ds+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit"});
-const feitas=r=>r?SESS.filter(s=>r[s.id]&&r[s.id].ok).length:0;
+// 29/10/2026: 1 treino por dia (id "t"). Dia antigo com as 3 sessões feitas também conta como treino completo.
+const feitas=r=>r&&((r.t&&r.t.ok)||SESS.every(s=>r[s.id]&&r[s.id].ok))?1:0;
+const parcial=r=>!!r&&!feitas(r)&&SESS.some(s=>r[s.id]&&r[s.id].ok);
 const nivelDo=ds=>{const r=data[ds];return r&&r.nivel!=null?r.nivel:cfg.nivel};
 function lsLoad(){try{const r=JSON.parse(localStorage.getItem(LS)||"null");if(r){data=r.data||{};cfg=Object.assign(cfg,r.cfg||{})}}catch(e){}}
 function lsSave(){try{localStorage.setItem(LS,JSON.stringify({data,cfg}))}catch(e){}}
@@ -166,7 +175,7 @@ async function saveCfg(){lsSave();if(db){try{await db.doc("config/geral").set(cf
 
 /* ---------- tela ---------- */
 function render(){renderKpis();renderDia();renderCal();renderTab()}
-function diasCompletosNoNivel(){return Object.keys(data).filter(ds=>ds>=cfg.desde&&feitas(data[ds])===3&&nivelDo(ds)===cfg.nivel).length}
+function diasCompletosNoNivel(){return Object.keys(data).filter(ds=>ds>=cfg.desde&&feitas(data[ds])===1&&nivelDo(ds)===cfg.nivel).length}
 function renderKpis(){
   const n=cfg.nivel, dc=diasCompletosNoNivel();
   $("kNivel").textContent=(n+1)+" · "+L[n].nome; $("kNivelTxt").textContent="desde "+new Date(cfg.desde+"T12:00:00").toLocaleDateString("pt-BR");
@@ -175,7 +184,7 @@ function renderKpis(){
   // semana atual (seg a sex)
   const t=new Date(today()+"T12:00:00"), seg=new Date(t); seg.setDate(t.getDate()-((t.getDay()+6)%7));
   let fs=0; for(let i=0;i<5;i++){const d=new Date(seg);d.setDate(seg.getDate()+i);const ds=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");fs+=feitas(data[ds])}
-  $("kSemana").textContent="esta semana: "+fs+" de 15";
+  $("kSemana").textContent="esta semana: "+fs+" de 5";
   // sugestão de subir
   const box=$("sobe"), faceis=ultimasSens();
   if(dc>=DIAS_SUBIR&&n<L.length-1){box.hidden=false;
@@ -184,28 +193,29 @@ function renderKpis(){
   } else if(dc>=DIAS_SUBIR&&n===L.length-1){box.hidden=false;box.innerHTML="<h2>Degrau 5 fechado 💪</h2><span class='hint'>Para continuar evoluindo: some 2 repetições por minuto ou faça a mochila mais pesada.</span>"}
   else box.hidden=true;
 }
-function ultimasSens(){const ss=[];Object.keys(data).sort().reverse().forEach(ds=>SESS.forEach(s=>{const x=data[ds][s.id];if(x&&x.ok&&x.sens)ss.push(x.sens)}));const u=ss.slice(0,6);return u.length&&u.filter(x=>x==="pesado").length<=1}
+function ultimasSens(){const ss=[];Object.keys(data).sort().reverse().forEach(ds=>["t"].concat(SESS.map(s=>s.id)).forEach(id=>{const x=data[ds][id];if(x&&x.ok&&x.sens)ss.push(x.sens)}));const u=ss.slice(0,6);return u.length&&u.filter(x=>x==="pesado").length<=1}
 function mudarNivel(n){cfg.hist=(cfg.hist||[]).concat([{de:cfg.nivel,para:n,em:today()}]);cfg.nivel=n;cfg.desde=today();
   const t=today();if(data[t]&&!feitas(data[t]))data[t].nivel=n;saveCfg();render();window.ui&&ui.toast("✓ Agora no degrau "+(n+1)+" · "+L[n].nome)}
+const AQ2="Marcha no lugar 30 s · círculos de braço 30 s · rotação de quadril e tronco 30 s · 10 agachamentos leves";
+const AL2="Posterior de coxa, peito no batente da porta e cobra (20 s cada)";
+const SLOT=["Pernas","Superior","Core"];
 function renderDia(){
   const ds=sel, can=ds===today(), r=data[ds]||{}, n=nivelDo(ds), tp=tipo(ds);
   $("dTitle").textContent=(ds===today()?"Hoje · ":"")+fmt(ds);
   $("dTipo").textContent=isWE(ds)?"fim de semana":"Dia "+tp+" · degrau "+(n+1);
   const lk=$("lock");
   if(isWE(ds)){lk.hidden=false;lk.textContent="Fim de semana: descanso.";$("sessoes").innerHTML="";return}
-  lk.hidden=can; lk.textContent=ds<today()?"Dia passado: dá para marcar o que ficou faltando, se esqueceu de registrar.":"Esse dia ainda não chegou.";
-  let h="";
-  SESS.forEach((s,i)=>{
-    const [ex,rx,dica]=L[n][s.id][tp], x=r[s.id]||{}, ok=!!x.ok, futuro=ds>today();
-    h+="<div class='sess"+(ok?" ok":"")+"'><div class='h'><span class='tag'>"+s.nome+" · "+(cfg.h[i]||"")+" · "+s.foco+"</span><span class='hint'>15 min</span></div>"+
-      "<div class='ex'>"+esc(ex)+"</div><div class='rx'>EMOM 10 min · "+esc(rx)+" por minuto</div><div class='hint'>"+esc(dica)+"</div>"+
-      "<div class='row'><button type='button' class='btn' data-como='"+s.id+"'>👁 Como fazer</button></div><div data-cbox='"+s.id+"' data-ex='"+esc(ex)+"' hidden></div>"+
-      "<ol><li><b>3 min aquecimento:</b> "+esc(AQ[s.id])+"</li><li><b>10 min EMOM:</b> no começo de cada minuto, "+esc(rx)+"; descansa o resto do minuto.</li><li><b>2 min alongamento:</b> "+esc(AL[s.id])+"</li></ol>"+
-      "<div id='tm_"+s.id+"'></div>"+
-      "<div class='row'>"+(futuro?"":(can&&!ok?"<button type='button' class='btn' data-a='timer' data-s='"+s.id+"'>▶ Iniciar timer</button>":"")+"<button type='button' class='btn "+(ok?"win":"primary")+"' data-a='ok' data-s='"+s.id+"'>"+(ok?"✓ Feita":"Marcar como feita")+"</button>")+"</div>"+
-      (ok?"<div class='row'><span class='hint'>Como foi?</span><div class='chips'>"+[["facil","Fácil"],["ok","Ok"],["pesado","Pesado"]].map(([v,l])=>"<button type='button' data-a='sens' data-s='"+s.id+"' data-v='"+v+"' class='"+(x.sens===v?"on":"")+"'>"+l+"</button>").join("")+"</div></div>":"")+
-      "</div>";
-  });
+  lk.hidden=can; lk.textContent=ds<today()?"Dia passado: dá para marcar se esqueceu de registrar.":"Esse dia ainda não chegou.";
+  const x=r.t||{}, ok=feitas(r)===1, futuro=ds>today();
+  const exs=SESS.map(s=>L[n][s.id][tp]);
+  let h="<div class='sess"+(ok?" ok":"")+"'><div class='h'><span class='tag'>Treino · "+esc(cfg.hora||"06:30")+" · corpo todo</span><span class='hint'>15 min</span></div>";
+  exs.forEach(([ex,rx,dica],i)=>{const id=SESS[i].id;
+    h+="<div class='exb'><span class='tag' style='font-size:.68rem'>Minuto "+(i+1)+" · "+SLOT[i]+"</span><div class='ex'>"+esc(ex)+"</div><div class='rx'>"+esc(rx)+"</div><div class='hint'>"+esc(dica)+"</div>"+
+      "<div class='row'><button type='button' class='btn' data-como='"+id+"'>👁 Como fazer</button></div><div data-cbox='"+id+"' data-ex='"+esc(ex)+"' hidden></div></div>"});
+  h+="<ol><li><b>2 min aquecimento:</b> "+esc(AQ2)+"</li><li><b>12 min EMOM (4 rodadas):</b> no começo de cada minuto faz as repetições e descansa o resto. Minuto 1 "+esc(exs[0][0].toLowerCase())+", minuto 2 "+esc(exs[1][0].toLowerCase())+", minuto 3 "+esc(exs[2][0].toLowerCase())+", e repete 4 vezes.</li><li><b>1 min alongamento:</b> "+esc(AL2)+"</li></ol>"+
+    "<div id='tm_t'></div>"+
+    "<div class='row'>"+(futuro?"":(can&&!ok?"<button type='button' class='btn' data-a='timer' data-s='t'>▶ Iniciar timer</button>":"")+"<button type='button' class='btn "+(ok?"win":"primary")+"' data-a='ok' data-s='t'>"+(ok?"✓ Feito":"Marcar como feito")+"</button>")+"</div>"+
+    (ok?"<div class='row'><span class='hint'>Como foi?</span><div class='chips'>"+[["facil","Fácil"],["ok","Ok"],["pesado","Pesado"]].map(([v,l])=>"<button type='button' data-a='sens' data-s='t' data-v='"+v+"' class='"+(x.sens===v?"on":"")+"'>"+l+"</button>").join("")+"</div></div>":"")+"</div>";
   $("sessoes").innerHTML=h;window.__como&&window.__como();
 }
 $("sessoes").addEventListener("click",e=>{
@@ -215,14 +225,14 @@ $("sessoes").addEventListener("click",e=>{
   if(a==="timer")return startTimer(s);
   data[ds]=data[ds]||{date:ds}; if(data[ds].nivel==null)data[ds].nivel=cfg.nivel;
   const x=data[ds][s]=data[ds][s]||{};
-  if(a==="ok"){x.ok=!x.ok;if(x.ok){x.em=new Date().toISOString();stopTimer(s)}else delete x.sens;
-    window.ui&&ui.toast(x.ok?(feitas(data[ds])===3?"✓ Dia completo!":"✓ Sessão feita"):"Sessão desmarcada")}
+  if(a==="ok"){const era=!!feitas(data[ds]);SESS.forEach(q=>{delete data[ds][q.id]});x.ok=!era;if(x.ok){x.em=new Date().toISOString();stopTimer(s)}else delete x.sens;
+    window.ui&&ui.toast(x.ok?"✓ Treino feito!":"Treino desmarcado")}
   if(a==="sens")x.sens=b.dataset.v;
   saveDay(ds);
 });
 function renderCal(){
   const cal=$("cal");cal.innerHTML="";const t=today();
-  const s=new Date(START+"T12:00:00"), lim=new Date(t+"T12:00:00"); lim.setMonth(lim.getMonth()+1);
+  const s=new Date(START+"T12:00:00"), lim=new Date(END+"T12:00:00");
   let cur=new Date(s.getFullYear(),s.getMonth(),1,12);
   while(cur<=lim){
     const y=cur.getFullYear(),m=cur.getMonth();
@@ -234,9 +244,10 @@ function renderCal(){
       const ds=y+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
       const b=document.createElement("button");b.type="button";b.textContent=d;
       let cls="day";
+      if(ds>END)break;
       if(ds<START){cls+=" past";b.disabled=true}
       else if(isWE(ds)){cls+=" we";b.disabled=true}
-      else{const f=feitas(data[ds]);if(f===3)cls+=" full";else if(f>0)cls+=" part";else if(ds<t)cls+=" miss";b.onclick=()=>{sel=ds;renderDia();renderCal();$("dTitle").scrollIntoView({behavior:"smooth",block:"start"})}}
+      else{const f=feitas(data[ds]);if(f===1)cls+=" full";else if(parcial(data[ds]))cls+=" part";else if(ds<t)cls+=" miss";b.onclick=()=>{sel=ds;renderDia();renderCal();$("dTitle").scrollIntoView({behavior:"smooth",block:"start"})}}
       if(ds===t)cls+=" today";if(ds===sel)cls+=" sel";
       b.className=cls;b.setAttribute("aria-label",fmt(ds));g.appendChild(b);
     }
@@ -250,12 +261,12 @@ function renderTab(){
   $("lvPick").innerHTML=L.map((lv,i)=>"<button type='button' data-n='"+i+"' class='"+(i===cfg.nivel?"on":"")+"'>"+(i+1)+"</button>").join("");
 }
 $("lvPick").addEventListener("click",e=>{const b=e.target.closest("[data-n]");if(!b)return;const n=+b.dataset.n;if(n!==cfg.nivel)mudarNivel(n)});
-["h1","h2","h3"].forEach((id,i)=>$(id).addEventListener("change",e=>{cfg.h[i]=e.target.value;saveCfg();renderDia();window.ui&&ui.toast("✓ Horário salvo")}));
+$("h1").addEventListener("change",e=>{cfg.hora=e.target.value||"06:30";saveCfg();renderDia();window.ui&&ui.toast("✓ Horário salvo")});
 
-/* ---------- timer guiado de 15 min: 3 aquecimento, 10 EMOM, 2 alongamento ---------- */
+/* ---------- timer guiado de 15 min: 2 aquecimento, 12 EMOM (4 rodadas: pernas, superior, core), 1 alongamento ---------- */
 let T=null, actx=null;
 function beep(f,ms){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=f;o.connect(g);g.connect(actx.destination);g.gain.setValueAtTime(.2,actx.currentTime);o.start();o.stop(actx.currentTime+ms/1000)}catch(e){}try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
-function fase(sec){if(sec<180)return{n:"Aquecimento",r:180-sec};if(sec<780){const k=Math.floor((sec-180)/60);return{n:"EMOM · minuto "+(k+1)+" de 10",r:60-((sec-180)%60),emom:true}}if(sec<900)return{n:"Alongamento",r:900-sec};return null}
+function fase(sec){if(sec<120)return{n:"Aquecimento",r:120-sec};if(sec<840){const k=Math.floor((sec-120)/60);return{n:"Rodada "+(Math.floor(k/3)+1)+" de 4 · minuto "+(k+1)+" de 12 · "+SLOT[k%3],r:60-((sec-120)%60),emom:true,slot:k%3}}if(sec<900)return{n:"Alongamento",r:900-sec};return null}
 let wake=null;
 function startTimer(sid){
   if(T)stopTimer(T.s);
@@ -266,12 +277,12 @@ function startTimer(sid){
 function stopTimer(sid){if(!T||T.s!==sid)return;clearInterval(T.iv);const box=$("tm_"+sid);if(box)box.innerHTML="";T=null;try{wake&&wake.release()}catch(e){}wake=null}
 function tick(){
   if(!T)return;const box=$("tm_"+T.s);const sec=Math.floor((Date.now()-T.t0)/1000), f=fase(sec);
-  if(!f){beep(660,600);const s=T.s;stopTimer(s);if(sel===today()){const r=data[sel]=data[sel]||{date:sel};if(r.nivel==null)r.nivel=cfg.nivel;r[s]=Object.assign(r[s]||{},{ok:true,em:new Date().toISOString()});saveDay(sel);window.ui&&ui.toast("✓ Sessão concluída: marque como foi")}return}
+  if(!f){beep(660,600);const s=T.s;stopTimer(s);if(sel===today()){const r=data[sel]=data[sel]||{date:sel};if(r.nivel==null)r.nivel=cfg.nivel;r[s]=Object.assign(r[s]||{},{ok:true,em:new Date().toISOString()});saveDay(sel);window.ui&&ui.toast("✓ Treino concluído: marque como foi")}return}
   if(sec!==T.last){T.last=sec;
-    if(sec===180||sec===780||(f.emom&&(sec-180)%60===0))beep(f.emom?988:740,f.emom?250:400);
+    if(sec===120||sec===840||(f.emom&&(sec-120)%60===0))beep(f.emom?988:740,f.emom?250:400);
     else if(f.r<=3&&f.r>0)beep(520,90);}
   if(!box)return;
-  const [ex,rx]=L[nivelDo(sel)][T.s][tipo(sel)];
+  const [ex,rx]=f.emom?L[nivelDo(sel)][SESS[f.slot].id][tipo(sel)]:["",""];
   const mm=String(Math.floor(f.r/60)).padStart(1,"0")+":"+String(f.r%60).padStart(2,"0");
   box.innerHTML="<div class='tm'><div class='ph'>"+f.n+"</div><div class='clk'>"+mm+"</div><div class='nx'>"+(f.emom?esc(ex)+" · "+esc(rx):"Total: "+Math.floor((900-sec)/60)+" min restantes")+"</div><div class='row' style='justify-content:center'><button type='button' class='btn' data-stop='1'>Parar timer</button></div></div>";
   box.querySelector("[data-stop]").onclick=()=>stopTimer(T.s);
@@ -279,13 +290,13 @@ function tick(){
 
 /* ---------- início ---------- */
 lsLoad();
-{const t=today();sel=t<START?START:t}
-$("h1").value=cfg.h[0];$("h2").value=cfg.h[1];$("h3").value=cfg.h[2];
+{const t=today();sel=t<START?START:t>END?END:t}perUI();
+$("h1").value=cfg.hora||"06:30";
 render();$("status").textContent="Conectando…";
 (async()=>{
   try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
   if(!db){$("status").textContent="Salvando neste aparelho";return}
-  db.doc("config/geral").onSnapshot(s=>{if(s.exists){cfg=Object.assign(cfg,s.data());["h1","h2","h3"].forEach((id,i)=>{if(document.activeElement!==$(id))$(id).value=cfg.h[i]||""});render()}},()=>{});
+  db.doc("config/geral").onSnapshot(s=>{if(s.exists){cfg=Object.assign(cfg,s.data());if(document.activeElement!==$("h1"))$("h1").value=cfg.hora||"06:30";render()}},()=>{});
   db.collection("dias").onSnapshot(q=>{const m={};q.docs.forEach(d=>{m[d.id]=d.data()});data=m;lsSave();if(!T)render();else{renderKpis();renderCal()}$("status").textContent="Sincronizado"},()=>{$("status").textContent="Sem conexão com o salvamento"});
 })();
 </script>
