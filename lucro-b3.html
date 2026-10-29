@@ -396,7 +396,9 @@ function lsSave(){try{localStorage.setItem(LS,JSON.stringify(dias))}catch(e){}}
 async function save(ks){
   lsSave();if(!db){$("status").textContent="Salvo neste aparelho";return}
   $("status").textContent="Salvando…";
-  try{for(const k of ks){if(dias[k])await db.doc("dias/"+k).set(dias[k]);else await db.doc("dias/"+k).delete()}$("status").textContent="Salvo"}
+  // guarda os dias ANTES de gravar: a sincronização troca "dias" a cada gravação e apagava os que ainda não tinham subido
+  const recs=ks.map(k=>[k,dias[k]?JSON.parse(JSON.stringify(dias[k])):null]);
+  try{for(const [k,v] of recs){if(v)await db.doc("dias/"+k).set(v);else await db.doc("dias/"+k).delete()}$("status").textContent="Salvo"}
   catch(e){$("status").textContent="Não salvou tudo na conta. Tente de novo."}
 }
 

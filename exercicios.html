@@ -104,6 +104,13 @@ details summary{cursor:pointer;font-weight:600}
     <div class="row"><span class="hint">Trocar de degrau manualmente:</span><div class="chips" id="lvPick"></div></div>
   </div>
 
+  <div class="panel">
+    <h2>Como fazer cada exercício</h2>
+    <div class="hint">O boneco mostra o movimento (perna e braço mais claros são os do outro lado). Embaixo, o passo a passo e o que evitar.</div>
+    <div class="chips" id="cfTabs"></div>
+    <div class="cf-lib" id="cfLib"></div>
+  </div>
+
   <details class="panel">
     <summary>Horários das sessões</summary>
     <div class="cfgf">
@@ -192,13 +199,14 @@ function renderDia(){
     const [ex,rx,dica]=L[n][s.id][tp], x=r[s.id]||{}, ok=!!x.ok, futuro=ds>today();
     h+="<div class='sess"+(ok?" ok":"")+"'><div class='h'><span class='tag'>"+s.nome+" · "+(cfg.h[i]||"")+" · "+s.foco+"</span><span class='hint'>15 min</span></div>"+
       "<div class='ex'>"+esc(ex)+"</div><div class='rx'>EMOM 10 min · "+esc(rx)+" por minuto</div><div class='hint'>"+esc(dica)+"</div>"+
+      "<div class='row'><button type='button' class='btn' data-como='"+s.id+"'>👁 Como fazer</button></div><div data-cbox='"+s.id+"' data-ex='"+esc(ex)+"' hidden></div>"+
       "<ol><li><b>3 min aquecimento:</b> "+esc(AQ[s.id])+"</li><li><b>10 min EMOM:</b> no começo de cada minuto, "+esc(rx)+"; descansa o resto do minuto.</li><li><b>2 min alongamento:</b> "+esc(AL[s.id])+"</li></ol>"+
       "<div id='tm_"+s.id+"'></div>"+
       "<div class='row'>"+(futuro?"":(can&&!ok?"<button type='button' class='btn' data-a='timer' data-s='"+s.id+"'>▶ Iniciar timer</button>":"")+"<button type='button' class='btn "+(ok?"win":"primary")+"' data-a='ok' data-s='"+s.id+"'>"+(ok?"✓ Feita":"Marcar como feita")+"</button>")+"</div>"+
       (ok?"<div class='row'><span class='hint'>Como foi?</span><div class='chips'>"+[["facil","Fácil"],["ok","Ok"],["pesado","Pesado"]].map(([v,l])=>"<button type='button' data-a='sens' data-s='"+s.id+"' data-v='"+v+"' class='"+(x.sens===v?"on":"")+"'>"+l+"</button>").join("")+"</div></div>":"")+
       "</div>";
   });
-  $("sessoes").innerHTML=h;
+  $("sessoes").innerHTML=h;window.__como&&window.__como();
 }
 $("sessoes").addEventListener("click",e=>{
   const b=e.target.closest("button[data-a]");if(!b)return;
@@ -281,4 +289,187 @@ render();$("status").textContent="Conectando…";
   db.collection("dias").onSnapshot(q=>{const m={};q.docs.forEach(d=>{m[d.id]=d.data()});data=m;lsSave();if(!T)render();else{renderKpis();renderCal()}$("status").textContent="Sincronizado"},()=>{$("status").textContent="Sem conexão com o salvamento"});
 })();
 </script>
+<script>
+/* ---------- Como fazer: boneco animado + passo a passo + erros comuns (29/10/2026) ---------- */
+(function(){
+const R=Math.PI/180, U=(a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy)||1;return [dx/l,dy/l]};
+const add=(a,u,k)=>[a[0]+u[0]*k,a[1]+u[1]*k];
+const LT=26,LS=26,LU=18,LF=17,TORSO=35;
+function ik(r,t,l1,l2,bend,near){ // dois segmentos; bend: -1/+1 ou "auto" (cotovelo do lado mais perto do quadril)
+  let dx=t[0]-r[0],dy=t[1]-r[1],d=Math.hypot(dx,dy);d=Math.max(.5,Math.min(d,l1+l2-.01));
+  const th=Math.atan2(dy,dx),a=Math.acos(Math.max(-1,Math.min(1,(l1*l1+d*d-l2*l2)/(2*l1*d))));
+  const j=s=>[r[0]+l1*Math.cos(th+s*a),r[1]+l1*Math.sin(th+s*a)];
+  let J;if(bend==="auto"){const p=j(1),q=j(-1);J=Math.hypot(p[0]-near[0],p[1]-near[1])<=Math.hypot(q[0]-near[0],q[1]-near[1])?p:q}else J=j(bend);
+  const e=add(J,U(J,t),l2);return [J,e];
+}
+function skel(p){
+  const hip=p.hip,nk=p.nk,hd=p.hd||add(nk,U(hip,nk),10),kb=p.kb||-1,eb=p.eb||"auto";
+  const leg=(f,k)=>k?[k,add(k,U(k,f),Math.min(LS,Math.hypot(f[0]-k[0],f[1]-k[1])))]:ik(hip,f,LT,LS,kb);
+  const [kn,fn]=leg(p.fn,p.kn),[kf,ff]=leg(p.ff,p.kf);
+  const [en,hn]=ik(nk,p.hn,LU,LF,eb,hip),[ef,hf]=ik(nk,p.hf,LU,LF,eb,hip);
+  return {hip,nk,hd,kn,fn,kf,ff,en,hn,ef,hf,bag:p.bag};
+}
+// flexões e pranchas: F = pés (ou joelhos), H = mãos; ang/e definem a direção do corpo
+function push(F,H,ang,e,knee){
+  const S0=[H[0]+e*Math.cos(ang*R),H[1]+e*Math.sin(ang*R)],n=U(F,S0);
+  if(knee){const hip=add(F,n,LT);return {hip,nk:add(hip,n,TORSO),hn:H,hf:[H[0]+3,H[1]],kn:F,kf:[F[0]+3,F[1]],fn:[F[0]-20,F[1]-15],ff:[F[0]-17,F[1]-15]}}
+  const hip=add(F,n,LT+LS-1);return {hip,nk:add(hip,n,TORSO),hn:H,hf:[H[0]+3,H[1]],fn:F,ff:[F[0]+2,F[1]]};
+}
+const ST={hip:[100,74],nk:[100,39],hn:[101,72],hf:[99,72],fn:[100,125],ff:[103,125]};
+const SQ_B={hip:[86,110],nk:[110,86],hn:[118,123],hf:[121,123],fn:[100,125],ff:[103,125]};
+const JUMP={hip:[100,56],nk:[100,21],hn:[104,-12],hf:[98,-12],fn:[100,107],ff:[103,107]};
+const LUNGE={hip:[98,96],nk:[99,61],hn:[101,97],hf:[103,97],fn:[127,125],ff:[70,123]};
+const LUNGE2={hip:[98,96],nk:[99,61],hn:[101,97],hf:[103,97],fn:[70,123],ff:[127,125]};
+const PL=push([56,124],[146,124],-95,33), PLb=push([40,124],[120,124],-95,33), PLbD=push([40,124],[120,124],-95,12);
+const FP=push([52,124],[160,124],-128,29), FPK=push([86,124],[160,124],-128,29,true);
+const chair=(x,side)=>({t:"chair",x,side}), wall=x=>({t:"wall",x}), table=x=>({t:"table",x});
+const G={
+ "Sentar e levantar da cadeira":{pr:[chair(58,"L")],k:[{hip:[82,96],nk:[96,63],hn:[128,70],hf:[130,72],fn:[110,125],ff:[113,125]},{hip:[108,74],nk:[109,39],hn:[143,44],hf:[145,46],fn:[110,125],ff:[113,125]}],
+  p:["Sente na ponta da cadeira, pés firmes no chão na largura do quadril.","Incline o tronco à frente e levante empurrando o chão com os calcanhares, sem usar as mãos.","Volte devagar (uns 2 s) até encostar de leve e já suba de novo."],
+  e:["Usar as mãos para levantar","Joelhos se fechando para dentro","Cair sentado sem controle"]},
+ "Ponte de glúteo":{k:[{hip:[96,119],nk:[62,119],hn:[94,122],hf:[96,122],fn:[124,124],ff:[127,124]},{hip:[98,100],nk:[64,117],hn:[94,122],hf:[96,122],fn:[124,124],ff:[127,124]}],
+  p:["Deite de barriga para cima, joelhos dobrados e pés no chão perto do bumbum.","Empurre com os calcanhares e suba o quadril até alinhar joelho, quadril e ombro.","Aperte o glúteo lá em cima (1 a 2 s) e desça devagar."],
+  e:["Arquear a lombar em vez de usar o glúteo","Empurrar com a ponta dos pés"]},
+ "Agachamento livre":{k:[{hip:[100,74],nk:[100,39],hn:[134,42],hf:[136,44],fn:[100,125],ff:[103,125]},{hip:[80,100],nk:[100,70],hn:[134,72],hf:[136,74],fn:[100,125],ff:[103,125]}],
+  p:["Pés na largura dos ombros, pontas um pouco para fora, braços à frente.","Leve o quadril para trás e para baixo, como se fosse sentar numa cadeira.","Desça até a coxa ficar paralela ao chão e suba empurrando o chão com o pé inteiro."],
+  e:["Calcanhar saindo do chão","Joelho entrando para dentro","Costas arredondadas"]},
+ "Afundo alternado":{k:[ST,LUNGE,ST,LUNGE2],loop:1,
+  p:["Em pé, mãos na cintura, dê um passo largo à frente.","Desça os dois joelhos até o de trás quase encostar no chão (os dois ficam em 90°).","Empurre com a perna da frente para voltar e troque a perna."],
+  e:["Passo curto demais (joelho da frente passa muito da ponta do pé)","Tronco caindo para a frente"]},
+ "Agachamento com salto":{k:[{hip:[80,100],nk:[100,70],hn:[84,104],hf:[86,104],fn:[100,125],ff:[103,125]},JUMP],
+  p:["Desça no agachamento com os braços para trás.","Suba explosivo e salte jogando os braços para cima.","Aterrisse macio, na ponta dos pés, e já desça para o próximo."],
+  e:["Aterrissar com as pernas duras","Joelhos para dentro na aterrissagem"]},
+ "Agachamento búlgaro":{pr:[chair(36,"L")],k:[{hip:[95,76],nk:[96,41],hn:[98,76],hf:[100,76],fn:[112,125],ff:[62,97]},{hip:[90,98],nk:[92,63],hn:[93,98],hf:[95,98],fn:[112,125],ff:[62,97]}],
+  p:["De costas para a cadeira, apoie o peito do pé de trás no assento.","Pé da frente bem à frente; desça reto até a coxa da frente ficar paralela ao chão.","Suba empurrando com o calcanhar da frente. Faça as de uma perna e troque."],
+  e:["Pé da frente perto demais da cadeira","Tronco tombando para o lado"]},
+ "Afundo com salto alternado":{k:[LUNGE,{hip:[100,60],nk:[100,25],hn:[118,32],hf:[84,32],fn:[112,108],ff:[88,108]},LUNGE2,{hip:[100,60],nk:[100,25],hn:[84,32],hf:[118,32],fn:[88,108],ff:[112,108]}],loop:1,
+  p:["Comece no afundo, um pé à frente.","Salte e troque as pernas no ar.","Aterrisse macio já no afundo com a outra perna à frente."],
+  e:["Joelho de trás batendo no chão","Perdendo o equilíbrio: diminua a altura do salto"]},
+ "Flexão na parede":{pr:[wall(152)],k:[push([75,125],[151,52],175,33),push([75,125],[151,52],175,12)],
+  p:["De frente para a parede, mãos nela na altura do peito, um pouco mais abertas que os ombros.","Dê um passo para trás e deixe o corpo reto como uma tábua.","Dobre os cotovelos até o peito chegar perto da parede e empurre de volta."],
+  e:["Quadril para trás (corpo dobrado)","Cotovelos abertos para os lados"]},
+ "Superman":{k:[{hip:[95,120],nk:[130,120],hn:[163,121],hf:[165,122],fn:[44,121],ff:[46,122]},{hip:[95,119],nk:[129,113],hn:[160,103],hf:[162,104],fn:[45,111],ff:[47,112]}],
+  p:["Deite de bruços, braços esticados à frente.","Levante braços, peito e pernas do chão ao mesmo tempo.","Segure 2 s olhando para o chão e desça devagar."],
+  e:["Jogar a cabeça para trás","Subir no balanço (com impulso)"]},
+ "Flexão inclinada (mãos na mesa ou bancada)":{pr:[table(144)],k:[push([62,125],[146,90],-120,33),push([62,125],[146,90],-120,11)],
+  p:["Mãos na beira de uma mesa ou bancada firme, um pouco mais abertas que os ombros.","Pés para trás até o corpo ficar reto da cabeça ao calcanhar.","Desça o peito até a borda e empurre de volta."],
+  e:["Mesa que escorrega ou balança","Quadril caindo ou empinado"]},
+ "Remada com mochila":{pr:[chair(124,"R")],k:[{hip:[84,74],nk:[118,80],hn:[116,113],hf:[130,98],fn:[84,125],ff:[98,125],bag:1},{hip:[84,74],nk:[118,80],hn:[98,86],hf:[130,98],fn:[84,125],ff:[98,125],bag:1}],
+  p:["Incline o tronco à frente com as costas retas e apoie uma mão na cadeira.","Segure a mochila com o outro braço esticado para baixo.","Puxe a mochila até a cintura levando o cotovelo para trás e desça devagar."],
+  e:["Girar o tronco para puxar","Costas arredondadas"]},
+ "Flexão de joelhos":{k:[push([88,124],[146,124],-95,33,true),push([88,124],[146,124],-95,12,true)],
+  p:["Mãos no chão um pouco mais abertas que os ombros, joelhos apoiados.","Corpo reto dos joelhos até a cabeça, barriga firme.","Desça o peito quase até o chão e empurre de volta."],
+  e:["Quadril empinado","Descer só a cabeça"]},
+ "Mergulho na cadeira":{pr:[chair(60,"L")],k:[{hip:[95,96],nk:[93,62],hn:[88,99],hf:[90,99],fn:[140,125],ff:[143,125],eb:1},{hip:[97,114],nk:[95,80],hn:[88,99],hf:[90,99],fn:[140,125],ff:[143,125],eb:1}],
+  p:["Sente na beira da cadeira e segure a borda com as mãos ao lado do quadril.","Tire o quadril da cadeira, pés à frente, joelhos dobrados.","Dobre os cotovelos para trás até uns 90° e empurre de volta."],
+  e:["Ombros subindo até as orelhas","Descer demais (dói o ombro)","Cadeira com rodinha"]},
+ "Flexão no chão":{k:[PL,push([56,124],[146,124],-95,12)],
+  p:["Mãos no chão um pouco mais abertas que os ombros, pés juntos.","Corpo reto da cabeça ao calcanhar.","Desça o peito quase até encostar, cotovelos a uns 45° do corpo, e empurre."],
+  e:["Quadril caindo (lombar afundando)","Cotovelos totalmente abertos"]},
+ "Flexão pike (ombros)":{k:[{hip:[100,80],nk:[122,100],hn:[142,124],hf:[144,124],fn:[78,125],ff:[81,125]},{hip:[102,84],nk:[128,110],hn:[142,124],hf:[144,124],fn:[78,125],ff:[81,125]}],
+  p:["Da posição de flexão, leve o quadril para cima formando um V invertido.","Dobre os cotovelos e leve a cabeça em direção ao chão, entre as mãos.","Empurre de volta até esticar os braços."],
+  e:["Quadril baixo (vira flexão normal)","Descer rápido e bater a cabeça"]},
+ "Flexão declinada (pés na cadeira)":{pr:[chair(22,"L")],k:[push([48,97],[150,124],-95,33),push([48,97],[150,124],-95,12)],
+  p:["Pés em cima da cadeira, mãos no chão um pouco mais abertas que os ombros.","Corpo reto, barriga e glúteo firmes.","Desça o peito até perto do chão e empurre de volta."],
+  e:["Quadril caindo","Cadeira instável ou que escorrega"]},
+ "Flexão pike com pés elevados":{pr:[chair(48,"L")],k:[{hip:[100,64],nk:[122,92],hn:[140,124],hf:[142,124],fn:[72,96],ff:[75,96]},{hip:[103,72],nk:[128,104],hn:[140,124],hf:[142,124],fn:[72,96],ff:[75,96]}],
+  p:["Pés na cadeira, mãos no chão perto dela e quadril bem alto.","Desça a cabeça devagar entre as mãos.","Empurre de volta. Quanto mais em pé o tronco, mais difícil."],
+  e:["Descer rápido demais","Mãos longe demais da cadeira"]},
+ "Prancha de joelhos":{hold:1,k:[FPK,Object.assign({},FPK,{nk:[FPK.nk[0],FPK.nk[1]-1]})],
+  p:["Antebraços no chão, cotovelos embaixo dos ombros.","Joelhos no chão, corpo reto dos joelhos até a cabeça.","Contraia barriga e glúteo e segure respirando normal."],
+  e:["Quadril empinado","Lombar afundando","Prender a respiração"]},
+ "Perdigueiro":{k:[{hip:[88,92],nk:[123,90],hn:[125,124],hf:[128,124],kn:[86,124],kf:[89,124],fn:[62,124],ff:[65,124]},{hip:[88,92],nk:[123,90],hn:[159,86],hf:[128,124],kn:[86,124],fn:[62,124],ff:[38,90]}],
+  p:["De quatro: mãos embaixo dos ombros e joelhos embaixo do quadril.","Estique um braço à frente e a perna oposta para trás, na linha das costas.","Segure 2 s, volte e troque o lado."],
+  e:["Girar o quadril","Levantar a perna alto demais (arqueia a lombar)"]},
+ "Prancha":{hold:1,k:[FP,Object.assign({},FP,{nk:[FP.nk[0],FP.nk[1]-1]})],
+  p:["Antebraços no chão, cotovelos embaixo dos ombros, pés juntos.","Corpo reto da cabeça ao calcanhar.","Contraia barriga e glúteo e segure respirando normal."],
+  e:["Quadril alto ou baixo","Olhar para a frente (pescoço torto)"]},
+ "Bicicleta no chão":{k:[{hip:[100,118],nk:[72,106],hn:[64,96],hf:[66,98],fn:[124,94],ff:[150,110]},{hip:[100,118],nk:[72,106],hn:[64,96],hf:[66,98],fn:[150,110],ff:[124,94]}],
+  p:["Deitado, mãos atrás da cabeça e ombros um pouco fora do chão.","Traga um joelho em direção ao peito e estique a outra perna.","Gire o tronco levando o cotovelo ao joelho oposto e troque, como pedalando."],
+  e:["Puxar o pescoço com as mãos","Ir rápido sem girar o tronco"]},
+ "Escalador":{k:[Object.assign({},PL,{fn:[112,116]}),Object.assign({},PL,{ff:[112,116]})],fast:1,
+  p:["Posição de flexão com os braços esticados, mãos embaixo dos ombros.","Puxe um joelho em direção ao peito.","Volte e puxe o outro, alternando sem subir o quadril."],
+  e:["Quadril alto","Ombros muito à frente das mãos"]},
+ "Prancha com toque no ombro":{k:[PL,Object.assign({},PL,{hn:[PL.nk[0]-3,PL.nk[1]+5]})],
+  p:["Posição de flexão com os pés um pouco abertos.","Tire uma mão do chão e toque o ombro oposto.","Volte e troque a mão, sem balançar o quadril."],
+  e:["Quadril balançando para os lados","Pés juntos demais"]},
+ "Burpee":{k:[ST,SQ_B,PLb,SQ_B,JUMP],loop:1,
+  p:["Em pé, agache e apoie as mãos no chão.","Jogue os pés para trás até ficar em prancha.","Traga os pés de volta, levante e salte com os braços para cima."],
+  e:["Lombar afundando na prancha","Aterrissar duro"]},
+ "Burpee com flexão":{k:[ST,SQ_B,PLb,PLbD,PLb,SQ_B,JUMP],loop:1,
+  p:["Agache e apoie as mãos no chão.","Jogue os pés para trás e faça uma flexão completa.","Traga os pés de volta, levante e salte."],
+  e:["Flexão pela metade","Pressa: a técnica vem antes da velocidade"]}
+};
+Object.values(G).forEach(g=>g.s=g.k.map(skel));
+const NS="http://www.w3.org/2000/svg";
+const mk=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e};
+function props(svg,pr){
+  mk("line",{x1:-10,x2:210,y1:127,y2:127,stroke:"var(--line)","stroke-width":3,"stroke-linecap":"round"},svg);
+  (pr||[]).forEach(o=>{const st={stroke:"var(--muted)","stroke-width":3,"stroke-linecap":"round",fill:"none",opacity:.55};
+    if(o.t==="chair"){mk("line",Object.assign({x1:o.x,x2:o.x+28,y1:99,y2:99},st),svg);mk("line",Object.assign({x1:o.x+3,x2:o.x+3,y1:99,y2:126},st),svg);mk("line",Object.assign({x1:o.x+25,x2:o.x+25,y1:99,y2:126},st),svg);const bx=o.side==="R"?o.x+28:o.x;mk("line",Object.assign({x1:bx,x2:bx,y1:66,y2:99},st),svg)}
+    if(o.t==="wall"){mk("rect",{x:o.x,y:-24,width:30,height:151,fill:"var(--line)",opacity:.6},svg)}
+    if(o.t==="table"){mk("line",Object.assign({x1:o.x,x2:o.x+56,y1:91,y2:91},st),svg);mk("line",Object.assign({x1:o.x+6,x2:o.x+6,y1:91,y2:126},st),svg);mk("line",Object.assign({x1:o.x+50,x2:o.x+50,y1:91,y2:126},st),svg)}
+  });
+}
+function figura(nome,small){
+  const g=G[nome];if(!g)return null;
+  const svg=mk("svg",{viewBox:"0 -26 200 158",role:"img","aria-label":"Boneco mostrando como fazer "+nome,class:"cf-svg"});
+  props(svg,g.pr);
+  const far="color-mix(in srgb,var(--accent) 38%,var(--surface))",w=small?5:5.5;
+  const pl=c=>mk("polyline",{fill:"none",stroke:c,"stroke-width":w,"stroke-linecap":"round","stroke-linejoin":"round"},svg);
+  const el={af:pl(far),lf:pl(far),bag:g.k.some(p=>p.bag)?mk("rect",{width:13,height:15,rx:3,fill:"var(--part)"},svg):null,to:pl("var(--accent)"),ln:pl("var(--accent)"),an:pl("var(--accent)"),hd:mk("circle",{r:8.5,fill:"var(--accent)"},svg)};
+  if(g.hold){const t=mk("text",{x:6,y:-10,"font-size":12,"font-weight":700,fill:"var(--accent)","font-family":"system-ui,sans-serif"},svg);t.textContent="SEGURA";}
+  svg._g=g;svg._el=el;svg._t0=performance.now();draw(svg,g.s[0]);
+  return svg;
+}
+const P2=a=>a[0].toFixed(1)+","+a[1].toFixed(1);
+function draw(svg,s){const e=svg._el;
+  e.af.setAttribute("points",[s.nk,s.ef,s.hf].map(P2).join(" "));e.lf.setAttribute("points",[s.hip,s.kf,s.ff].map(P2).join(" "));
+  e.to.setAttribute("points",[s.hip,s.nk].map(P2).join(" "));e.ln.setAttribute("points",[s.hip,s.kn,s.fn].map(P2).join(" "));
+  e.an.setAttribute("points",[s.nk,s.en,s.hn].map(P2).join(" "));e.hd.setAttribute("cx",s.hd[0]);e.hd.setAttribute("cy",s.hd[1]);
+  if(e.bag){e.bag.setAttribute("x",s.hn[0]-6.5);e.bag.setAttribute("y",s.hn[1]-2)}}
+const lerp=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];
+const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+function frame(svg,now){const g=svg._g,n=g.s.length,mv=g.fast?420:g.hold?1600:850,hd=g.fast?80:g.hold?200:320,seg=mv+hd;
+  const seq=g.loop?g.s.map((_,i)=>i):[0,1];const L=seq.length,el=(now-svg._t0)%(seg*L),i=Math.floor(el/seg),f=Math.min(1,(el-i*seg)/mv);
+  const A=g.s[seq[i]],B=g.s[seq[(i+1)%L]],t=ease(f),o={};for(const k in A)if(Array.isArray(A[k]))o[k]=lerp(A[k],B[k],t);draw(svg,o)}
+const vivos=new Set(),reduz=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+const io="IntersectionObserver" in window?new IntersectionObserver(es=>es.forEach(x=>{x.isIntersecting?vivos.add(x.target):vivos.delete(x.target)})):null;
+(function loop(now){vivos.forEach(s=>{if(s.isConnected)frame(s,now);else vivos.delete(s)});requestAnimationFrame(loop)})(performance.now());
+function card(nome,extra){
+  const g=G[nome],box=document.createElement("div");box.className="cf";
+  if(!g){box.innerHTML="<p class='hint'>Sem desenho para esse exercício ainda.</p>";return box}
+  const fig=document.createElement("div");fig.className="cf-fig";
+  if(reduz){g.s.slice(0,2).forEach((s,i)=>{const v=figura(nome,1);draw(v,g.s[i]);fig.appendChild(v)})}
+  else{const v=figura(nome);fig.appendChild(v);if(io)io.observe(v);else vivos.add(v)}
+  const tx=document.createElement("div");tx.className="cf-tx";
+  tx.innerHTML=(extra||"")+"<ol class='cf-p'>"+g.p.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ol><div class='cf-e'><b>Evite</b><ul>"+g.e.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul></div>";
+  box.appendChild(fig);box.appendChild(tx);return box;
+}
+const st=document.createElement("style");st.textContent=
+ ".cf{display:grid;grid-template-columns:minmax(0,280px) minmax(0,1fr);gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}"+
+ "@media (max-width:560px){.cf{grid-template-columns:minmax(0,1fr)}}"+
+ ".cf-fig{display:flex;gap:6px;background:linear-gradient(180deg,var(--accent-soft),transparent);border-radius:10px;padding:6px}.cf-svg{width:100%;height:auto;display:block}"+
+ ".cf-tx{display:grid;gap:8px;font-size:.88rem}.cf-tx h3{margin:0}.cf-p{margin:0;padding-left:20px;display:grid;gap:4px}.cf-p li::marker{font-weight:700;color:var(--accent)}"+
+ ".cf-e{font-size:.8rem;color:var(--muted);background:var(--loss-soft);border-radius:8px;padding:8px 10px}.cf-e b{color:var(--loss)}.cf-e ul{margin:4px 0 0;padding-left:18px}"+
+ ".cf-lib{display:grid;gap:12px}.cf-lib .cf-tag{font-size:.72rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.05em}";
+document.head.appendChild(st);
+/* botão "Como fazer" nas sessões do dia */
+const abertos=new Set();
+window.__como=function(){document.querySelectorAll("[data-cbox]").forEach(b=>{const id=b.dataset.cbox;b.hidden=!abertos.has(id);if(!b.hidden&&!b.firstChild)b.appendChild(card(b.dataset.ex));const bt=document.querySelector("[data-como='"+id+"']");if(bt)bt.textContent=b.hidden?"👁 Como fazer":"Fechar explicação"})};
+document.getElementById("sessoes").addEventListener("click",e=>{const b=e.target.closest("[data-como]");if(!b)return;const id=b.dataset.como;abertos.has(id)?abertos.delete(id):abertos.add(id);window.__como()});
+window.__como();
+/* biblioteca com todos os exercícios, por sessão */
+const lib=document.getElementById("cfLib"),tabs=document.getElementById("cfTabs");
+if(lib&&tabs){
+  const por={};SESS.forEach(s=>{por[s.id]=[];L.forEach((lv,i)=>["A","B"].forEach(t=>{const n=lv[s.id][t][0];if(!por[s.id].some(x=>x.n===n))por[s.id].push({n,lv:i})}))});
+  let cur="s1";
+  const show=()=>{tabs.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.s===cur));lib.innerHTML="";
+    por[cur].forEach(x=>lib.appendChild(card(x.n,"<span class='cf-tag'>Degrau "+(x.lv+1)+" · "+esc(L[x.lv].nome)+"</span><h3>"+esc(x.n)+"</h3>")))};
+  tabs.innerHTML=SESS.map(s=>"<button type='button' data-s='"+s.id+"'>"+esc(s.foco)+"</button>").join("");
+  tabs.onclick=e=>{const b=e.target.closest("button");if(!b)return;cur=b.dataset.s;show()};show();
+}
+})();
+</script>
+
 </body></html>
