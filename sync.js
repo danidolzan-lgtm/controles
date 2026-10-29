@@ -67,7 +67,7 @@
     document.documentElement.setAttribute("data-page", file);
     var GROUPS = [
       { g: "Opções binárias", s: "OB", k: "ob", c: "#2563EB", items: [["checklist-ob", "Check-list"], ["diario-ob", "Diário"], ["manual-ob", "Manual"], ["progresso-ob", "Progresso"], ["dopamina", "Dopamina"], ["ir-ob", "IR"], ["analise-ob", "Análise"], ["lucro-ob", "Lucro"]] },
-      { g: "B3", s: "B3", k: "b3", c: "#0F766E", items: [["checklist-b3", "Check-list"], ["diario-b3", "Diário"], ["manual-b3", "Manual"], ["progresso-b3", "Progresso"], ["dopamina-b3", "Dopamina"], ["ir-b3", "IR"], ["analise-b3", "Análise"]] },
+      { g: "B3", s: "B3", k: "b3", c: "#0F766E", items: [["checklist-b3", "Check-list"], ["diario-b3", "Diário"], ["manual-b3", "Manual"], ["progresso-b3", "Progresso"], ["dopamina-b3", "Dopamina"], ["ir-b3", "IR"], ["analise-b3", "Análise"], ["lucro-b3", "Lucro"]] },
       { g: "Pessoal", s: "Pessoal", k: "pes", c: "#7C3AED", items: [["salario", "Salário"], ["oracao", "Oração"], ["receitas", "Receitas"], ["limpeza", "Limpeza de peças"], ["consorcio", "Consórcios"], ["exercicios", "Exercícios"]] }
     ];
     var cur = null;

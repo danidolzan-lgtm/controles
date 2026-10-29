@@ -200,13 +200,15 @@ function daMetas(){const done=new Set(st.conquistados);let last=-1;LV.forEach((v
   const nivel=last>=0?LV[last]:LV[0], ct=last>=0?CT[last]:1, banca=(st.banca!=null&&!isNaN(st.banca)&&st.banca>0)?st.banca:nivel;
   return {banca,ct}}
 // toda vez que mexe nas Metas (degrau ou banca), o simulador já puxa; no simulador ainda dá pra mudar à mão
-function puxarMetas(quiet){const m=daMetas();sim.banca=m.banca;sim.ct=m.ct;fillSim();calcSim();saveSim(quiet)}
+// 29/10/2026: banca e contratos do simulador vêm SEMPRE da escada (Metas), em todos os aparelhos. Mudar à mão aqui é só para testar: não salva.
+let simManual=false;
+function puxarMetas(quiet){simManual=false;fillSim();calcSim()}
 function fillSim(){
-  if((sim.banca==null||sim.banca==="")){const m=daMetas();sim.banca=m.banca;if(sim.ct==null)sim.ct=m.ct}
+  if(!simManual){const m=daMetas();sim.banca=m.banca;sim.ct=m.ct}
   for(const id in F){if(document.activeElement!==$(id))$(id).value=sim[F[id]]??""}
   if(document.activeElement!==$("sAtivo"))$("sAtivo").value=sim.ativo;
   const m=daMetas(), igual=Math.abs((+sim.banca||0)-m.banca)<.005&&(+sim.ct||0)===m.ct;
-  $("sPullTxt").textContent=igual?"✓ Usando as Metas: banca "+brl2(m.banca)+" · "+ctTxt(m.ct)+".":"Você mudou à mão. Nas Metas: banca "+brl2(m.banca)+" · "+ctTxt(m.ct)+".";
+  $("sPullTxt").textContent=igual?"✓ Usando as Metas: banca "+brl2(m.banca)+" · "+ctTxt(m.ct)+".":"Teste à mão (não salva). Nas Metas: banca "+brl2(m.banca)+" · "+ctTxt(m.ct)+".";
   $("sPull").hidden=igual;
   [...$("sModo").children].forEach(b=>b.classList.toggle("on",b.dataset.m===sim.modo))}
 function semana(banca,ctFix){
@@ -218,7 +220,7 @@ function calcSim(){
   const banca=parseFloat($("sBanca").value);
   if(!(banca>0)||!(+sim.stopPts>0)){["oCt","oAlvoPts","oG","oL","oSem","oMes","oFim"].forEach(i=>$(i).textContent="–");$("tMes").innerHTML="";$("fMes").innerHTML="";$("oPaga").textContent="Informe a banca e o stop em pontos.";return}
   const w=semana(banca), m=+sim.mult||0;
-  $("sCtTxt").textContent=sim.ct?"Usando "+ctTxt(+sim.ct)+" (apague para seguir a escada).":"Pela escada, a banca de "+brl2(banca)+" usa "+ctTxt(ctDaBanca(banca))+".";
+  $("sCtTxt").textContent=sim.ct?"Usando "+ctTxt(+sim.ct)+" (teste à mão; ↺ volta para a escada).":"Pela escada, a banca de "+brl2(banca)+" usa "+ctTxt(ctDaBanca(banca))+".";
   $("oCt").textContent=w.ct; $("oCt1").textContent=sim.ativo+" · "+(sim.ct?"definido por você":"pela escada");
   $("oAlvoPts").textContent=nf((+sim.stopPts)*m)+" pts"; $("oAlvoPts1").textContent="stop de "+nf(+sim.stopPts)+" pts × "+nf(m)+(+sim.stopPts>LIM[sim.ativo]?" · stop acima do limite do manual ("+LIM[sim.ativo]+" pts)":"");
   $("oG").textContent=sg(w.g); $("oG1").textContent=pc(w.g/banca)+" da banca"+(+sim.custo?" · já tirando o custo":"");
@@ -239,10 +241,11 @@ function calcSim(){
 $("sAtivo").addEventListener("change",e=>{sim.ativo=e.target.value;sim.stopPts=STOPDEF[sim.ativo];fillSim();calcSim();saveSim()});
 let simT=null;
 function saveSim(quiet){clearTimeout(simT);simT=setTimeout(async()=>{
-  try{localStorage.setItem(SLS,JSON.stringify(sim))}catch(e){}
-  if(sref){try{await sref.set(sim);$("status").textContent="Salvo"}catch(e){$("status").textContent="Não salvou. Tente de novo."}}
+  const o=Object.assign({},sim);delete o.banca;delete o.ct; // banca e contratos ficam na escada
+  try{localStorage.setItem(SLS,JSON.stringify(o))}catch(e){}
+  if(sref){try{await sref.set(o);$("status").textContent="Salvo"}catch(e){$("status").textContent="Não salvou. Tente de novo."}}
   if(quiet!==true)window.ui&&ui.toast("✓ Simulação salva")},700)}
-for(const id in F){$(id).addEventListener("input",e=>{const v=e.target.value===""?null:parseFloat(e.target.value);sim[F[id]]=isNaN(v)?null:v;calcSim();fillSim()});$(id).addEventListener("change",()=>saveSim())}
+for(const id in F){$(id).addEventListener("input",e=>{const v=e.target.value===""?null:parseFloat(e.target.value);sim[F[id]]=isNaN(v)?null:v;if(id==="sBanca"||id==="sCt")simManual=true;calcSim();fillSim()});$(id).addEventListener("change",()=>{if(id!=="sBanca"&&id!=="sCt")saveSim()})}
 $("sPull").addEventListener("click",()=>{puxarMetas(true);window.ui&&ui.toast("✓ Valores das Metas no simulador")});
 $("sModo").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;sim.modo=b.dataset.m;fillSim();calcSim();saveSim()});
 document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;

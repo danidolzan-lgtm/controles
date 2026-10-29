@@ -1,7 +1,7 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="diario-ob3"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Diário OB</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: resumo, mão base/payout, calendário seg–sex 29/10–17/12/2026 e 11/01–15/12/2027, tabelas. Janela do dia com 5 sessões (08:00, 09:45, 13:30, 15:00 e 19:30 OTC seg–qui); cada sessão tem no máximo 2 entradas (mão base + Soros) e para no 1º loss. */
+/* Layout: resumo, mão base/payout, calendário seg–sex 29/10–17/12/2026, 11/01–31/03/2027 e 01/04–30/06/2027, tabelas. Janela do dia com 5 sessões (08:00, 09:45, 13:30, 15:00 e 19:30 OTC seg–qui); cada sessão tem no máximo 2 entradas (mão base + Soros) e para no 1º loss. */
 :root{
   --bg:#EEF3FC; --surface:#FFFFFF; --line:#DDE4F2; --fg:#13203B; --muted:#58668A;
   --accent:#2563EB; --accent-soft:#DCE7FF; --soros:#7C3AED; --soros-soft:#EDE9FE;
@@ -121,7 +121,8 @@ td:first-child{font-family:var(--f-body);white-space:normal}
   </div>
 
   <div class="panel cfg">
-    <label for="cBase">Mão base (R$)<input id="cBase" type="number" min="0" step="0.5" inputmode="decimal"></label>
+    <label for="cNivel" style="width:auto;min-width:230px">Degrau da escada<select id="cNivel" style="font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-width:0;width:100%;text-transform:none;letter-spacing:0"></select></label>
+    <label for="cBase">Mão base (R$)<input id="cBase" type="number" readonly tabindex="-1" title="Vem do degrau da escada" style="opacity:.75"></label>
     <label for="cPay">Payout (%)<input id="cPay" type="number" min="1" max="100" step="1" inputmode="numeric"></label>
     <span class="hint" id="cHint"></span>
     <span class="metas" id="cMetas"></span>
@@ -142,8 +143,8 @@ td:first-child{font-family:var(--f-body);white-space:normal}
 
 <style>.per{display:flex;gap:6px;flex-wrap:wrap}.per button{appearance:none;font:inherit;font-size:.82rem;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:6px 12px;cursor:pointer;white-space:nowrap}.per button b{font-weight:700}.per button.on{background:var(--accent);border-color:var(--accent);color:#fff}</style>
 <script>
-// 29/10/2026: tudo zerado. Dois períodos: 29/10 a 17/12/2026 e 11/01 a 15/12/2027 (botões em cima do calendário).
-const PER=[{y:"2026",a:"2026-10-29",b:"2026-12-17",t:"29/10 a 17/12/2026"},{y:"2027",a:"2027-01-11",b:"2027-12-15",t:"11/01 a 15/12/2027"}];
+// 29/10/2026: tudo zerado. Três períodos: 29/10 a 17/12/2026, 11/01 a 31/03/2027 e 01/04 a 30/06/2027 (botões em cima do calendário).
+const PER=[{y:"2026",a:"2026-10-29",b:"2026-12-17",t:"29/10 a 17/12/2026"},{y:"jan–mar/27",a:"2027-01-11",b:"2027-03-31",t:"11/01 a 31/03/2027"},{y:"abr–jun/27",a:"2027-04-01",b:"2027-06-30",t:"01/04 a 30/06/2027"}];
 const _hj=(()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")})();
 let PI=PER.findIndex(p=>_hj<=p.b);if(PI<0)PI=PER.length-1;
 let START=PER[PI].a, END=PER[PI].b;
@@ -367,28 +368,30 @@ function doSave(){
 }
 
 /* ---------- ajustes ---------- */
-$("cBase").addEventListener("change",e=>{const v=parseFloat(e.target.value);if(!isNaN(v)&&v!==cfg.base){cfg.base=v;saveCfg();renderKpis();renderHint();ui_.toast("✓ Mão base salva")}});
-$("cPay").addEventListener("change",e=>{const v=parseFloat(e.target.value);if(!isNaN(v)&&v!==cfg.payout){cfg.payout=v;saveCfg();renderKpis();renderHint();ui_.toast("✓ Payout salvo")}});
+$("cPay").addEventListener("change",e=>{const v=parseFloat(e.target.value);if(!isNaN(v)&&v!==cfg.payout){cfg.payout=v;saveCfg();renderKpis();renderHint();gravaProg({payout:v});ui_.toast("✓ Payout salvo")}});
 
 lsLoad();$("cBase").value=cfg.base;$("cPay").value=cfg.payout;render();setStatus("Conectando…");
-/* Mão base puxada do Progresso OB (nível conquistado ÷ 5). Toda vez que o nível muda lá, a mão base daqui acompanha;
-   se quiser, ainda dá pra mudar à mão aqui até o próximo nível. */
+/* 29/10/2026: a mão base vem SEMPRE da escada (degrau ÷ 5), a mesma do Progresso, do simulador e do Manual.
+   Trocar o degrau aqui grava no Progresso e todos se adaptam (PC e celular). O payout também é um só. */
 const PLV=[50,100,150,250,350,500,750,1000,1500,2500,3500,5000,7500,10000];
-let cfgOk=false, maoPend=null;
-function maoDoProg(d){const c=new Set((d&&d.conquistados)||[]);let last=-1;PLV.forEach((v,i)=>{if(c.has(i))last=i});return {mao:(last>=0?PLV[last]:PLV[0])/5,nivel:last>=0?PLV[last]:null}}
-function aplicaMetas(p){if(!p)return;if(!cfgOk){maoPend=p;return}
-  if(cfg.baseMetas!==p.mao){cfg.base=p.mao;cfg.baseMetas=p.mao;if(document.activeElement!==$("cBase"))$("cBase").value=cfg.base;saveCfg();renderKpis();renderHint();window.ui&&ui.toast&&ui.toast("Mão base atualizada pelo Progresso: R$ "+p.mao.toLocaleString("pt-BR",{minimumFractionDigits:2}))}
-  metasTxt(p)}
-function metasTxt(p){p=p||window._pm;if(!p)return;window._pm=p;const cur=document.activeElement===$("cBase")?parseFloat($("cBase").value)||0:+cfg.base||0, igual=Math.abs(cur-p.mao)<.005;
-  $("cMetas").textContent="Mão base "+(igual?"puxada do Progresso":"mudada à mão · no Progresso é R$ "+p.mao.toLocaleString("pt-BR",{minimumFractionDigits:2}))+(p.nivel?" (nível R$ "+p.nivel.toLocaleString("pt-BR")+")":" (início)")}
-$("cBase").addEventListener("input",()=>metasTxt());$("cBase").addEventListener("change",()=>metasTxt());
-try{const r=JSON.parse(localStorage.getItem("progressoOB2.v1")||"null");if(r){cfgOk=true;aplicaMetas(maoDoProg(r));cfgOk=false}}catch(e){}
+const PROG="progresso-ob2", PLS="progressoOB2.v1";
+const brl0=v=>"R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+function maoDoProg(d){const c=new Set((d&&d.conquistados)||[]);let last=-1;PLV.forEach((v,i)=>{if(c.has(i))last=i});return {idx:last,mao:(last>=0?PLV[last]:PLV[0])/5,nivel:last>=0?PLV[last]:null,payout:d&&+d.payout>0?+d.payout:null}}
+$("cNivel").innerHTML="<option value='-1'>Início · mão "+brl0(PLV[0]/5)+"</option>"+PLV.map((v,i)=>"<option value='"+i+"'>"+String(i+1).padStart(2,"0")+" · R$ "+v.toLocaleString("pt-BR")+" · mão "+brl0(v/5)+"</option>").join("");
+function aplicaMetas(p){if(!p)return;const mudou=window._pm&&window._pm.mao!==p.mao;window._pm=p;cfg.base=p.mao;if(p.payout)cfg.payout=p.payout;
+  $("cBase").value=cfg.base;if(document.activeElement!==$("cPay"))$("cPay").value=cfg.payout;if(document.activeElement!==$("cNivel"))$("cNivel").value=String(p.idx);
+  renderKpis();renderHint();metasTxt();if(mudou)ui_.toast("Mão base pela escada: "+brl0(p.mao))}
+function metasTxt(){$("cMetas").textContent=window._pm?"A mão base vem da escada, a mesma do Progresso. Trocou o degrau aqui, muda lá também (e no celular).":""}
+async function gravaProg(o){
+  try{const r=JSON.parse(localStorage.getItem(PLS)||"null")||{conquistados:[],banca:null};Object.assign(r,o);localStorage.setItem(PLS,JSON.stringify(r));if(!db)aplicaMetas(maoDoProg(r))}catch(e){}
+  if(db&&db.app){try{await db.app(PROG).doc("estado/progresso").set(o,{merge:true})}catch(e){ui_.toast("Não salvou na conta",1)}}}
+$("cNivel").addEventListener("change",e=>{const i=+e.target.value;gravaProg({conquistados:Array.from({length:i+1},(_,k)=>k)});ui_.toast("✓ Degrau salvo · mão "+brl0((i>=0?PLV[i]:PLV[0])/5))});
+try{aplicaMetas(maoDoProg(JSON.parse(localStorage.getItem(PLS)||"null")||{}))}catch(e){}
 (async()=>{
   try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
   if(!db){setStatus("Salvando neste aparelho");return}
-  db.doc("config/geral").onSnapshot(s=>{if(s.exists){cfg=Object.assign(cfg,s.data());if(document.activeElement!==$("cBase"))$("cBase").value=cfg.base;if(document.activeElement!==$("cPay"))$("cPay").value=cfg.payout;renderKpis();renderHint()}
-    if(!cfgOk){cfgOk=true;if(maoPend){aplicaMetas(maoPend);maoPend=null}}metasTxt()},()=>{cfgOk=true});
-  if(db.app)db.app("progresso-ob2").doc("estado/progresso").onSnapshot(s=>{aplicaMetas(maoDoProg(s.exists?s.data():null))},()=>{});
+  db.doc("config/geral").onSnapshot(s=>{if(s.exists){cfg=Object.assign(cfg,s.data());if(window._pm)aplicaMetas(window._pm);else{$("cBase").value=cfg.base;if(document.activeElement!==$("cPay"))$("cPay").value=cfg.payout;renderKpis();renderHint()}}},()=>{});
+  if(db.app)db.app(PROG).doc("estado/progresso").onSnapshot(s=>{const d=s.exists?s.data():null;try{if(d)localStorage.setItem(PLS,JSON.stringify(d))}catch(e){}aplicaMetas(maoDoProg(d))},()=>{});
   db.collection("dias").onSnapshot(q=>{const m={};q.docs.forEach(d=>{m[d.id]=d.data()});days=m;lsSave();render();setStatus("Sincronizado")},()=>setStatus("Sem conexão com o salvamento"));
 })();
 </script>

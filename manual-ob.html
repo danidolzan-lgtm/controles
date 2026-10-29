@@ -556,18 +556,20 @@ function soros(){
   document.getElementById("vBe").textContent=b>0&&p>0?(100*b/(b+M)).toFixed(1).replace(".",",")+"%":"—";
 }
 ["sBase","sPay"].forEach(id=>document.getElementById(id).addEventListener("input",soros));
-// mão base e payout ficam salvos (no aparelho e na conta)
-const SLS="manualOB.soros";
-function sorosLoad(v){if(!v)return;const a=document.activeElement;if(v.base!=null&&a!==document.getElementById("sBase"))document.getElementById("sBase").value=v.base;if(v.payout!=null&&a!==document.getElementById("sPay"))document.getElementById("sPay").value=v.payout;soros()}
-try{sorosLoad(JSON.parse(localStorage.getItem(SLS)||"null"))}catch(e){}
+// 29/10/2026: mão base e payout vêm da escada do Progresso (os mesmos do Diário e do simulador).
+// Mudar a mão aqui é só para testar; o payout, se mudar, vale para todos.
+const PLV=[50,100,150,250,350,500,750,1000,1500,2500,3500,5000,7500,10000], PLS="progressoOB2.v1";
+function sorosLoad(d){if(!d)return;const c=new Set(d.conquistados||[]);let last=-1;PLV.forEach((v,i)=>{if(c.has(i))last=i});const a=document.activeElement;
+  if(a!==document.getElementById("sBase"))document.getElementById("sBase").value=(last>=0?PLV[last]:PLV[0])/5;
+  if(+d.payout>0&&a!==document.getElementById("sPay"))document.getElementById("sPay").value=+d.payout;soros()}
+try{sorosLoad(JSON.parse(localStorage.getItem(PLS)||"null")||{})}catch(e){}
 let sorosDb=null;
-["sBase","sPay"].forEach(id=>document.getElementById(id).addEventListener("change",async()=>{
-  const v={base:parseFloat(document.getElementById("sBase").value)||0,payout:parseFloat(document.getElementById("sPay").value)||0};
-  try{localStorage.setItem(SLS,JSON.stringify(v))}catch(e){}
-  if(sorosDb){try{await sorosDb.doc("config/soros").set(v)}catch(e){}}
-  window.ui&&ui.toast(id==="sPay"?"✓ Payout salvo":"✓ Mão base salva");
-}));
+document.getElementById("sPay").addEventListener("change",async()=>{const v=parseFloat(document.getElementById("sPay").value)||0;if(!(v>0))return;
+  try{const r=JSON.parse(localStorage.getItem(PLS)||"null")||{conquistados:[],banca:null};r.payout=v;localStorage.setItem(PLS,JSON.stringify(r))}catch(e){}
+  if(sorosDb&&sorosDb.app){try{await sorosDb.app("progresso-ob2").doc("estado/progresso").set({payout:v},{merge:true})}catch(e){}}
+  window.ui&&ui.toast("✓ Payout salvo para todos");
+});
 soros();
-(async()=>{try{sorosDb=window.claude?await window.claude.use("db"):null}catch(e){}if(sorosDb)sorosDb.doc("config/soros").onSnapshot(d=>{if(d.exists){const v=d.data();try{localStorage.setItem(SLS,JSON.stringify(v))}catch(e){}sorosLoad(v)}},()=>{})})();
+(async()=>{try{sorosDb=window.claude?await window.claude.use("db"):null}catch(e){}if(sorosDb&&sorosDb.app)sorosDb.app("progresso-ob2").doc("estado/progresso").onSnapshot(d=>{if(d.exists)sorosLoad(d.data())},()=>{})})();
 </script>
 </body></html>

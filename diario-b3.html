@@ -1,7 +1,7 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563EB"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="diario-b3n"></script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{overflow-x:hidden}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.voltar{display:inline-block;margin:12px 16px 0;font:600 14px system-ui,sans-serif;color:inherit;opacity:.7;text-decoration:none}</style></head><body><a class="voltar" href="index.html">← Meus Controles</a><title>Diário B3</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: resumo no topo, ajustes de contrato, calendário seg–sex 29/10–17/12/2026 e 11/01–15/12/2027, tabelas por operacional/ativo. Janela do dia abre ao tocar no calendário. */
+/* Layout: resumo no topo, ajustes de contrato, calendário seg–sex 29/10–17/12/2026, 11/01–31/03/2027 e 01/04–30/06/2027, tabelas por operacional/ativo. Janela do dia abre ao tocar no calendário. */
 :root{
   --bg:#EEF3FC; --surface:#FFFFFF; --line:#DDE4F2; --fg:#13203B; --muted:#58668A;
   --accent:#2563EB; --accent-soft:#DCE7FF;
@@ -110,7 +110,8 @@ td:first-child{font-family:var(--f-body);white-space:normal}
   </div>
 
   <div class="panel cfg">
-    <label for="cCt">Contratos padrão<input id="cCt" type="number" min="1" step="1" inputmode="numeric"></label>
+    <label for="cNivel" style="width:auto;min-width:240px">Degrau da escada<select id="cNivel" style="font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-width:0;width:100%;text-transform:none;letter-spacing:0"></select></label>
+    <label for="cCt">Contratos padrão<input id="cCt" type="number" readonly tabindex="-1" title="Vem do degrau da escada" style="opacity:.75"></label>
     <span class="hint">Toque em Meta (lucro, entra positivo) ou Stop (perda, entra negativo) e digite o valor em R$ que deu na operação.</span>
     <span class="metas" id="cMetas"></span>
   </div>
@@ -131,8 +132,8 @@ td:first-child{font-family:var(--f-body);white-space:normal}
 
 <style>.per{display:flex;gap:6px;flex-wrap:wrap}.per button{appearance:none;font:inherit;font-size:.82rem;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:6px 12px;cursor:pointer;white-space:nowrap}.per button b{font-weight:700}.per button.on{background:var(--accent);border-color:var(--accent);color:#fff}</style>
 <script>
-// 29/10/2026: tudo zerado. Dois períodos: 29/10 a 17/12/2026 e 11/01 a 15/12/2027 (botões em cima do calendário).
-const PER=[{y:"2026",a:"2026-10-29",b:"2026-12-17",t:"29/10 a 17/12/2026"},{y:"2027",a:"2027-01-11",b:"2027-12-15",t:"11/01 a 15/12/2027"}];
+// 29/10/2026: tudo zerado. Três períodos: 29/10 a 17/12/2026, 11/01 a 31/03/2027 e 01/04 a 30/06/2027 (botões em cima do calendário).
+const PER=[{y:"2026",a:"2026-10-29",b:"2026-12-17",t:"29/10 a 17/12/2026"},{y:"jan–mar/27",a:"2027-01-11",b:"2027-03-31",t:"11/01 a 31/03/2027"},{y:"abr–jun/27",a:"2027-04-01",b:"2027-06-30",t:"01/04 a 30/06/2027"}];
 const _hj=(()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")})();
 let PI=PER.findIndex(p=>_hj<=p.b);if(PI<0)PI=PER.length-1;
 let START=PER[PI].a, END=PER[PI].b;
@@ -329,29 +330,30 @@ function doSave(){
 }
 
 /* ---------- ajustes ---------- */
-$("cCt").addEventListener("change",e=>{const v=parseInt(e.target.value);if(v>0&&v!==cfg.ct){cfg.ct=v;saveCfg();window.ui&&ui.toast("✓ Contratos padrão salvos")}});
 
 
 lsLoad();$("cCt").value=cfg.ct;render();setStatus("Conectando…");
-/* Contratos padrão puxados do Progresso B3 (contratos do nível conquistado). Toda vez que o nível muda lá, acompanha;
-   ainda dá pra mudar à mão aqui até o próximo nível. */
+/* 29/10/2026: os contratos vêm SEMPRE da escada, a mesma do Progresso B3 e do simulador.
+   Trocar o degrau aqui grava no Progresso e todos se adaptam (PC e celular). */
 const PLV=[500,1000,3000,5000,7000,10000,12000,15000,20000,25000,30000,35000,40000,50000,60000,70000,80000,90000,100000];
 const PCT=[1,2,3,5,7,10,12,15,20,25,30,35,40,50,60,70,80,90,100];
-let cfgOk=false, ctPend=null;
-function ctDoProg(d){const c=new Set((d&&d.conquistados)||[]);let last=-1;PLV.forEach((v,i)=>{if(c.has(i))last=i});return {ct:last>=0?PCT[last]:1,nivel:last>=0?PLV[last]:null}}
-function aplicaMetas(p){if(!p)return;if(!cfgOk){ctPend=p;return}
-  if(cfg.ctMetas!==p.ct){cfg.ct=p.ct;cfg.ctMetas=p.ct;if(document.activeElement!==$("cCt"))$("cCt").value=cfg.ct;saveCfg();window.ui&&ui.toast&&ui.toast("Contratos atualizados pelo Progresso: "+p.ct)}
-  metasTxt(p)}
-function metasTxt(p){p=p||window._pm;if(!p)return;window._pm=p;const cur=document.activeElement===$("cCt")?parseInt($("cCt").value)||0:+cfg.ct||0, igual=cur===p.ct;
-  $("cMetas").textContent="Contratos "+(igual?"puxados do Progresso":"mudados à mão · no Progresso são "+p.ct)+(p.nivel?" (nível R$ "+p.nivel.toLocaleString("pt-BR")+")":" (início)")}
-$("cCt").addEventListener("input",()=>metasTxt());$("cCt").addEventListener("change",()=>metasTxt());
-try{const r=JSON.parse(localStorage.getItem("progressoB3m.v1")||"null");if(r){cfgOk=true;aplicaMetas(ctDoProg(r));cfgOk=false}}catch(e){}
+const PROG="progresso-b3m", PLS="progressoB3m.v1";
+const ctT=n=>n+(n===1?" contrato":" contratos");
+function ctDoProg(d){const c=new Set((d&&d.conquistados)||[]);let last=-1;PLV.forEach((v,i)=>{if(c.has(i))last=i});return {idx:last,ct:last>=0?PCT[last]:1,nivel:last>=0?PLV[last]:null}}
+$("cNivel").innerHTML="<option value='-1'>Início · 1 contrato</option>"+PLV.map((v,i)=>"<option value='"+i+"'>"+String(i+1).padStart(2,"0")+" · R$ "+v.toLocaleString("pt-BR")+" · "+ctT(PCT[i])+"</option>").join("");
+function aplicaMetas(p){if(!p)return;const mudou=window._pm&&window._pm.ct!==p.ct;window._pm=p;cfg.ct=p.ct;
+  $("cCt").value=cfg.ct;if(document.activeElement!==$("cNivel"))$("cNivel").value=String(p.idx);metasTxt();if(mudou)window.ui&&ui.toast("Contratos pela escada: "+p.ct)}
+function metasTxt(){$("cMetas").textContent=window._pm?"Os contratos vêm da escada, a mesma do Progresso. Trocou o degrau aqui, muda lá também (e no celular).":""}
+async function gravaProg(o){
+  try{const r=JSON.parse(localStorage.getItem(PLS)||"null")||{conquistados:[],banca:null};Object.assign(r,o);localStorage.setItem(PLS,JSON.stringify(r));if(!db)aplicaMetas(ctDoProg(r))}catch(e){}
+  if(db&&db.app){try{await db.app(PROG).doc("estado/progresso").set(o,{merge:true})}catch(e){window.ui&&ui.toast("Não salvou na conta",1)}}}
+$("cNivel").addEventListener("change",e=>{const i=+e.target.value;gravaProg({conquistados:Array.from({length:i+1},(_,k)=>k)});window.ui&&ui.toast("✓ Degrau salvo · "+ctT(i>=0?PCT[i]:1))});
+try{aplicaMetas(ctDoProg(JSON.parse(localStorage.getItem(PLS)||"null")||{}))}catch(e){}
 (async()=>{
   try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
   if(!db){setStatus("Salvando neste aparelho");return}
-  db.doc("config/geral").onSnapshot(s=>{if(s.exists){cfg=Object.assign(cfg,s.data());if(document.activeElement!==$("cCt"))$("cCt").value=cfg.ct}
-    if(!cfgOk){cfgOk=true;if(ctPend){aplicaMetas(ctPend);ctPend=null}}metasTxt()},()=>{cfgOk=true});
-  if(db.app)db.app("progresso-b3m").doc("estado/progresso").onSnapshot(s=>{aplicaMetas(ctDoProg(s.exists?s.data():null))},()=>{});
+  db.doc("config/geral").onSnapshot(s=>{if(s.exists){cfg=Object.assign(cfg,s.data());if(window._pm)aplicaMetas(window._pm);else $("cCt").value=cfg.ct}},()=>{});
+  if(db.app)db.app(PROG).doc("estado/progresso").onSnapshot(s=>{const d=s.exists?s.data():null;try{if(d)localStorage.setItem(PLS,JSON.stringify(d))}catch(e){}aplicaMetas(ctDoProg(d))},()=>{});
   db.collection("dias").onSnapshot(q=>{const m={};q.docs.forEach(d=>{m[d.id]=d.data()});days=m;lsSave();render();setStatus("Sincronizado")},()=>setStatus("Sem conexão com o salvamento"));
 })();
 </script>
