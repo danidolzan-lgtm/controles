@@ -219,7 +219,7 @@
         cur.g.items.forEach(function (it) { var a = el("a", it[0] === file ? "on" : "", esc(it[1])); a.href = it[0] + ".html"; if (it[0] === file) a.setAttribute("aria-current", "page"); q.appendChild(a); });
         inn.appendChild(q);
       }
-      var btn = el("button", "site-btn", "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round'><path d='M4 7h16M4 12h16M4 17h16'/></svg><span class='t'>Menu</span>");
+      var btn = el("button", "site-btn", "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='3' width='7' height='7' rx='2'/><rect x='14' y='3' width='7' height='7' rx='2'/><rect x='3' y='14' width='7' height='7' rx='2'/><rect x='14' y='14' width='7' height='7' rx='2'/></svg><span class='t'>Menu principal</span>");
       btn.type = "button"; btn.setAttribute("aria-expanded", "false"); btn.setAttribute("aria-label", "Abrir menu");
       inn.appendChild(btn); h.appendChild(inn);
       var drop = el("div", "site-drop"); drop.hidden = true; var di = el("div", "site-drop-in");
@@ -232,7 +232,7 @@
         col.appendChild(its); di.appendChild(col);
       });
       /* conta (e-mail e Sair) dentro do menu */
-      var acct = el("div", "site-acct"); acct.hidden = true; home.appendChild(acct);
+      var acct = el("div", "site-acct"); acct.hidden = true; var slot = document.getElementById("acctSlot"); (slot || home).appendChild(acct);
       window.__siteAcct = function (u, sair) {
         if (!u) { acct.hidden = true; btn.classList.remove("on-line"); return; }
         acct.hidden = false; btn.classList.add("on-line");
@@ -245,7 +245,9 @@
       var veil = el("div", "site-veil"); veil.hidden = true; document.body.appendChild(veil);
       veil.addEventListener("click", function () { setOpen(false); });
       function setOpen(o) { drop.hidden = !o; veil.hidden = !o; btn.setAttribute("aria-expanded", o ? "true" : "false"); document.documentElement.style.overflow = o ? "hidden" : ""; }
-      btn.addEventListener("click", function (e) { e.stopPropagation(); setOpen(drop.hidden); });
+      /* botão de menu: sempre volta para a tela dos 3 módulos (OB, B3 e Pessoal) */
+      btn.setAttribute("aria-label", "Menu principal");
+      btn.addEventListener("click", function (e) { e.stopPropagation(); try { sessionStorage.removeItem("index.tab"); } catch (x) {} if (file === "index") { location.hash = "inicio"; } else { location.href = "index.html#inicio"; } });
       document.addEventListener("click", function (e) { if (!drop.hidden && !h.contains(e.target)) setOpen(false); });
       document.addEventListener("keydown", function (e) { if (e.key === "Escape") setOpen(false); });
       var tag = crumb.querySelector("[data-k]"); if (tag) tag.addEventListener("click", function () { goTab(tag.dataset.k); });
