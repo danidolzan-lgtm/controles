@@ -87,6 +87,12 @@
       /* cores do módulo (OB azul, B3 verde-azulado, Pessoal roxo) no fundo, no título e no logo */
       "html[data-group] body{background-image:radial-gradient(1000px 480px at 0% -8%,color-mix(in srgb,var(--gc) 20%,transparent),transparent 62%),radial-gradient(900px 420px at 100% 0%,color-mix(in srgb,var(--gc) 11%,transparent),transparent 60%)!important}" +
       "html[data-group] h1{background:linear-gradient(90deg,var(--gc),color-mix(in srgb,var(--gc) 50%,#7C3AED))!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important}" +
+      /* tom do módulo também nos cartões, linhas, botões e destaques de cada página */
+      "html:root[data-group]{--accent:var(--gc);--accent-soft:color-mix(in srgb,var(--gc) 15%,#fff);--surface:color-mix(in srgb,var(--gc) 3%,#fff);--line:color-mix(in srgb,var(--gc) 18%,#DDE4F2);--bg:color-mix(in srgb,var(--gc) 6%,#EEF3FC)}" +
+      "@media (prefers-color-scheme: dark){html:root[data-group]:not([data-theme=light]){--accent:color-mix(in srgb,var(--gc) 55%,#fff);--accent-soft:color-mix(in srgb,var(--gc) 38%,#0B1220);--surface:color-mix(in srgb,var(--gc) 9%,#16213A);--line:color-mix(in srgb,var(--gc) 26%,#2A3A5C);--bg:color-mix(in srgb,var(--gc) 5%,#0B1220)}}" +
+      "html:root[data-group][data-theme=dark]{--accent:color-mix(in srgb,var(--gc) 55%,#fff);--accent-soft:color-mix(in srgb,var(--gc) 38%,#0B1220);--surface:color-mix(in srgb,var(--gc) 9%,#16213A);--line:color-mix(in srgb,var(--gc) 26%,#2A3A5C);--bg:color-mix(in srgb,var(--gc) 5%,#0B1220)}" +
+      "html[data-group] body{min-height:100dvh}" +
+      "html[data-group] .panel,html[data-group] .card,html[data-group] .kpi,html[data-group] .box{box-shadow:0 12px 26px -22px var(--gc)}" +
       "html[data-group] .site-logo{background:linear-gradient(135deg,var(--gc),color-mix(in srgb,var(--gc) 55%,#7C3AED))!important}" +
       ":root{--site-max:1680px;--site-pad:clamp(16px,2.6vw,40px);--site-h:58px;--stick:58px}" +
       "html[data-page] .wrap{max-width:var(--site-max)!important;width:100%!important;padding-inline:var(--site-pad)!important;padding-top:20px!important}" +
