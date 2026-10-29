@@ -109,9 +109,9 @@ a:hover{transform:translateY(-2px)}
 <script>
 (function(){
   const tabs=[...document.querySelectorAll(".side button")], secs=[...document.querySelectorAll("[data-sec]")];
-  function abrir(t){tabs.forEach(b=>{const on=b.dataset.tab===t;b.classList.toggle("on",on);b.setAttribute("aria-selected",on)});secs.forEach(s=>s.hidden=s.dataset.sec!==t);try{localStorage.setItem("index.tab",t)}catch(e){}}
+  function abrir(t){tabs.forEach(b=>{const on=b.dataset.tab===t;b.classList.toggle("on",on);b.setAttribute("aria-selected",on)});secs.forEach(s=>s.hidden=s.dataset.sec!==t);try{sessionStorage.setItem("index.tab",t)}catch(e){}}
   tabs.forEach(b=>b.addEventListener("click",()=>abrir(b.dataset.tab)));
-  let t="ob";try{t=localStorage.getItem("index.tab")||"ob"}catch(e){}
+  let t="ob";try{t=sessionStorage.getItem("index.tab")||"ob"}catch(e){}
   abrir(tabs.some(b=>b.dataset.tab===t)?t:"ob");
   // conversas do Claude salvas nas páginas de análise
   document.querySelectorAll("[data-claude]").forEach(a=>{let u="";try{u=localStorage.getItem(a.dataset.claude)||""}catch(e){}

@@ -251,9 +251,9 @@ $("sModo").addEventListener("click",e=>{const b=e.target.closest("button");if(!b
 document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
   document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("on",x===b));
   $("tabMetas").hidden=b.dataset.tab!=="metas";$("tabSim").hidden=b.dataset.tab!=="sim";
-  try{localStorage.setItem("progressoB3.tab",b.dataset.tab)}catch(e){}
+  try{sessionStorage.setItem("progressoB3.tab",b.dataset.tab)}catch(e){}
   if(b.dataset.tab==="sim"){fillSim();calcSim()}});
-try{if(localStorage.getItem("progressoB3.tab")==="sim")document.querySelector('[data-tab=sim]').click()}catch(e){}
+try{if(sessionStorage.getItem("progressoB3.tab")==="sim")document.querySelector('[data-tab=sim]').click()}catch(e){}
 fillSim();calcSim();
 
 (async()=>{

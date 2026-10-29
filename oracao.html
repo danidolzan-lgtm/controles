@@ -112,10 +112,10 @@ function tab(n){
   $("tNoite").classList.toggle("on",a);$("tCons").classList.toggle("on",!a);
   $("tNoite").setAttribute("aria-selected",a);$("tCons").setAttribute("aria-selected",!a);
   $("pNoite").hidden=!a;$("pCons").hidden=a;
-  try{localStorage.setItem("oracao.tab",n)}catch(e){}
+  try{sessionStorage.setItem("oracao.tab",n)}catch(e){}
 }
 $("tNoite").onclick=()=>tab("noite");$("tCons").onclick=()=>tab("cons");
-try{if(localStorage.getItem("oracao.tab")==="cons")tab("cons")}catch(e){}
+try{if(sessionStorage.getItem("oracao.tab")==="cons")tab("cons")}catch(e){}
 $("form").addEventListener("submit",e=>{
   e.preventDefault();
   const o=$("oque").value.trim(), p=$("pedido").value.trim();

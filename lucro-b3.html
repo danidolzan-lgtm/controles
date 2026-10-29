@@ -209,6 +209,7 @@ tr.day td.num{font-family:var(--f-num);text-transform:none;text-align:right}
 </div>
 
 <script>
+try{localStorage.removeItem("lucroB3.filtro")}catch(e){} // filtro volta ao padrão ao abrir o app
 (function(){
 const $=id=>document.getElementById(id);
 const LS="lucroB3.v1", LSF="lucroB3.filtro";
@@ -354,14 +355,18 @@ function parseNotas(pages,fname){
 async function importar(files){
   const msg=$("impMsg");msg.className="msg";msg.textContent="Lendo "+files.length+(files.length===1?" arquivo…":" arquivos…");
   try{
-    const got={};
+    const got={}, notasVistas=new Set();
     for(const f of files){
       if(!/\.pdf$/i.test(f.name)){continue}
       const pages=await pdfPages(f), all=pages.flat();let ns=[];
       if(/encerram no mesmo dia/i.test(all.join("\n"))){ns=parseExtratoToks(pages.flatMap(p=>p.toks||[]));if(!ns.length)ns=parseExtrato(all)}
       if(!ns.length)ns=parseNotas(pages,f.name);
+      const doArq={};
       ns.forEach(n=>{if(!n.d)return;const k=n.d.y+"-"+pad(n.d.m)+"-"+pad(n.d.d);const bru=n.bruto!=null?n.bruto:(n.res!=null?r2(n.res+(n.taxas||0)):null);if(bru==null)return;
-        const g=got[k]=got[k]||{d:k,b:0,t:0,i:0,f:n.como==="extrato"?"extrato":"nota"};g.b=r2(g.b+bru);g.t=r2(g.t+(n.taxas||0));g.i=r2(g.i+(n.irrf||0))});
+        if(n.como!=="extrato"){const id=n.nr+"|"+k;if(notasVistas.has(id))return;notasVistas.add(id)} // mesma nota em dois arquivos: conta uma vez
+        const g=doArq[k]=doArq[k]||{d:k,b:0,t:0,i:0,f:n.como==="extrato"?"extrato":"nota"};g.b=r2(g.b+bru);g.t=r2(g.t+(n.taxas||0));g.i=r2(g.i+(n.irrf||0))});
+      // extrato: o mesmo dia em dois extratos (períodos que se cruzam) vale uma vez só; notas de WIN e WDO do mesmo dia somam
+      Object.values(doArq).forEach(x=>{const g=got[x.d];if(!g||x.f==="extrato"||g.f==="extrato")got[x.d]=x;else{g.b=r2(g.b+x.b);g.t=r2(g.t+x.t);g.i=r2(g.i+x.i)}});
     }
     const ks=Object.keys(got).sort();
     if(!ks.length){msg.className="msg err";msg.textContent="Não achei os ajustes de day trade nesse arquivo. Me mande o PDF no chat que eu ajusto a leitura.";window.ui&&ui.toast("Não reconheci o arquivo",1);return}
@@ -370,6 +375,9 @@ async function importar(files){
     await save(ks);
     const L=ks.map(k=>got[k]),tl=L.reduce((s,x)=>s+liq(x),0),tt=L.reduce((s,x)=>s+x.t,0);
     msg.textContent="✓ "+ks.length+(ks.length===1?" dia lido":" dias lidos")+" ("+ks[0].split("-").reverse().join("/")+(ks.length>1?" a "+ks[ks.length-1].split("-").reverse().join("/"):"")+")"+(troca?", "+troca+" já estavam e foram atualizados":"")+" · taxas "+brl(r2(tt))+" · líquido "+sbrl(r2(tl))+". Confira com o extrato.";
+    const [fa,fb]=bounds(),fora=ks.filter(k=>k<fa||k>fb).length;
+    if(fora){const p=PERS.find(p=>ks[0]>=p[2]&&ks[ks.length-1]<=p[3]);F.per=p?p[0]:"tudo";try{sessionStorage.setItem(LSF,JSON.stringify(F))}catch(x){}
+      msg.textContent+=" Mostrando "+(p?"o período "+p[1]:"Tudo")+" para aparecerem todos os dias do arquivo.";}
     window.ui&&ui.toast("✓ "+ks.length+" dias importados");
     render();
   }catch(e){msg.className="msg err";msg.textContent="Não consegui ler: "+(e.message||e)}
@@ -394,15 +402,21 @@ async function save(ks){
 
 /* ---------- filtros ---------- */
 const PERS=[["p1","2026 · 29/10 a 17/12","2026-10-29","2026-12-17"],["p2","jan–mar/27","2027-01-11","2027-03-31"],["p3","abr–jun/27","2027-04-01","2027-06-30"]];
-const CH=PERS.map(p=>[p[0],p[1]]).concat([["mes","Este mês"],["mesant","Mês passado"],["tudo","Tudo"],["custom","Período…"]]);
+const CH=[["hoje","Hoje"],["semana","Esta semana"],["7d","7 dias"],["mes","Este mês"],["mesant","Mês passado"],["30d","30 dias"],["ano","Este ano"]].concat(PERS.map(p=>[p[0],p[0]==="p1"?"29/10 a 17/12":p[1]]),[["tudo","Tudo"],["custom","Período…"]]);
 const ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 const hoje=ymd(new Date());
-let F={per:(PERS.find(p=>hoje<=p[3])||PERS[PERS.length-1])[0],de:"",ate:""};
-try{Object.assign(F,JSON.parse(localStorage.getItem(LSF)||"{}"))}catch(e){}
+let F={per:"mes",de:"",ate:""};
+try{Object.assign(F,JSON.parse(sessionStorage.getItem(LSF)||"{}"))}catch(e){}
 if(!CH.some(c=>c[0]===F.per))F.per="tudo";
 function bounds(){
   const now=new Date(),p=PERS.find(x=>x[0]===F.per);if(p)return [p[2],p[3]];
+  const back=n=>{const d=new Date(now);d.setDate(d.getDate()-n);return ymd(d)};
   switch(F.per){
+    case "hoje":return [hoje,hoje];
+    case "semana":return [back(now.getDay()),hoje];
+    case "7d":return [back(6),hoje];
+    case "30d":return [back(29),hoje];
+    case "ano":return [now.getFullYear()+"-01-01",hoje];
     case "mes":return [hoje.slice(0,8)+"01",hoje];
     case "mesant":{const a=new Date(now.getFullYear(),now.getMonth()-1,1),b=new Date(now.getFullYear(),now.getMonth(),0);return [ymd(a),ymd(b)]}
     case "custom":return [F.de||"0000",F.ate||"9999"];
@@ -414,10 +428,10 @@ function chips(){
   const el=$("fPer");el.innerHTML=CH.map(([k,l])=>"<button type='button' data-k='"+k+"' class='"+(F.per===k?"on":"")+"'>"+l+"</button>").join("");
   el.onclick=e=>{const b=e.target.closest("button");if(!b)return;F.per=b.dataset.k;
     if(F.per==="custom"&&!F.de){const ks=Object.keys(dias).sort();if(ks.length){F.de=ks[0];F.ate=ks[ks.length-1]}}
-    try{localStorage.setItem(LSF,JSON.stringify(F))}catch(x){}render()};
+    try{sessionStorage.setItem(LSF,JSON.stringify(F))}catch(x){}render()};
 }
-$("fDe").addEventListener("change",e=>{F.de=e.target.value;try{localStorage.setItem(LSF,JSON.stringify(F))}catch(x){}render()});
-$("fAte").addEventListener("change",e=>{F.ate=e.target.value;try{localStorage.setItem(LSF,JSON.stringify(F))}catch(x){}render()});
+$("fDe").addEventListener("change",e=>{F.de=e.target.value;try{sessionStorage.setItem(LSF,JSON.stringify(F))}catch(x){}render()});
+$("fAte").addEventListener("change",e=>{F.ate=e.target.value;try{sessionStorage.setItem(LSF,JSON.stringify(F))}catch(x){}render()});
 
 /* ---------- gráficos ---------- */
 function tipper(box){let t=box.querySelector(".tip");if(!t){t=document.createElement("div");t.className="tip";box.appendChild(t)}return t}
