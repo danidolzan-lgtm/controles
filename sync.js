@@ -68,17 +68,17 @@
     var GROUPS = [
       { g: "Opções binárias", s: "OB", k: "ob", c: "#2563EB", items: [["checklist-ob", "Check-list"], ["diario-ob", "Diário"], ["manual-ob", "Manual"], ["progresso-ob", "Progresso"], ["dopamina", "Dopamina"], ["ir-ob", "IR"], ["analise-ob", "Análise"], ["lucro-ob", "Lucro"]] },
       { g: "B3", s: "B3", k: "b3", c: "#0F766E", items: [["checklist-b3", "Check-list"], ["diario-b3", "Diário"], ["manual-b3", "Manual"], ["progresso-b3", "Progresso"], ["dopamina-b3", "Dopamina"], ["ir-b3", "IR"], ["analise-b3", "Análise"], ["lucro-b3", "Lucro"]] },
-      { g: "Pessoal", s: "Pessoal", k: "pes", c: "#7C3AED", items: [["salario", "Salário"], ["oracao", "Oração"], ["receitas", "Receitas"], ["limpeza", "Limpeza de peças"], ["consorcio", "Consórcios"], ["exercicios", "Exercícios"]] }
+      { g: "Pessoal", s: "Pessoal", k: "pes", c: "#7C3AED", items: [["salario", "Salário"], ["oracao", "Oração"], ["receitas", "Receitas"], ["limpeza", "Limpeza de peças"], ["compras", "Compras"], ["consorcio", "Consórcios"], ["exercicios", "Exercícios"]] }
     ];
     var DESC = { "checklist-ob": "Uma vez por dia", "diario-ob": "5 sessões por dia", "manual-ob": "Os 5 operacionais", "progresso-ob": "Escada e simulador", "dopamina": "Acertei ou errei", "ir-ob": "Resultado mensal", "analise-ob": "Print e seta na vela", "lucro-ob": "Excel da Quotex",
       "checklist-b3": "Uma vez por dia", "diario-b3": "Operações em R$", "manual-b3": "M2 · stop e alvo 2x", "progresso-b3": "Contratos e simulador", "dopamina-b3": "Acertei ou errei", "ir-b3": "Day trade · DARF", "analise-b3": "Print e seta na vela", "lucro-b3": "Extrato · com taxas",
-      "salario": "Danrlei e Cristiane", "oracao": "Noite e consagração", "receitas": "Caderno de receitas", "limpeza": "Lotes e valor", "consorcio": "Simular e acompanhar", "exercicios": "5 degraus" };
+      "salario": "Danrlei e Cristiane", "oracao": "Noite e consagração", "receitas": "Caderno de receitas", "limpeza": "Lotes e valor", "consorcio": "Simular e acompanhar", "exercicios": "5 degraus", "compras": "Marcar o que pegou" };
     var P = function (d) { return "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>" + d + "</svg>"; };
     var ICO = { "Check-list": P("<rect x='4' y='3' width='16' height='18' rx='3'/><path d='M8.5 12l2.5 2.5 4.5-5'/>"), "Diário": P("<path d='M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3z'/><path d='M5 17a3 3 0 013-3h11M9 8h6'/>"),
       "Manual": P("<path d='M12 6c-2-1.5-5-2-8-1.5V19c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V4.5C17 4 14 4.5 12 6z'/><path d='M12 6v14.5'/>"), "Progresso": P("<path d='M4 20h4v-5h4v-5h4V5h4'/><path d='M4 20V16'/>"),
       "Dopamina": P("<path d='M13 2L4 14h7l-1 8 9-12h-7z'/>"), "IR": P("<path d='M6 2h12v20l-3-2-3 2-3-2-3 2z'/><path d='M9 8h6M9 12h6M9 16h3'/>"), "Análise": P("<circle cx='12' cy='12' r='8'/><circle cx='12' cy='12' r='3.5'/><path d='M12 2v3M12 19v3M2 12h3M19 12h3'/>"),
       "Lucro": P("<path d='M3 20h18'/><path d='M4 16l5-5 4 3 7-8'/><path d='M15 6h5v5'/>"), "Salário": P("<rect x='3' y='6' width='18' height='13' rx='3'/><path d='M16 12.5h2M3 10h18'/>"), "Oração": P("<path d='M12 3v18M7 8h10'/>"),
-      "Receitas": P("<path d='M6 13a6 6 0 1112 0v6H6z'/><path d='M6 16h12'/>"), "Limpeza de peças": P("<path d='M14 3l7 7-9 9H5v-7z'/><path d='M10 7l7 7'/>"), "Consórcios": P("<circle cx='9' cy='9' r='5'/><circle cx='15' cy='15' r='5'/>"), "Exercícios": P("<path d='M6 8v8M18 8v8M3 10v4M21 10v4M6 12h12'/>") };
+      "Receitas": P("<path d='M6 13a6 6 0 1112 0v6H6z'/><path d='M6 16h12'/>"), "Limpeza de peças": P("<path d='M14 3l7 7-9 9H5v-7z'/><path d='M10 7l7 7'/>"), "Consórcios": P("<circle cx='9' cy='9' r='5'/><circle cx='15' cy='15' r='5'/>"), "Exercícios": P("<path d='M6 8v8M18 8v8M3 10v4M21 10v4M6 12h12'/>"), "Compras": P("<path d='M3 4h2l2.4 11h10.2L20 8H6.2'/><circle cx='9' cy='19.5' r='1.5'/><circle cx='17' cy='19.5' r='1.5'/>") };
     window.__MC = { GROUPS: GROUPS, ICO: ICO, DESC: DESC };
     var cur = null;
     GROUPS.forEach(function (g) { g.items.forEach(function (it) { if (it[0] === file) cur = { g: g, it: it }; }); });

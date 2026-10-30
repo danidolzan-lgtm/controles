@@ -1,0 +1,162 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#7C3AED">
+<title>Lista de compras</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="sync.js" data-app="compras"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#EEF3FC;--surface:#FFFFFF;--line:#DDE4F2;--fg:#13203B;--muted:#58668A;--accent:#2563EB;--accent-soft:#DCE7FF;--ok:#15803D;--bad:#E11D48;
+  --f-display:"Archivo",system-ui,sans-serif;--f-body:"IBM Plex Sans",system-ui,sans-serif}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0B1220;--surface:#16213A;--line:#2A3A5C;--fg:#E6EDFA;--muted:#9AA9C7;--accent:#60A5FA;--accent-soft:#1E3A8A;--ok:#4ADE80;--bad:#FB7185;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0B1220;--surface:#16213A;--line:#2A3A5C;--fg:#E6EDFA;--muted:#9AA9C7;--accent:#60A5FA;--accent-soft:#1E3A8A;--ok:#4ADE80;--bad:#FB7185;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
+.wrap{max-width:720px;margin:0 auto;padding-inline:16px;padding-block:20px 56px;display:grid;gap:16px}
+.wrap>*{min-width:0}
+h1{font-family:var(--f-display);font-weight:800;font-size:1.6rem;margin:0}
+.sub,.status{color:var(--muted);font-size:.85rem}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:14px}
+form.add{display:grid;grid-template-columns:minmax(0,1fr) 90px auto;gap:8px}
+@media (max-width:480px){form.add{grid-template-columns:minmax(0,1fr) 70px}form.add .btn{grid-column:1/-1}}
+input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%;min-width:0}
+input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{appearance:none;font:inherit;font-weight:600;border-radius:10px;padding:11px 16px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:#fff}
+.btn.ghost{background:var(--surface);color:var(--fg);border-color:var(--line)}
+.btn.danger{background:var(--surface);color:var(--bad);border-color:var(--bad)}
+.btn[disabled]{opacity:.5;cursor:default}
+.prog{display:grid;gap:6px}
+.prog .t{display:flex;justify-content:space-between;font-size:.85rem;color:var(--muted)}
+.prog .t b{color:var(--fg);font-family:var(--f-display)}
+.bar{height:10px;border-radius:99px;background:color-mix(in srgb,var(--accent) 14%,transparent);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--ok));border-radius:99px;transition:width .3s}
+.mark{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;font-family:var(--f-display)}
+.list{display:grid;gap:8px}
+.it{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 10px 10px 12px;transition:opacity .2s,background .2s}
+.it .ck{appearance:none;width:30px;height:30px;border-radius:9px;border:2px solid var(--line);background:var(--bg);display:grid;place-items:center;cursor:pointer;padding:0;color:#fff;flex:none}
+.it .ck svg{width:18px;height:18px;opacity:0}
+.it.on .ck{background:var(--ok);border-color:var(--ok)}
+.it.on .ck svg{opacity:1}
+.it .nm{appearance:none;background:none;border:0;font:inherit;color:inherit;text-align:left;cursor:pointer;padding:4px 0;min-width:0;display:grid;gap:1px}
+.it .nm b{font-weight:600;overflow-wrap:anywhere}
+.it .nm span{font-size:.8rem;color:var(--muted)}
+.it.on{background:color-mix(in srgb,var(--ok) 7%,var(--surface))}
+.it.on .nm b{text-decoration:line-through;color:var(--muted)}
+.it .x{appearance:none;width:34px;height:34px;border-radius:9px;border:1px solid transparent;background:none;color:var(--muted);cursor:pointer;font-size:1.1rem;display:grid;place-items:center}
+.it .x:hover{color:var(--bad);border-color:var(--line)}
+.it .x.sure{color:#fff;background:var(--bad);border-color:var(--bad);width:auto;padding:0 10px;font-size:.8rem;font-weight:600}
+.empty{color:var(--muted);font-size:.9rem;text-align:center;padding:18px 8px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+</style></head><body>
+<div class="wrap">
+  <div class="top">
+    <div><h1>Lista de compras</h1><div class="sub">Adicione o que precisa, marque o que já pegou e limpe depois.</div></div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="panel">
+    <form class="add" id="form" autocomplete="off">
+      <input id="nome" type="text" placeholder="Ex.: arroz, leite, café…" aria-label="Item">
+      <input id="qtd" type="text" placeholder="Qtd" aria-label="Quantidade">
+      <button class="btn" type="submit">Adicionar</button>
+    </form>
+    <div class="prog" id="prog" hidden>
+      <div class="t"><span>Pegos</span><b id="cont">0 de 0</b></div>
+      <div class="bar"><i id="barra"></i></div>
+    </div>
+  </div>
+
+  <div style="display:grid;gap:8px">
+    <div class="mark" id="mFalta">Falta pegar</div>
+    <div class="list" id="falta"></div>
+  </div>
+  <div style="display:grid;gap:8px" id="boxPego" hidden>
+    <div class="mark">Já peguei</div>
+    <div class="list" id="pego"></div>
+  </div>
+  <div class="row" id="acoes" hidden>
+    <button type="button" class="btn ghost" id="limparPegos">Excluir os pegos</button>
+    <button type="button" class="btn ghost" id="limparTudo">Excluir a lista toda</button>
+  </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const LS="compras.itens";
+let db=null, items=[], sureId=null, sureAll=null;
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const CK="<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M5 12.5l4.5 4.5L19 7.5'/></svg>";
+function lsLoad(){try{return JSON.parse(localStorage.getItem(LS)||"[]")}catch(e){return []}}
+function lsSave(){try{localStorage.setItem(LS,JSON.stringify(items))}catch(e){}}
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+function card(i){
+  const sure=sureId===i._id;
+  return "<div class='it"+(i.pego?" on":"")+"' data-id='"+esc(i._id)+"'>"+
+    "<button type='button' class='ck' data-t aria-label='"+(i.pego?"Desmarcar ":"Marcar ")+esc(i.nome)+"' aria-pressed='"+!!i.pego+"'>"+CK+"</button>"+
+    "<button type='button' class='nm' data-t><b>"+esc(i.nome)+"</b>"+(i.qtd?"<span>"+esc(i.qtd)+"</span>":"")+"</button>"+
+    "<button type='button' class='x"+(sure?" sure":"")+"' data-x aria-label='Excluir "+esc(i.nome)+"'>"+(sure?"Excluir?":"✕")+"</button></div>";
+}
+function draw(){
+  const f=items.filter(i=>!i.pego).sort((a,b)=>(a.criado||0)-(b.criado||0));
+  const p=items.filter(i=>i.pego).sort((a,b)=>(b.pegoEm||0)-(a.pegoEm||0));
+  $("falta").innerHTML=f.length?f.map(card).join(""):"<div class='empty'>"+(items.length?"Tudo pego! 🎉":"A lista está vazia. Adicione o primeiro item acima.")+"</div>";
+  $("pego").innerHTML=p.map(card).join("");
+  $("boxPego").hidden=!p.length;
+  $("acoes").hidden=!items.length;
+  $("prog").hidden=!items.length;
+  $("cont").textContent=p.length+" de "+items.length;
+  $("barra").style.width=(items.length?p.length/items.length*100:0)+"%";
+  $("limparPegos").disabled=!p.length;
+  $("limparPegos").className="btn "+(sureAll==="pegos"?"danger":"ghost");
+  $("limparPegos").textContent=sureAll==="pegos"?"Confirmar: excluir "+p.length+" pego"+(p.length>1?"s":""):"Excluir os pegos";
+  $("limparTudo").className="btn "+(sureAll==="tudo"?"danger":"ghost");
+  $("limparTudo").textContent=sureAll==="tudo"?"Confirmar: excluir tudo":"Excluir a lista toda";
+}
+async function put(i){
+  if(db){try{const {_id,...d}=i;await db.collection("itens").doc(_id).set(d)}catch(e){$("status").textContent="Não salvou. Tente de novo."}}
+  else lsSave();
+}
+async function del(ids){
+  items=items.filter(i=>!ids.includes(i._id));draw();
+  if(db){try{const b=firebase.firestore().batch();ids.forEach(id=>b.delete(db.collection("itens").doc(id)));await b.commit()}catch(e){
+    try{await Promise.all(ids.map(id=>db.collection("itens").doc(id).delete()))}catch(e2){$("status").textContent="Não excluiu. Tente de novo."}}}
+  else lsSave();
+}
+$("form").addEventListener("submit",e=>{
+  e.preventDefault();
+  const nome=$("nome").value.trim(), qtd=$("qtd").value.trim();
+  if(!nome){$("nome").focus();return}
+  const i={_id:uid(),nome,qtd,pego:false,criado:Date.now()};
+  items.push(i);sureId=null;sureAll=null;draw();put(i);
+  $("nome").value="";$("qtd").value="";$("nome").focus();
+});
+document.addEventListener("click",e=>{
+  const it=e.target.closest(".it");
+  if(it){
+    const i=items.find(x=>x._id===it.dataset.id);if(!i)return;
+    if(e.target.closest("[data-x]")){
+      if(sureId!==i._id){sureId=i._id;sureAll=null;draw();return}
+      sureId=null;del([i._id]);$("status").textContent="Item excluído";return;
+    }
+    if(e.target.closest("[data-t]")){
+      i.pego=!i.pego;i.pegoEm=i.pego?Date.now():0;sureId=null;sureAll=null;draw();put(i);return;
+    }
+  }
+  if(e.target.closest("#limparPegos")){
+    if(sureAll!=="pegos"){sureAll="pegos";sureId=null;draw();return}
+    sureAll=null;del(items.filter(i=>i.pego).map(i=>i._id));$("status").textContent="Itens pegos excluídos";return;
+  }
+  if(e.target.closest("#limparTudo")){
+    if(sureAll!=="tudo"){sureAll="tudo";sureId=null;draw();return}
+    sureAll=null;del(items.map(i=>i._id));$("status").textContent="Lista excluída";return;
+  }
+  if(sureId||sureAll){sureId=null;sureAll=null;draw()}
+});
+items=lsLoad();draw();
+(async()=>{
+  try{db=window.claude?await window.claude.use("db"):null}catch(e){db=null}
+  if(!db)return;
+  // o que estava só neste aparelho sobe para a conta uma vez
+  const loc=lsLoad();
+  if(loc.length){try{await Promise.all(loc.map(i=>{const {_id,...d}=i;return db.collection("itens").doc(_id).set(d)}));localStorage.removeItem(LS)}catch(e){}}
+  db.collection("itens").onSnapshot(q=>{items=q.docs.map(d=>Object.assign({_id:d.id},d.data()));draw()},()=>{$("status").textContent="Sem conexão com o salvamento"});
+})();
+</script>
+</body></html>

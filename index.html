@@ -47,6 +47,7 @@ a.tile .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:ce
 a.tile .ic svg{width:22px;height:22px}
 a.tile b{font:800 1.02rem var(--f-display)}
 a.tile small{color:var(--muted);font-size:.8rem;line-height:1.3}
+a.tile{position:relative}a.tile .ar{position:absolute;top:14px;right:14px;color:var(--gc);font-weight:700}
 @media (max-width:560px){a.tile{padding:12px;gap:8px}a.tile .ic{width:36px;height:36px}}
 .links{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr))}
 a.lnk{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
@@ -62,17 +63,19 @@ a.lnk .ar{margin-left:auto;color:var(--gc);font-weight:700}
   <section id="grupo" hidden style="display:grid;gap:16px">
     <div class="gh"><span class="gi" id="gIc"></span><div><h1 id="gTit"></h1><p class="sub" id="gSub"></p></div></div>
     <div class="tiles" id="tiles"></div>
+    <div id="links"></div>
   </section>
 </div>
 <script>
 (function(){
   const MC=window.__MC||{GROUPS:[],ICO:{},DESC:{}};
   const SUB={ob:"Quotex · M1 · os 5 operacionais",b3:"Mini índice e mini dólar",pes:"Rotina, casa e finanças"};
+  /* links viram cards junto com as páginas: [url, título, descrição, chave do link salvo, posição] — posição = depois de qual página ("" = no fim) */
+  const IL=(d)=>"<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>"+d+"</svg>";
+  const LICO={"Quotex":IL("<path d='M4 19l5-6 4 3 7-9'/><path d='M15 7h5v5'/>"),"Notícias":IL("<rect x='3' y='4' width='18' height='16' rx='3'/><path d='M7 9h10M7 13h10M7 17h6'/>"),"Claude":IL("<path d='M4 5h16v11H9l-5 4z'/>")};
   const LINKS={
-    ob:[["https://quotex.com/pt/trade","Quotex","Corretora · operar"],["https://br.investing.com/economic-calendar","Notícias","Calendário econômico (Investing)"],["analise-ob.html#cfgBox","Claude · conversa OB","Prints e dúvidas de OB","analiseOB.claudeUrl"]],
-    b3:[["https://br.investing.com/economic-calendar","Notícias","Calendário econômico (Investing)"],["analise-b3.html#cfgBox","Claude · conversa B3","Prints e dúvidas de B3","analiseB3.claudeUrl"]]};
-  const sv=p=>"<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>"+p+"</svg>";
-  const ICO_Q=sv("<path d='M3 17l6-6 4 4 8-8'/><path d='M15 7h6v6'/>"),ICO_N=sv("<path d='M4 5h13v14H6a2 2 0 0 1-2-2z'/><path d='M17 9h3v8a2 2 0 0 1-2 2'/><path d='M8 9h5M8 13h5'/>"),ICO_CL=sv("<path d='M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.5A8 8 0 1 1 21 12z'/>");
+    ob:[["https://quotex.com/pt/trade","Quotex","Corretora · operar","","checklist-ob"],["https://br.investing.com/economic-calendar","Notícias","Calendário econômico","","checklist-ob"],["analise-ob.html#cfgBox","Claude","Conversa OB · prints e dúvidas","analiseOB.claudeUrl",""]],
+    b3:[["https://br.investing.com/economic-calendar","Notícias","Calendário econômico","","checklist-b3"],["analise-b3.html#cfgBox","Claude","Conversa B3 · prints e dúvidas","analiseB3.claudeUrl",""]]};
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const sigla=g=>g.s==="Pessoal"?"EU":g.s;
   const $=id=>document.getElementById(id);
@@ -83,13 +86,16 @@ a.lnk .ar{margin-left:auto;color:var(--gc);font-weight:700}
     document.documentElement.setAttribute("data-g",k);document.documentElement.style.setProperty("--gc",g.c);
     $("home").hidden=true;$("grupo").hidden=false;
     $("gIc").textContent=sigla(g);$("gTit").textContent=g.g;$("gSub").textContent=(SUB[k]||"")+" · "+g.items.length+" páginas";
-    const it=g.items.map(x=>({href:x[0]+".html",nome:x[1],desc:MC.DESC[x[0]]||"",ico:MC.ICO[x[1]]||"",ext:false}));
-    const L=(LINKS[k]||[]).map(l=>{let u=l[0],ext=/^https?:/.test(u),sp=l[2];
+    const L=LINKS[k]||[];
+    const cardPg=it=>"<a class='tile' href='"+it[0]+".html'><span class='ic'>"+(MC.ICO[it[1]]||"")+"</span><span><b>"+esc(it[1])+"</b><br><small>"+esc(MC.DESC[it[0]]||"")+"</small></span></a>";
+    const cardLk=l=>{let u=l[0],ext=/^https?:/.test(u),sp=l[2];
       if(l[3]){let s="";try{s=localStorage.getItem(l[3])||""}catch(e){}if(s){u=s;ext=true}else sp="Configure na Análise de entrada"}
-      return {href:u,nome:l[1],desc:sp,ico:l[3]?ICO_CL:(/quotex/i.test(l[1])?ICO_Q:ICO_N),ext:ext,cl:!!l[3],q:/quotex/i.test(l[1]),n:l[1]==="Notícias"}});
-    const q=L.find(x=>x.q),n=L.find(x=>x.n),cl=L.find(x=>x.cl);
-    const ordem=[it[0],q,n].concat(it.slice(1),[cl]).filter(Boolean);
-    $("tiles").innerHTML=ordem.map((x,i)=>"<a class='tile' href='"+esc(x.href)+"'"+(x.ext?" target='_blank' rel='noopener'":"")+" style='animation-delay:"+(i*.03)+"s'><span class='ic'>"+x.ico+"</span><span><b>"+esc(x.nome)+(x.ext?" ↗":"")+"</b><br><small>"+esc(x.desc)+"</small></span></a>").join("");
+      return "<a class='tile lk' href='"+esc(u)+"'"+(ext?" target='_blank' rel='noopener'":"")+"><span class='ic'>"+(LICO[l[1]]||"")+"</span><span><b>"+esc(l[1])+"</b><br><small>"+esc(sp)+"</small></span><span class='ar'>"+(ext?"↗":"→")+"</span></a>"};
+    let h=[];
+    g.items.forEach(it=>{h.push(cardPg(it));L.filter(l=>l[4]===it[0]).forEach(l=>h.push(cardLk(l)))});
+    L.filter(l=>!l[4]).forEach(l=>h.push(cardLk(l)));
+    $("tiles").innerHTML=h.map((x,i)=>x.replace("<a class='tile","<a style='animation-delay:"+(i*.03)+"s' class='tile")).join("");
+    $("links").innerHTML="";
     try{sessionStorage.setItem("index.tab",k)}catch(e){}
     window.scrollTo({top:0});
   }
