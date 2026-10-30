@@ -25,6 +25,10 @@ h1{font-family:var(--f-display);font-weight:800;font-size:1.6rem;margin:0}
 .big{font-family:var(--f-num);font-weight:600;font-size:1.8rem}
 .row{display:flex;gap:16px;flex-wrap:wrap;align-items:end}
 .row>div{display:grid;gap:2px}
+.goal>.row:first-child{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,130px),1fr));gap:12px 16px;align-items:start}
+.goal>.row:first-child>div{align-content:start}
+.goal>.row:nth-child(2){align-items:end}
+.goal>.row:nth-child(2) .hint{padding-bottom:8px}
 .num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
 .bar{height:10px;border-radius:5px;background:var(--accent-soft);overflow:hidden}
 .bar i{display:block;height:100%;background:var(--accent);width:0}
